@@ -1,0 +1,88 @@
+// Place your key bindings in this file to overwrite the defaults
+[
+    {
+        "key": "ctrl+d",
+        "command": "workbench.action.terminal.focus"
+    },
+    {
+        "key": "f8",
+        "command": "-editor.action.marker.nextInFiles",
+        "when": "editorFocus && !editorReadonly"
+    },
+    {
+        "key": "shift+f8",
+        "command": "-editor.action.marker.prevInFiles",
+        "when": "editorFocus && !editorReadonly"
+    },
+    {
+        "key": "ctrl+i",
+        "command": "workbench.action.focusActiveEditorGroup"
+    },
+    {
+        "key": "ctrl+d",
+        "command": "workbench.action.terminal.focus",
+        "when": "!terminalFocus"
+    },
+    {
+        "key": "ctrl+tab",
+        "command": "workbench.action.terminal.focusNext",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+shift+tab",
+        "command": "workbench.action.terminal.focusPrevious",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+t",
+        "command": "workbench.action.terminal.new",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+w",
+        "command": "workbench.action.terminal.kill",
+        "when": "terminalFocus"
+    },
+    {
+        "key": "ctrl+e",
+        "command": "-workbench.action.quickOpen"
+    },
+    {
+        "key": "ctrl+e",
+        "command": "workbench.action.editor.changeLanguageMode"
+    },
+    {
+        "key": "ctrl+k m",
+        "command": "-workbench.action.editor.changeLanguageMode"
+    },
+    {
+        "key": "ctrl+shift+c",
+        "command": "workbench.action.terminal.openNativeConsole",
+        "when": "!terminalFocus"
+    },
+    {
+        "key": "ctrl+shift+d ctrl+shift+o",
+        "command": "workbench.view.extension.dockerView"
+    },
+    {
+        "key": "f8",
+        "command": "workbench.action.terminal.runSelectedText"
+    },
+    {
+        "key": "f5",
+        "command": "workbench.action.terminal.runActiveFile",
+        "when": "editorLangId == 'powershell'"
+    },
+
+    //  Insiders-specific
+    // {
+    //     "key": "ctrl+left",
+    //     "command": "workbench.action.terminal.sendSequence",
+    //     "args": { "text": "\u001bb" }
+    // },
+    // {
+    //     "key": "ctrl+right",
+    //     "command": "workbench.action.terminal.sendSequence",
+    //     "args": { "text": "\u001bf" }
+    // }
+]
