@@ -4,28 +4,37 @@ using namespace System.Linq
 using namespace System.Management.Automation
 
 
+
+# $o1 = [pscustomobject]@{a=1;b=2}
+# $o2 = [pscustomobject]@{a=3;b=4}
+# $ox = @($o1,$o2)
+# $psox = [List[psobject]]::new([psobject[]]$ox)
+# $l = [Linq99]::new($psox)
+
+
 # https://gist.github.com/Jaykul/dfc355598e0f233c8c7f288295f7bb56
 class _Linq99 : IEnumerable
 {
-    hidden [IEnumerable[PSObject]]$_collection
+    hidden [IEnumerable]$_collection
 
-    Linq99 ()
+    _Linq99 ()
     {
         $this._collection = [List[PSObject]]::new()
     }
 
-    Linq99 ([IEnumerable[PSObject]]$Collection)
+    _Linq99 ([IEnumerable]$Collection)
     {
         $this._collection = $Collection
     }
 
-    [IEnumerator[PSObject]] GetEnumerator()
+    [IEnumerator] GetEnumerator()
     {
-        return $this._collection.GetEnumerator()
+        return [_Linq99Enumerator]::new($this._collection)
     }
 }
 
-class Linq99 : IEnumerable[PSObject]
+
+class Linq99 : _Linq99, IEnumerable[PSObject]
 {
     hidden [IEnumerable[PSObject]]$_collection
 
@@ -41,20 +50,27 @@ class Linq99 : IEnumerable[PSObject]
 
     [IEnumerator[PSObject]] GetEnumerator()
     {
-        return $this._collection.GetEnumerator()
+        return [Linq99Enumerator]::new($this._collection)
     }
 }
+
+
+
+
+
 
 class _Linq99Enumerator : IEnumerator
 {
-    hidden [PSObject] $_enumerator
+    hidden [IEnumerator] $_enumerator
+
+    _Linq99Enumerator () {}
 
     _Linq99Enumerator ([IEnumerable[PSObject]] $Collection)
     {
         $this._enumerator = $Collection.GetEnumerator()
     }
 
-    [PSObject] get_Current()
+    [object] get_Current()
     {
         return $this._enumerator.Current
     }
@@ -73,5 +89,17 @@ class _Linq99Enumerator : IEnumerator
 
 class Linq99Enumerator : _Linq99Enumerator, IEnumerator[PSObject]
 {
+    hidden [IEnumerator[PSObject]] $_enumerator
 
+    Linq99Enumerator ([IEnumerable[PSObject]] $Collection)
+    {
+        $this._enumerator = $Collection.GetEnumerator()
+    }
+
+    [PSObject] get_Current()
+    {
+        return $this._enumerator.Current
+    }
+
+    [void] Dispose() {}
 }
