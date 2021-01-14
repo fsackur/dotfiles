@@ -141,8 +141,20 @@ function Clear-DeletedRemoteBranches
     (git branch -vv |sls ': gone') -replace '^ *' -replace ' .*' | %{git branch -D $_}
 }
 
+function Git-Reset
+{
+    param
+    (
+        [Parameter()]
+        [ValidateRange(0, 2147483647)]
+        [int]$Commits = 0,
 
+        [switch]$Soft
+    )
 
+    git reset HEAD~$Commits $(if (-not $Soft) {'--hard'})
+}
+Set-Alias rst Git-Reset
 
 
 
