@@ -145,11 +145,11 @@ function Git-Reset
 {
     param
     (
-        [Parameter()]
-        [ValidateRange(0, 2147483647)]
-        [int]$Commits = 0,
+        [switch]$Soft,
 
-        [switch]$Soft
+        [Parameter(Position = 0)]
+        [ValidateRange(0, 2147483647)]
+        [int]$Commits = 0
     )
 
     git add --all
