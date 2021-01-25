@@ -152,6 +152,8 @@ function Git-Reset
         [switch]$Soft
     )
 
+    git add --all
+
     git reset HEAD~$Commits $(if (-not $Soft) {'--hard'})
 }
 Set-Alias rst Git-Reset
