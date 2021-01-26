@@ -122,18 +122,23 @@ function Git-AddRemote
 {
     param
     (
-        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [Parameter(Mandatory, Position = 1)]
         [string]$Owner
     )
 
     $Owner = $Owner.Trim()
 
-    $Origin = git remote -v | sls origin | select -First 1
-    $OriginUrl = $Origin -replace '^origin\s+' -replace '\s.*'
-    $NewUrl = $OriginUrl -replace [regex]::Escape($env:USERNAME), $Owner
+    if (-not $Name) {$Name = $Owner}
 
-    git remote add $Owner $NewUrl
-    git fetch $Owner
+    $Origin = git remote -v | sls origin | select -First 1
+    [uri]$OriginUrl = $Origin -replace '^origin\s+' -replace '\s.*'
+    $BaseUrl = $OriginUrl -replace [regex]::Escape($OriginUrl.LocalPath)
+    $NewUrl = $BaseUrl, $Owner, $OriginUrl.Segments[-1] -join '/'
+
+    git remote add $Name $NewUrl
+    git fetch $Name
 }
 
 function Clear-DeletedRemoteBranches
