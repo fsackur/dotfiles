@@ -6,7 +6,9 @@
     PathAliases        = @{}
     SymbolicLinks      = @{}
     ScriptPaths        = @(
-        'C:\dev\dotfiles\PSProfile\Console.ps1'
+        'C:\dev\dotfiles\PSProfile\Console.ps1',
+        'C:\dev\dotfiles\Helpers\git_helpers.ps1',
+        'C:\dev\dotfiles\Helpers\pipe_operators.ps1'
     )
     ModulesToImport    = @()
     Variables          = @{}
