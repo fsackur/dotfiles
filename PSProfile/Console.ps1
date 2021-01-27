@@ -3,3 +3,5 @@ if ($Options.Keys)
 {
     Set-PSReadLineOption @Options
 }
+
+Set-PoshPrompt pure

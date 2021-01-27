@@ -46,5 +46,11 @@
     PSBuildPathMap     = @{}
     RefreshFrequency   = '01:00:00'
     InitScripts        = @{}
-    ModulesToInstall   = @()
+    ModulesToInstall   = @(
+        'Microsoft.PowerShell.SecretManagement',
+        'Microsoft.PowerShell.SecretStore',
+        'SecretManagement.BitWarden',
+        'PSProfile',
+        'oh-my-posh'
+    )
 }
