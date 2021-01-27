@@ -5,7 +5,9 @@
     # LastRefresh        = $null
     PathAliases        = @{}
     SymbolicLinks      = @{}
-    ScriptPaths        = @()
+    ScriptPaths        = @(
+        'C:\dev\dotfiles\PSProfile\Console.ps1'
+    )
     ModulesToImport    = @()
     Variables          = @{}
     Prompts            = @{}
@@ -14,10 +16,11 @@
     Settings           = @{
         PSReadline            = @{
             KeyHandlers = @{
-          
+
             }
             Options     = @{
-          
+                PredictionSource    = "History"
+                MaximumHistoryCount = 16384
             }
         }
         # ConfigurationPath     = $null
@@ -45,4 +48,3 @@
     InitScripts        = @{}
     ModulesToInstall   = @()
 }
-  
