@@ -1,6 +1,6 @@
 {
     "workbench.startupEditor": "newUntitledFile",
-    "docker.host": "tcp://localhost:2375",
+    "docker.host": "ssh://mich8638@devenv",
     "debug.toolBarLocation": "docked",
     "git.confirmSync": false,
     "git.autofetch": true,
@@ -54,7 +54,7 @@
     "python.dataScience.runStartupCommands": "from pprint import pprint",
     "workbench.activityBar.visible": true,
     "workbench.statusBar.visible": true,
-    "workbench.colorTheme": "Tomorrow Night Blue",
+    "workbench.colorTheme": "Artem",
     "editor.renderLineHighlight": "none",
     "explorer.confirmDelete": false,
     "task.problemMatchers.neverPrompt": {
@@ -187,5 +187,37 @@
     "editor.suggestSelection": "first",
     "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
     "python.jediEnabled": false,
-    "vsintellicode.java.completionsEnabled": false
+    "vsintellicode.java.completionsEnabled": false,
+    "python.insidersChannel": "weekly",
+    "python.showStartPage": false,
+    "workbench.editorAssociations": [
+        {
+            "viewType": "jupyter-notebook",
+            "filenamePattern": "*.ipynb"
+        }
+    ],
+    // "terminal.integrated.shell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+    "terminal.integrated.shell.windows": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    // "powershell.cwd": "${fileWorkspaceFolder}",
+    "powershell.powerShellAdditionalExePaths": [
+        {
+            "versionName": "5",
+            "exePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+        },
+        {
+            "versionName": "7",
+            "exePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
+        }
+    ],
+    "powershell.powerShellDefaultVersion": "5",
+    "explorer.confirmDragAndDrop": false,
+    "files.associations": {
+        "*.drawio.svg": "drawio",
+        "*.svg": "drawio"
+    },
+    "hediet.vscode-drawio.local-storage": "eyIuZHJhd2lvLWNvbmZpZyI6IntcImxhbmd1YWdlXCI6XCJcIixcImN1c3RvbUZvbnRzXCI6W10sXCJsaWJyYXJpZXNcIjpcImdlbmVyYWxcIixcImN1c3RvbUxpYnJhcmllc1wiOltcIkwuc2NyYXRjaHBhZFwiXSxcInBsdWdpbnNcIjpbXSxcInJlY2VudENvbG9yc1wiOltcIkQ5RDlEOVwiXSxcImZvcm1hdFdpZHRoXCI6XCIyNDBcIixcImNyZWF0ZVRhcmdldFwiOmZhbHNlLFwicGFnZUZvcm1hdFwiOntcInhcIjowLFwieVwiOjAsXCJ3aWR0aFwiOjgyNyxcImhlaWdodFwiOjExNjl9LFwic2VhcmNoXCI6dHJ1ZSxcInNob3dTdGFydFNjcmVlblwiOnRydWUsXCJncmlkQ29sb3JcIjpcIiNkMGQwZDBcIixcImRhcmtHcmlkQ29sb3JcIjpcIiM2ZTZlNmVcIixcImF1dG9zYXZlXCI6dHJ1ZSxcInJlc2l6ZUltYWdlc1wiOm51bGwsXCJvcGVuQ291bnRlclwiOjAsXCJ2ZXJzaW9uXCI6MTgsXCJ1bml0XCI6MSxcImlzUnVsZXJPblwiOmZhbHNlLFwidWlcIjpcIlwifSJ9",
+    "terminal.integrated.shellArgs.windows": [
+        "-NoLogo"
+    ],
+    "powershell.integratedConsole.suppressStartupBanner": true,
 }

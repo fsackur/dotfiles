@@ -1,56 +1,70 @@
 {
-    // "workbench.welcome.enabled": false,
-    "customizeUI.stylesheet": {
-        // NOTE: Hides icons in top right of an editor tab. Only enable if you're already familiar with
-        // the editor icons, along with their functionality and keyboard shortcuts.
-        ".editor-actions": "display: none !important"
-    },
     "window.zoomLevel": 0,
+    "window.newWindowDimensions": "maximized",
     "editor.minimap.enabled": false,
     "editor.renderControlCharacters": false,
     "git.enableSmartCommit": true,
-    "terminal.integrated.shell.linux": "/bin/bash",
-    "terminal.integrated.shell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
-    "powershell.powerShellDefaultVersion": "PS7",
+
+    // "terminal.integrated.shell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    // "terminal.integrated.automationShell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "terminal.integrated.shell.windows": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "powershell.powerShellDefaultVersion": "PSv5",
     "powershell.powerShellAdditionalExePaths": [
         {
-            "versionName": "PS7",
-            "exePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+            "versionName": "PSv7",
+            "exePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe"
         },
         {
             "versionName": "PSv5",
-            "exePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-        },
+            "exePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+        }
     ],
+    "terminal.integrated.shell.linux": "/bin/bash",
     "terminal.integrated.shellArgs.linux": ["-l"],
     "terminal.integrated.automationShell.linux": "/bin/sh",
-    "terminal.integrated.automationShell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
-    // "terminal.integrated.shell.windows": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",
+
+
+
+
+    "powershell.codeFormatting.addWhitespaceAroundPipe": true,
+    "powershell.codeFormatting.alignPropertyValuePairs": true,
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.ignoreOneLineBlock": true,
+    "powershell.codeFormatting.newLineAfterCloseBrace": true,
+    "powershell.codeFormatting.newLineAfterOpenBrace": true,
     "powershell.codeFormatting.openBraceOnSameLine": false,
+    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+    "powershell.codeFormatting.preset": "Allman",
+    "powershell.codeFormatting.trimWhitespaceAroundPipe": false,
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.codeFormatting.whitespaceAfterSeparator": true,
+    "powershell.codeFormatting.whitespaceAroundOperator": true,
+    "powershell.codeFormatting.whitespaceBeforeOpenBrace": true,
+    "powershell.codeFormatting.whitespaceBeforeOpenParen": true,
+    "powershell.codeFormatting.whitespaceBetweenParameters": false,
+    "powershell.codeFormatting.whitespaceInsideBrace": false,
+
+
     "powershell.scriptAnalysis.settingsPath": "C:\\Githubdata\\WaeStd\\WaeRules\\WaeRuleSettings.psd1",
     "explorer.confirmDelete": false,
     "gitlens.advanced.messages": {
-        "suppressCommitHasNoPreviousCommitWarning": false,
-        "suppressCommitNotFoundWarning": false,
-        "suppressFileNotUnderSourceControlWarning": false,
-        "suppressGitVersionWarning": false,
-        "suppressLineUncommittedWarning": false,
-        "suppressNoRepositoryWarning": false,
-        "suppressResultsExplorerNotice": false,
-        "suppressShowKeyBindingsNotice": true
+        "suppressGitDisabledWarning": true,
+        "suppressShowKeyBindingsNotice": true,
     },
+    "gitlens.views.updates.visible": false,
+    "gitlens.views.welcome.visible": false,
     "explorer.confirmDragAndDrop": false,
     "telemetry.enableCrashReporter": false,
     "telemetry.enableTelemetry": false,
     "gitlens.advanced.telemetry.enabled": false,
-    "editor.renderWhitespace": "none",
+    "editor.renderWhitespace": "all",
     "editor.quickSuggestions": {
         "other": false,
         "comments": true,
         "strings": false
     },
     "gitlens.blame.ignoreWhitespace": true,
-    "githubPullRequests.telemetry.enabled": false,
+
     "editor.acceptSuggestionOnEnter": "smart",
     "powershell.integratedConsole.showOnStartup": true,
     "editor.detectIndentation": false,
@@ -58,12 +72,11 @@
     "terminal.external.windowsExec": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",
     "extensions.autoCheckUpdates": false,
     "extensions.autoUpdate": false,
-    "extensions.showRecommendationsOnlyOnDemand": true,
-    "powershell.developer.featureFlags": ["PSReadLine"],
+    "extensions.ignoreRecommendations": true,
+
     "workbench.startupEditor": "newUntitledFile",
     "terminal.integrated.cursorStyle": "line",
     "powershell.developer.editorServicesLogLevel": "Verbose",
-    "powershell.codeFormatting.preset": "Allman",
     "[html]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
@@ -86,20 +99,37 @@
         "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "git.promptToSaveFilesBeforeCommit": "never",
-    "files.trimTrailingWhitespace": true,
     "gitlens.views.repositories.files.layout": "tree",
-    "python.dataScience.askForKernelRestart": false,
+    "gitlens.showWhatsNewAfterUpgrades": false,
+    "gitlens.showWelcomeOnInstall": false,
+
+    "githubPullRequests.logLevel": "debug",
     "githubPullRequests.showInSCM": true,
     "githubPullRequests.remotes": [
         "origin",
         "upstream",
-        "GTSWAE"
+        "a8240",
+        "GTSWAE",
+        "GTSLAE"
+    ],
+    "githubPullRequests.queries": [
+        {
+            "label": "Waiting For My Review",
+            "query": "is:open", // review-requested:${user}"
+        },
+        {
+            "label": "Assigned To Me",
+            "query": "is:open assignee:${user}"
+        },
+        {
+            "label": "Created By Me",
+            "query": "is:open author:${user}"
+        }
     ],
     "editor.fontFamily": "'Victor Mono', Consolas, 'Courier New', monospace",
-    "python.linting.pycodestyleEnabled": true,
     "python.linting.pycodestyleArgs": [
         "--max-line-length=120",
-        "--disable=E302"
+        "--ignore=E302,E303,E501"
     ],
     "_python.pythonPath": "C:\\\\Users\\\\mich8638\\\\Envs\\\\vscode\\\\Scripts\\\\python.exe",
     "_python.venvPath": "C:\\\\Users\\\\mich8638\\\\Envs\\\\",
@@ -114,7 +144,6 @@
         "--allow-root"
     ],
     "python.condaPath": "/home/freddie/anaconda3/bin/conda",
-    "python.dataScience.allowUnauthorizedRemoteConnection": true,
     "remote.WSL.debug": true,
     "python.analysis.logLevel": "Information",
     "gitlens.views.repositories.avatars": false,
@@ -130,7 +159,7 @@
     ],
     "git.ignoreLegacyWarning": true,
     "git.ignoreMissingGitWarning": true,
-    "docker.host": "tcp://localhost:2375",
+    "docker.host": "ssh://mich8638@devenv",
     "docker.images.label": "RepositoryNameAndTag",
     "git.allowForcePush": true,
     "powershell.promptToUpdatePowerShell": false,
@@ -144,7 +173,7 @@
                 "name": "PowerShell: Interactive Session",
                 "type": "PowerShell",
                 "request": "launch",
-                "cwd": ""
+                "cwd": "${workspaceFolder}"
             }
         ]
     },
@@ -181,7 +210,6 @@
     ],
     "gitlens.codeLens.authors.enabled": false,
     "gitlens.codeLens.recentChange.enabled": false,
-    "workbench.colorTheme": "Plastic",
     "editor.renderLineHighlight": "none",
     // "workbench.colorCustomizations": {
     //     "activityBarBadge.background": "#616161",
@@ -319,10 +347,6 @@
             }
         ]
     },
-
-    "python.dataScience.jupyterCommandLineArguments": [
-
-    ],
     "task.problemMatchers.neverPrompt": {
         "shell": true
     },
@@ -340,7 +364,80 @@
     "python.autoComplete.extraPaths": [
         "/mono/stepladder"
     ],
-    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
-    "powershell.codeFormatting.autoCorrectAliases": true,
-    "powershell.codeFormatting.useCorrectCasing": true,
+
+    "coverage-gutters.coverageReportFileName": "stepladder/tests/iou/coverage.xml",
+    "gitlens.debug": true,
+    "gitlens.outputLevel": "debug",
+    "powershell.pester.useLegacyCodeLens": false,
+    "python.linting.pycodestyleEnabled": true,
+    "pullRequestMonitor.githubEnterpriseUrl": "https://github.rackspace.com",
+    "gitlens.views.welcome.enabled": false,
+    "files.trimFinalNewlines": true,
+    "csharp.referencesCodeLens.enabled": false,
+    "files.insertFinalNewline": true,
+    "workbench.editorAssociations": [
+        {
+            "viewType": "default",
+            "filenamePattern": "git-rebase-todo"
+        }
+    ],
+    "workbench.editor.enablePreviewFromQuickOpen": false,
+
+    "powershell.integratedConsole.suppressStartupBanner": true,
+    "powershell.promptToUpdatePackageManagement": false,
+    "jenkins-jack.jenkins.connections": [
+        {
+            "name": "GTSWAE Jenkins",
+            "uri": "https://jenkins-whamapi.rax.io",
+            "username": "freddie-sackur",
+            "password": "M5ZTDGockCUk",
+            "active": true
+        }
+    ],
+    "jenkins-jack.pipeline.tree.items": [],
+    "workbench.colorTheme": "Sapphire",
+    // "workbench.colorTheme": "Ra Sapphire",
+    // "workbench.colorTheme": "Icy-Sunset",
+    // "workbench.colorTheme": "Darcula",
+    // "workbench.colorTheme": "Monokai",
+    // "workbench.colorTheme": "Community Material Theme Palenight",
+    "settingsSync.ignoredExtensions": [
+        "alefragnani.jenkins-status",
+        "chintans98.markdown-jira",
+        "formulahendry.dotnet-test-explorer",
+        "GitHub.vscode-pull-request-github",
+        "tabeyti.jenkins-jack",
+    ],
+    "remote.SSH.path": "C:/Program Files/Git/usr/bin/ssh.exe",
+    "gitlens.blame.heatmap.location": "left",
+    "gitlens.heatmap.ageThreshold": 15,
+    "gitlens.heatmap.toggleMode": "window",
+    "gitlens.statusBar.enabled": false,
+    "gitlens.codeLens.enabled": false,
+    "gitlens.defaultDateFormat": "YY-MM-DD hh:mm",
+    "gitlens.defaultDateShortFormat": "YY-MM-DD",
+    "gitlens.views.contributors.avatars": false,
+    // "jupyter.askForKernelRestart": false,
+    // "jupyter.allowUnauthorizedRemoteConnection": true,
+    // "jupyter.jupyterCommandLineArguments": [
+
+    // ],
+    "files.associations": {
+        "*.clixml": "xml",
+        "*.json": "jsonc"
+    },
+    "python.showStartPage": false,
+    "markdown-toc.updateOnSave": false,
+    "codestream.email": "freddie.sackur@rackspace.co.uk",
+    "terminal.integrated.shellArgs.windows": [
+        "-NoLogo"
+    ],
+    "files.trimTrailingWhitespace": true,
+    "hediet.vscode-drawio.local-storage": "eyIuZHJhd2lvLWNvbmZpZyI6IntcImxhbmd1YWdlXCI6XCJcIixcImN1c3RvbUZvbnRzXCI6W10sXCJsaWJyYXJpZXNcIjpcImdlbmVyYWxcIixcImN1c3RvbUxpYnJhcmllc1wiOltcIkwuc2NyYXRjaHBhZFwiXSxcInBsdWdpbnNcIjpbXSxcInJlY2VudENvbG9yc1wiOltdLFwiZm9ybWF0V2lkdGhcIjpcIjI0MFwiLFwiY3JlYXRlVGFyZ2V0XCI6ZmFsc2UsXCJwYWdlRm9ybWF0XCI6e1wieFwiOjAsXCJ5XCI6MCxcIndpZHRoXCI6ODI3LFwiaGVpZ2h0XCI6MTE2OX0sXCJzZWFyY2hcIjp0cnVlLFwic2hvd1N0YXJ0U2NyZWVuXCI6dHJ1ZSxcImdyaWRDb2xvclwiOlwiI2QwZDBkMFwiLFwiZGFya0dyaWRDb2xvclwiOlwiIzZlNmU2ZVwiLFwiYXV0b3NhdmVcIjp0cnVlLFwicmVzaXplSW1hZ2VzXCI6bnVsbCxcIm9wZW5Db3VudGVyXCI6MCxcInZlcnNpb25cIjoxOCxcInVuaXRcIjoxLFwiaXNSdWxlck9uXCI6ZmFsc2UsXCJ1aVwiOlwiXCJ9In0=",
+    "gitlens.views.lineHistory.enabled": true,
+    "gitlens.views.repositories.enabled": true,
+
+    // "terminal.integrated.automationShell.windows": "pwsh",
+    // "automation"
+
 }

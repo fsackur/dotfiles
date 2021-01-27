@@ -73,7 +73,11 @@
         "command": "workbench.action.terminal.runActiveFile",
         "when": "editorLangId == 'powershell'"
     },
-
+    {
+        "key": "ctrl+alt+r",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": { "text": "\u000DImport-ModuleUnderTest\u000D" }
+    }
     //  Insiders-specific
     // {
     //     "key": "ctrl+left",
