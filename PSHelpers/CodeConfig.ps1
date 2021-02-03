@@ -113,7 +113,7 @@ function Import-CodeSettings
                 # commented-out setting - then we assume it belongs to the current token.
                 $Text = if ($AttachedComment)
                 {
-                    $AttachedComment.Text, $Lines -join [Environment]::NewLine
+                    ($AttachedComment.Text, $Lines | % {$_}) -join [Environment]::NewLine
                 }
                 else
                 {
