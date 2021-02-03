@@ -202,21 +202,21 @@ function Save-CodeSettings
     $RealPath = Get-CodeSettingsPath @PSBoundParameters
     $Settings = Import-CodeSettings @PSBoundParameters
 
-    $Join = ",$([Environment]::NewLine)"
-    $Blocks = if ($Split)
+    $Join      = ",$([Environment]::NewLine)"
+    $JoinBlock = ",$([Environment]::NewLine * 3)"
+
+    $Blocks = $Settings.GetEnumerator() |
+        group {$_.Key -replace '\..*'} |
+        select (
+            @{Name = 'Name'; Expression = {$_.Name -replace '$', '.json'}},
+            @{Name = 'Text'; Expression = {$_.Group.Value -join $Join}}
+        )
+
+    if (-not $Split)
     {
-        $Settings.GetEnumerator() |
-            group {$_.Key -replace '\..*'} |
-            select (
-                @{Name = 'Name'; Expression = {$_.Name -replace '$', '.json'}},
-                @{Name = 'Text'; Expression = {$_.Group.Value -join $Join}}
-            )
-    }
-    else
-    {
-        [pscustomobject]@{
+        $Blocks = [pscustomobject]@{
             Name = $File
-            Text = ($Settings.Values | %{$_}) -join $Join
+            Text = $Blocks.Text -join $JoinBlock
         }
     }
 
