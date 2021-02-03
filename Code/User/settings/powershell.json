@@ -1,0 +1,23 @@
+{
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.openBraceOnSameLine": false,
+    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+    "powershell.codeFormatting.preset": "Allman",
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.developer.editorServicesLogLevel": "Verbose",
+    "powershell.developer.featureFlags": ["PSReadLine"],
+    "powershell.integratedConsole.showOnStartup": true,
+    "powershell.powerShellAdditionalExePaths": [
+        {
+            "versionName": "PS7",
+            "exePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+        },
+        {
+            "versionName": "PSv5",
+            "exePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        },
+    ],
+    "powershell.powerShellDefaultVersion": "PSv5",
+    "powershell.promptToUpdatePowerShell": false,
+    "powershell.scriptAnalysis.settingsPath": "C:\\Githubdata\\WaeStd\\WaeRules\\WaeRuleSettings.psd1"
+}

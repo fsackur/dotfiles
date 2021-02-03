@@ -1,0 +1,5 @@
+{
+    "extensions.autoCheckUpdates": false,
+    "extensions.autoUpdate": false,
+    "extensions.showRecommendationsOnlyOnDemand": true
+}

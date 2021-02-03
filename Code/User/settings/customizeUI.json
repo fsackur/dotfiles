@@ -1,0 +1,7 @@
+{
+    "customizeUI.stylesheet": {
+        // NOTE: Hides icons in top right of an editor tab. Only enable if you're already familiar with
+        // the editor icons, along with their functionality and keyboard shortcuts.
+        ".editor-actions": "display: none !important"
+    }
+}

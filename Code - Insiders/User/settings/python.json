@@ -1,0 +1,26 @@
+{
+    "python.dataScience.askForKernelRestart": false,
+    "python.dataScience.runStartupCommands": "from pprint import pprint",
+    "python.dataScience.textOutputLimit": 0,
+    "python.formatting.blackArgs": ["--config=${workspaceFolder}/../pyproject.toml"],
+    "python.formatting.provider": "black",
+    "python.jediEnabled": false,
+    "python.linting.banditArgs": ["--configfile=${workspaceFolder}/../.bandit"],
+    "python.linting.banditEnabled": true,
+    "python.linting.prospectorEnabled": false,
+    "python.linting.pycodestyleArgs": [
+        "--max-line-length=140",
+        "--ignore=E302"
+    ],
+    "python.linting.pycodestyleEnabled": true,
+    "python.linting.pycodestylePath": "pycodestyle",
+    "python.linting.pylintArgs": [
+        "--rcfile=${workspaceFolder}/../.pylintrc"
+    ],
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintUseMinimalCheckers": false,
+    "python.pythonPath": "C:\\Program Files\\Python37\\python.exe",
+    "python.sortImports.args": ["--settings-path=${workspaceFolder}/../pyproject.toml"],
+    "python.testing.pytestArgs": ["--no-cov"],
+    "python.testing.pytestEnabled": true
+}

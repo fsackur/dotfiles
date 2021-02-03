@@ -1,0 +1,4 @@
+{
+    "files.defaultLanguage": "${activeEditorLanguage}",
+    "files.trimTrailingWhitespace": true
+}

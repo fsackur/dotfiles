@@ -1,0 +1,9 @@
+{
+    "githubPullRequests.remotes": [
+        "origin",
+        "upstream",
+        "GTSWAE"
+    ],
+    "githubPullRequests.showInSCM": true,
+    "githubPullRequests.telemetry.enabled": false
+}

@@ -1,0 +1,22 @@
+{
+    "gitlens.advanced.messages": {
+        "suppressCommitHasNoPreviousCommitWarning": false,
+        "suppressCommitNotFoundWarning": false,
+        "suppressFileNotUnderSourceControlWarning": false,
+        "suppressGitVersionWarning": false,
+        "suppressLineUncommittedWarning": false,
+        "suppressNoRepositoryWarning": false,
+        "suppressResultsExplorerNotice": false,
+        "suppressShowKeyBindingsNotice": true
+    },
+    "gitlens.advanced.telemetry.enabled": false,
+    "gitlens.blame.ignoreWhitespace": true,
+    "gitlens.codeLens.authors.enabled": false,
+    "gitlens.codeLens.recentChange.enabled": false,
+    "gitlens.views.repositories.autoRefresh": false,
+    "gitlens.views.repositories.autoReveal": false,
+    "gitlens.views.repositories.avatars": false,
+    "gitlens.views.repositories.files.layout": "tree",
+    "gitlens.views.repositories.showBranchComparison": false,
+    "gitlens.views.search.enabled": false
+}

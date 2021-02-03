@@ -1,0 +1,4 @@
+{
+    "remote.SSH.useLocalServer": true,
+    "remote.WSL.debug": true
+}

@@ -1,0 +1,11 @@
+{
+    "docker.containers.description": [
+        "RepositoryNameAndTag",
+        "Status"
+    ],
+    "docker.containers.groupBy": "Networks",
+    "docker.containers.label": "ContainerName",
+    "docker.host": "tcp://localhost:2375",
+    "docker.networks.sortBy": "Label",
+    "docker.volumes.label": "VolumeName"
+}
