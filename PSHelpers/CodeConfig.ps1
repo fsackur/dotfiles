@@ -176,3 +176,71 @@ function Import-CodeSettings
     $TopLevelTokens | select -Skip 1 | group Name | sort Name | %{$Output.Add($_.Name, $_.Group.Text)}
     $Output
 }
+
+
+
+function Save-CodeSettings
+{
+    param
+    (
+        [ValidateSet(
+            "settings.json",
+            "keybindings.json"
+        )]
+        [string]$File = "settings.json",
+
+        [switch]$Insiders,
+
+        [string]$OutPath = (Split-Path $PSScriptRoot),
+
+        [switch]$Split
+    )
+
+
+    [void]$PSBoundParameters.Remove('Split')
+    [void]$PSBoundParameters.Remove('OutPath')
+    $RealPath = Get-CodeSettingsPath @PSBoundParameters
+    $Settings = Import-CodeSettings @PSBoundParameters
+
+    $Join = ",$([Environment]::NewLine)"
+    $Global:Blocks = if ($Split)
+    {
+        $Settings.GetEnumerator() |
+            group {$_.Key -replace '\..*'} |
+            select (
+                @{Name = 'Name'; Expression = {$_.Name -replace '$', '.json'}},
+                @{Name = 'Text'; Expression = {$_.Group.Value -join $Join}}
+            )
+    }
+    else
+    {
+        [pscustomobject]@{
+            Name = $File
+            Text = ($Settings.Values | %{$_}) -join $Join
+        }
+    }
+
+
+    $ChildPath = $RealPath -replace ('.*(?=' + $(if ($Insiders) {"Code - Insiders"} else {"Code"}) + ')')
+    $OutPath   = $OutPath | Join-Path -ChildPath $ChildPath
+    $OutPath   = if ($Split)
+    {
+        $OutPath -replace '\.json$'
+    }
+    else
+    {
+        $OutPath | Split-Path
+    }
+
+    if (-not (Test-Path $OutPath -PathType Container))
+    {
+        New-Item $OutPath -ItemType Directory -Force -ErrorAction Stop | Out-Null
+    }
+
+    foreach ($Block in $Blocks)
+    {
+        $FilePath = Join-Path $OutPath ($Block.Name -replace '\[|\]')
+        # Remove-Item $FilePath
+        "{", $Block.Text, "}" | Out-File $FilePath -Encoding utf8 -Force
+    }
+}
