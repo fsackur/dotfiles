@@ -47,8 +47,8 @@ function Import-CodeSettings
         $JsonReader  = [Newtonsoft.Json.JsonTextReader]::new($FileReader)
 
         #region First pass
-        $Depth = 0
-        $Global:Tokens = [Collections.ArrayList]::new()
+        $Depth  = 0
+        $Tokens = [Collections.ArrayList]::new()
 
         while ($JsonReader.Read())
         {
@@ -85,9 +85,9 @@ function Import-CodeSettings
 
 
     #region Second pass
+    $Chunk          = [Collections.ArrayList]::new()
+    $TopLevelTokens = [Collections.ArrayList]::new()
     $Start = $End = $Previous = $Current = $AttachedComment = $null
-    $Global:Chunk          = [Collections.ArrayList]::new()
-    $Global:TopLevelTokens = [Collections.ArrayList]::new()
     foreach ($Token in $Tokens)
     {
         if ($Token.Depth -eq 1)
@@ -203,7 +203,7 @@ function Save-CodeSettings
     $Settings = Import-CodeSettings @PSBoundParameters
 
     $Join = ",$([Environment]::NewLine)"
-    $Global:Blocks = if ($Split)
+    $Blocks = if ($Split)
     {
         $Settings.GetEnumerator() |
             group {$_.Key -replace '\..*'} |
