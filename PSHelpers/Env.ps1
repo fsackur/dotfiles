@@ -9,7 +9,14 @@ $Global:IS_VSCODE = (
         (Get-Process -Id $PId).Parent.CommandLine -match 'vscode'
     )
 )
-$Global:IS_ISE = $Host.Name -eq 'Windows PowerShell ISE Host'
-$Global:IS_WSL = [bool]$env:WSL_DISTRO_NAME
+$Global:IS_ISE     = $Host.Name -eq 'Windows PowerShell ISE Host'
+$Global:IS_WSL     = [bool]$env:WSL_DISTRO_NAME
+$Global:IS_WINDOWS = [Environment]::OSVersion.Platform -match 'Win'
+$Global:IS_LINUX   = [Environment]::OSVersion.Platform -match 'Unix'
+
+if ($Global:IS_WINDOWS)
+{
+    $Global:XDG_CONFIG_HOME = Split-Path $PSScriptRoot
+}
 
 $env:EDITOR = "code --wait"
