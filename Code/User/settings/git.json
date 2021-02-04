@@ -1,9 +1,0 @@
-{
-    "git.allowForcePush": true,
-    "git.autofetch": true,
-    "git.confirmSync": false,
-    "git.enableSmartCommit": true,
-    "git.ignoreLegacyWarning": true,
-    "git.ignoreMissingGitWarning": true,
-    "git.promptToSaveFilesBeforeCommit": "never"
-}
