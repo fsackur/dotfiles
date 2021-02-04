@@ -20,7 +20,7 @@ Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 
 Set-PoshPrompt pure
 
-
+Import-Module posh-git
 
 $PSDefaultParameterValues += @{
     'Out-Default:OutVariable' = '+LastOutput'
