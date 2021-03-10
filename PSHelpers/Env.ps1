@@ -2,11 +2,11 @@
 $Global:IS_VSCODE = (
     (
         $PSVersionTable.PSVersion.Major -le 5 -and
-        (Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId).ProcessName -eq 'Code'
+        (Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId).ProcessName -match '^Code( - Insiders)?$'
     ) -or
     (
         $PSVersionTable.PSVersion.Major -ge 6 -and
-        (Get-Process -Id $PId).Parent.CommandLine -match 'vscode'
+        (Get-Process -Id $PId).Parent.ProcessName -match '^Code( - Insiders)?$'
     )
 )
 $Global:IS_ISE     = $Host.Name -eq 'Windows PowerShell ISE Host'
