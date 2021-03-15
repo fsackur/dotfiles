@@ -15,3 +15,6 @@ if ($Global:IS_WINDOWS)
 }
 
 $env:EDITOR = "code --wait"
+
+# Not always correct - may need to fix later
+$Global:MODULE_PATH = $env:PSModulePath -split [System.IO.Path]::PathSeparator -match [regex]::Escape($HOME) | Select-Object -First 1
