@@ -1,13 +1,8 @@
 
+$Global:IS_PS_CORE = $PSVersionTable.PSVersion.Major -ge 6
 $Global:IS_VSCODE = (
-    (
-        $PSVersionTable.PSVersion.Major -le 5 -and
-        (Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId).ProcessName -match '^Code( - Insiders)?$'
-    ) -or
-    (
-        $PSVersionTable.PSVersion.Major -ge 6 -and
-        (Get-Process -Id $PId).Parent.ProcessName -match '^Code( - Insiders)?$'
-    )
+    (-not $IS_PS_CORE -and (Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId).ProcessName -match '^Code( - Insiders)?$') -or
+    ($IS_PS_CORE -and (Get-Process -Id $PId).Parent.ProcessName -match '^Code( - Insiders)?$')
 )
 $Global:IS_ISE     = $Host.Name -eq 'Windows PowerShell ISE Host'
 $Global:IS_WSL     = [bool]$env:WSL_DISTRO_NAME
