@@ -315,3 +315,52 @@ function Get-GitLog
     }
 }
 Set-Alias ggl Get-GitLog
+
+
+function CherryPick-Interactive
+{
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Alias('Id', 'CommitId', 'SHA', 'Hash', 'Ref')]
+        [string]$Commit
+        # [int]$Commit
+    )
+
+    begin
+    {
+        $StartingCommit = (git show -s --oneline HEAD) -replace ' .*'
+        $LastCommit = $StartingCommit
+        $LastFailed = $false
+    }
+
+    process
+    {
+        $Commit = $Commit -replace ' .*'
+        $ShouldRetry = $false
+        do
+        {
+            if ($PSCmdlet.ShouldProcess($(git show -s --oneline $Commit), "Cherry-pick"))
+            {
+                git cherry-pick $Commit
+                $LastFailed = -not $?
+            }
+            else
+            {
+                $LastFailed = $false
+                return
+            }
+
+            $ShouldRetry = -not $LastFailed
+
+            if (-not $?)
+            {
+                Write-Host "Operation failed. Perform any clean-up, then enter 'exit' to continue:"
+                $Host.EnterNestedPrompt()
+                Write-Host "We will retry the same commit again. If you wish to skip, answer 'N'"
+            }
+        }
+        while ($ShouldRetry)
+    }
+}
