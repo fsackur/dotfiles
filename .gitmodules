@@ -1,0 +1,3 @@
+[submodule "Corp"]
+	path = Corp
+	url = https://github.rackspace.com/mich8638/dotfiles
