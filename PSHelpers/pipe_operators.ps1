@@ -85,3 +85,21 @@ function notmatch
         $input -notmatch $Pattern
     }
 }
+
+
+function Switch-Order
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object]$InputObject
+    )
+
+    end
+    {
+        [Array]::Reverse($input)
+        $input
+    }
+}
+Set-Alias reverse Switch-Order
