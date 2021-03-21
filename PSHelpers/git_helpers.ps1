@@ -64,7 +64,7 @@ Register-ArgumentCompleter -CommandName Git-Fixup -ParameterName Message -Script
         $fakeBoundParameters
     )
 
-    @((ggl -InformationAction SilentlyContinue).Summary) -like "*$wordToComplete*"
+    @((ggl -InformationAction SilentlyContinue -Commits 80).Summary) -like "*$wordToComplete*"
 }
 Set-Alias f Git-Fixup
 
