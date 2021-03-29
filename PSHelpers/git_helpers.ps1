@@ -222,12 +222,16 @@ function Get-GitLog
     [OutputType([psobject])]
     param
     (
+        [Parameter(ParameterSetName = 'FromRef')]
+        [string]$FromRef,
+
         [Parameter(ParameterSetName = 'SinceLastPRMerge')]
         [switch]$SinceLastPRMerge,
 
+        [Parameter(ParameterSetName = 'FromRef')]
         [Parameter(ParameterSetName = 'Default')]
         [Parameter(Position = 0)]
-        [int]$Commits = 30,
+        [int]$Count = 30,
 
         [Parameter()]
         [string]$Remote,
@@ -250,8 +254,6 @@ function Get-GitLog
         'Summary'
     )
 
-    $Commits = [Math]::Abs($Commits)
-
     if (-not $PSBoundParameters.ContainsKey('InformationAction'))
     {
         $InformationPreference = 'Continue'
@@ -260,8 +262,13 @@ function Get-GitLog
     $ArgumentList = @(
         "log",
         '--pretty=format:"%h;%an;%ar;%s"'
-        "-$Commits"
     )
+
+    if ($PSCmdlet.ParameterSetName -eq 'Default')
+    {
+        $Count = [Math]::Abs($Count)
+        $ArgumentList += "-$Count"
+    }
 
     if ($PSBoundParameters.ContainsKey('Remote') -or $PSBoundParameters.ContainsKey('Branch'))
     {
@@ -282,12 +289,21 @@ function Get-GitLog
         $ArgumentList += "--since=$Weeks.weeks"
     }
 
-
+    if ($PSCmdlet.ParameterSetName -eq 'FromRef')
+    {
+        $ArgumentList += "HEAD"
+        $ArgumentList += "^$FromRef"
+        $ArgumentList += '--ancestry-path'
+    }
 
 
     $CommitLines = & git $ArgumentList
 
 
+    if ($PSCmdlet.ParameterSetName -eq 'FromRef')
+    {
+        $CommitLines = $CommitLines | Select-Object -Last $Count
+    }
 
     if ($PSCmdlet.ParameterSetName -eq 'SinceLastPRMerge')
     {
@@ -318,7 +334,15 @@ function Get-GitLog
 
     if ($PSVersionTable.PSVersion.Major -ge 5)
     {
-        Write-Information "$([string][char]8 * 4)    Count: $($Output.Count)`n"
+        if ($PSCmdlet.ParameterSetName -eq 'FromRef')
+        {
+            $Message = "First $($Output.Count) commits starting from $FromRef"
+        }
+        else
+        {
+            $Message = "Count: $($Output.Count)"
+        }
+        Write-Information "$([string][char]8 * 4)    $Message`n"
     }
 }
 Set-Alias ggl Get-GitLog
