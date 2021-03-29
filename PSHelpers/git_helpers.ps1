@@ -218,21 +218,21 @@ function Get-GitLog
 
         Gets the git log since the last merge.
     #>
-    [CmdletBinding(DefaultParameterSetName = 'SinceLastPRMerge')]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType([psobject])]
     param
     (
-        [Parameter(ParameterSetName = 'MergeContainingRef')]
+        [Parameter(ParameterSetName = 'FromRef')]
         [switch]$MergeOnly,
 
-        [Parameter(ParameterSetName = 'MergeContainingRef')]
-        [Parameter(ParameterSetName = 'FromRef')]
+        [Parameter(ParameterSetName = 'FromRef', Mandatory)]
         [string]$FromRef,
 
         [Parameter(ParameterSetName = 'SinceLastPRMerge')]
         [switch]$SinceLastPRMerge,
 
-        [Parameter(Position = 1)]
+        [Parameter(Position = 0)]
+        [Alias('Commits')]
         [int]$Count,
 
         [Parameter()]
@@ -241,7 +241,6 @@ function Get-GitLog
         [Parameter()]
         [string]$Branch,
 
-        [Parameter(ParameterSetName = 'Default')]
         [Parameter()]
         [int]$Weeks = 8,
 
@@ -249,22 +248,18 @@ function Get-GitLog
         [switch]$SortDescending
     )
 
-    $OutputProperties = @(
-        'Id',
-        'Author',
-        'UpdatedAt',
-        'Summary'
-    )
-
     if (-not $PSBoundParameters.ContainsKey('InformationAction'))
     {
         $InformationPreference = 'Continue'
     }
 
-    $ArgumentList = @(
-        "log",
-        '--pretty=format:"%h;%an;%ar;%s"'
-    )
+    $OutputProperties = [ordered]@{
+        Id        = "%h"
+        Author    = "%an"
+        UpdatedAt = "%ar"
+        Message   = "%s"
+    }
+    $OFS = ";"
 
     if ($Count)
     {
@@ -274,13 +269,20 @@ function Get-GitLog
     {
         $Count = switch($PSCmdlet.ParameterSetName)
         {
+            'Default'               {30}
             'MergeContainingRef'    {1}
             'FromRef'               {12}
             'SinceLastPRMerge'      {60}
         }
     }
 
-    if ($PSCmdlet.ParameterSetName -eq 'Default')
+
+    $ArgumentList = @(
+        "log",
+        "--pretty=format:`"$($OutputProperties.Values -join $OFS)`""
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq 'Default' -and $Count)
     {
         $ArgumentList += "-$Count"
     }
@@ -304,16 +306,16 @@ function Get-GitLog
         $ArgumentList += "--since=$Weeks.weeks"
     }
 
+    if ($MergeOnly)
+    {
+        $ArgumentList += "--merges"
+    }
+
     if ($PSBoundParameters.ContainsKey('FromRef'))
     {
         $ArgumentList += "HEAD"
         $ArgumentList += "^$FromRef"
         $ArgumentList += '--ancestry-path'
-    }
-
-    if ($PSCmdlet.ParameterSetName -eq 'MergeContainingRef')
-    {
-        $ArgumentList += "--merges"
     }
 
 
@@ -322,7 +324,6 @@ function Get-GitLog
 
     if ($Count)
     {
-        $Count = [Math]::Abs($Count)
         $CommitLines = $CommitLines | Select-Object -Last $Count
     }
 
@@ -332,14 +333,13 @@ function Get-GitLog
     }
 
 
+    $Properties = @($OutputProperties.Keys)
     $Output = $CommitLines | ForEach-Object {
-        $Values = $_ -split ';', 4
-        $Commit = [pscustomobject]@{
-            $OutputProperties[0] = $Values[0]
-            $OutputProperties[1] = $Values[1]
-            $OutputProperties[2] = $Values[2]
-            $OutputProperties[3] = $Values[3]
-        }
+        $Values = $_ -split $OFS, $Properties.Count
+        $_Commit = [ordered]@{}
+        0..($Properties.Count - 1) |
+            ForEach-Object {$_Commit[$Properties[$_]] = $Values[$_]}
+        $Commit = [pscustomobject]$_Commit
         $Commit.PSTypeNames.Insert(0, 'GitCommit')
         $Commit
     }
