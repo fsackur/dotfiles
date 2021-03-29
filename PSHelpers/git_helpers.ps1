@@ -148,8 +148,13 @@ function Clear-DeletedRemoteBranches
 
 function Git-Reset
 {
+    [CmdletBinding(DefaultParameterSetName = 'Soft')]
     param
     (
+        [Parameter(ParameterSetName = 'Hard')]
+        [switch]$Hard,
+
+        [Parameter(ParameterSetName = 'Soft')]
         [switch]$Soft,
 
         [Parameter(Position = 0)]
@@ -159,7 +164,9 @@ function Git-Reset
 
     git add --all
 
-    git reset HEAD~$Commits $(if (-not $Soft) {'--hard'})
+    $args = @()
+    if ($PSCmdlet.ParameterSetName -eq 'Hard') {$args += '--hard'}
+    git reset HEAD~$Commits $args
 }
 Set-Alias rst Git-Reset
 
