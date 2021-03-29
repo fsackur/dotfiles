@@ -222,16 +222,18 @@ function Get-GitLog
     [OutputType([psobject])]
     param
     (
+        [Parameter(ParameterSetName = 'MergeContainingRef')]
+        [switch]$MergeOnly,
+
+        [Parameter(ParameterSetName = 'MergeContainingRef')]
         [Parameter(ParameterSetName = 'FromRef')]
         [string]$FromRef,
 
         [Parameter(ParameterSetName = 'SinceLastPRMerge')]
         [switch]$SinceLastPRMerge,
 
-        [Parameter(ParameterSetName = 'FromRef')]
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter(Position = 0)]
-        [int]$Count = 30,
+        [Parameter(Position = 1)]
+        [int]$Count,
 
         [Parameter()]
         [string]$Remote,
@@ -264,9 +266,22 @@ function Get-GitLog
         '--pretty=format:"%h;%an;%ar;%s"'
     )
 
-    if ($PSCmdlet.ParameterSetName -eq 'Default')
+    if ($Count)
     {
         $Count = [Math]::Abs($Count)
+    }
+    else
+    {
+        $Count = switch($PSCmdlet.ParameterSetName)
+        {
+            'MergeContainingRef'    {1}
+            'FromRef'               {12}
+            'SinceLastPRMerge'      {60}
+        }
+    }
+
+    if ($PSCmdlet.ParameterSetName -eq 'Default')
+    {
         $ArgumentList += "-$Count"
     }
 
@@ -289,19 +304,25 @@ function Get-GitLog
         $ArgumentList += "--since=$Weeks.weeks"
     }
 
-    if ($PSCmdlet.ParameterSetName -eq 'FromRef')
+    if ($PSBoundParameters.ContainsKey('FromRef'))
     {
         $ArgumentList += "HEAD"
         $ArgumentList += "^$FromRef"
         $ArgumentList += '--ancestry-path'
     }
 
+    if ($PSCmdlet.ParameterSetName -eq 'MergeContainingRef')
+    {
+        $ArgumentList += "--merges"
+    }
+
 
     $CommitLines = & git $ArgumentList
 
 
-    if ($PSCmdlet.ParameterSetName -eq 'FromRef')
+    if ($Count)
     {
+        $Count = [Math]::Abs($Count)
         $CommitLines = $CommitLines | Select-Object -Last $Count
     }
 
