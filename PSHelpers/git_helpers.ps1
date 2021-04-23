@@ -185,8 +185,22 @@ function Get-GitLog
         Specifies to fetch commits as far back as the last merged PR or the last commit by
         'whamapi-cicd-svc'.
 
-        .PARAMETER Commits
+        .PARAMETER MergesOnly
+        Specifies to only show merges, not individual commits.
+
+        .PARAMETER Reflog
+        Specifies to retreive the reflog instead of the commit history. The reflog is git plumbing
+        that can help undo operations.
+
+        .PARAMETER Undoable
+        Specifies to retrieve a view of the reflog where atomic operations in an action such as a
+        rebase are combined into a single object, representing an action such as a rebase.
+
+        .PARAMETER Count
         Specify how many commits to retrieve.
+
+        .PARAMETER FromRef
+        Providing a starting reference (branch, tag or commit).
 
         .PARAMETER Remote
         Specify the remote name of the ref from which to fetch commits. Defaults to the local clone.
@@ -218,22 +232,34 @@ function Get-GitLog
 
         Gets the git log since the last merge.
     #>
-    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    [CmdletBinding(DefaultParameterSetName = 'SinceLastPRMerge')]
     [OutputType([psobject])]
     param
     (
-        [Parameter(ParameterSetName = 'FromRef')]
-        [switch]$MergeOnly,
-
-        [Parameter(ParameterSetName = 'FromRef', Mandatory)]
-        [string]$FromRef,
-
         [Parameter(ParameterSetName = 'SinceLastPRMerge')]
         [switch]$SinceLastPRMerge,
 
-        [Parameter(Position = 0)]
-        [Alias('Commits')]
+        [Parameter(ParameterSetName = 'MergesOnly', Mandatory)]
+        [switch]$MergesOnly,
+
+        [Parameter(ParameterSetName = 'Reflog', Mandatory)]
+        [switch]$Reflog,
+
+        [Parameter(ParameterSetName = 'ReflogAction', Mandatory)]
+        [switch]$Undoable,
+
+        [Parameter(ParameterSetName = 'Reflog', Position = 0)]
+        [Parameter(ParameterSetName = 'ReflogAction', Position = 0)]
+        [Parameter(ParameterSetName = 'MergesOnly', Position = 0)]
+        [Parameter(ParameterSetName = 'Default', Position = 0)]
+        [ValidateRange(1, 5000)]
+        [Alias('Commits')]  # Backward-compatibility
         [int]$Count,
+
+        [Parameter(ParameterSetName = 'Reflog')]
+        [Parameter(ParameterSetName = 'MergesOnly')]
+        [Parameter(ParameterSetName = 'Default')]
+        [string]$FromRef,
 
         [Parameter()]
         [string]$Remote,
@@ -241,107 +267,196 @@ function Get-GitLog
         [Parameter()]
         [string]$Branch,
 
+        [Parameter(ParameterSetName = 'Default')]
         [Parameter()]
-        [int]$Weeks = 8,
+        [int]$Weeks,
 
         [Parameter()]
         [switch]$SortDescending
     )
 
+
+    $SinceLastPRMerge = $PSCmdlet.ParameterSetName -eq 'SinceLastPRMerge'
+
     if (-not $PSBoundParameters.ContainsKey('InformationAction'))
     {
-        $InformationPreference = 'Continue'
+        # Caller was a function in this module
+        if ((Get-PSCallStack)[1].InvocationInfo.MyCommand.Module -eq $MyInvocation.MyCommand.Module)
+        {
+            $InformationPreference = 'SilentlyContinue'
+        }
+        else
+        {
+            $InformationPreference = 'Continue'
+        }
     }
 
-    $OutputProperties = [ordered]@{
-        Id        = "%h"
-        Author    = "%an"
-        UpdatedAt = "%ar"
-        Message   = "%s"
-    }
-    $OFS = ";"
 
-    if ($Count)
+    $ToRef  = "HEAD"
+    $Header = ""
+
+    # https://git-scm.com/docs/git-log#_pretty_formats
+    $Format = if ($Reflog)
     {
-        $Count = [Math]::Abs($Count)
+        [ordered]@{
+            ReflogId = '%gd'
+            Action   = '%gs'
+            Id       = '%h'
+            Summary  = '%s'
+        }
+    }
+    elseif ($Undoable)
+    {
+        [ordered]@{
+            ReflogId   = '%gd'
+            Action     = '%gs'
+            PreviousId = ''
+            Id         = '%h'
+            Summary    = '%s'
+        }
     }
     else
     {
-        $Count = switch($PSCmdlet.ParameterSetName)
+        [ordered]@{
+            Id        = '%h'
+            Author    = '%an'
+            UpdatedAt = '%ar'
+            Summary   = '%s'
+        }
+    }
+    $OutputProperties = @($Format.Keys)
+
+
+    [string[]]$LogArgs = if ($Reflog -or $Undoable) {'reflog'} else {'log'}
+
+
+    $OFS          = [char]31    # random non-printing char that we don't expect to find in git output
+    $FormatString = $Format.Values -join $OFS
+    $LogArgs += "--pretty=format:$FormatString"
+
+
+    if (-not $Count -and -not $FromRef)
+    {
+        $Count = switch ($PSCmdlet.ParameterSetName)
         {
-            'Default'               {30}
-            'MergeContainingRef'    {1}
-            'FromRef'               {12}
-            'SinceLastPRMerge'      {60}
+            'MergesOnly'        {6}
+            'SinceLastPRMerge'  {500}
+            'Reflog'            {60}
+            'ReflogAction'      {500}
+            default             {12}
         }
     }
 
+    if ($Count -and -not $Undoable) {$LogArgs += "-n $Count"}
 
-    $ArgumentList = @(
-        "log",
-        "--pretty=format:`"$($OutputProperties.Values -join $OFS)`""
-    )
+    if ($MergesOnly) {$LogArgs += "--merges"}
 
-    if ($PSCmdlet.ParameterSetName -eq 'Default' -and $Count)
+    if ($Weeks) {$LogArgs += "--since=$Weeks.weeks"}
+
+    if ($Remote -or $Branch)
     {
-        $ArgumentList += "-$Count"
+        if (-not $Branch) {$Branch = git branch --show-current}
+
+        $ToRef = $Remote, $Branch -join '/' -replace '^/'
+        $Header = "Branch: $ToRef"
     }
 
-    if ($PSBoundParameters.ContainsKey('Remote') -or $PSBoundParameters.ContainsKey('Branch'))
+    if ($SinceLastPRMerge)
     {
-        if (-not $Remote) {$Remote = 'origin'}
+        $LastMerge = Get-GitLog -MergesOnly -Count 1
+        $FromRef = $LastMerge.Id
+    }
 
-        $Ref = $Remote, $Branch -join '/'
-        $ArgumentList += $Ref
+    if ($FromRef)
+    {
+        $RefRange = "$FromRef..$ToRef"
+        $LogArgs += $RefRange
 
-        if ($PSVersionTable.PSVersion.Major -ge 5)
+        if ($PSBoundParameters.ContainsKey('FromRef'))
         {
-            Write-Information "$([Environment]::NewLine)    Ref: $Ref"
+            $Header = "Range: $RefRange"
         }
     }
-
-
-    if ($PSBoundParameters.ContainsKey('Weeks'))
+    else
     {
-        $ArgumentList += "--since=$Weeks.weeks"
-    }
-
-    if ($MergeOnly)
-    {
-        $ArgumentList += "--merges"
-    }
-
-    if ($PSBoundParameters.ContainsKey('FromRef'))
-    {
-        $ArgumentList += "HEAD"
-        $ArgumentList += "^$FromRef"
-        $ArgumentList += '--ancestry-path'
+        $LogArgs += $ToRef
     }
 
 
-    $CommitLines = & git $ArgumentList
+    # Do the thing
+    $CommitLines = & git $LogArgs
 
 
-    if ($Count)
-    {
-        $CommitLines = $CommitLines | Select-Object -Last $Count
-    }
-
-    if ($PSCmdlet.ParameterSetName -eq 'SinceLastPRMerge')
+    if ($SinceLastPRMerge)
     {
         $CommitLines = $CommitLines.Where({$_ -match 'whamapi-cicd-svc|;Merge pull request'}, 'Until')
     }
 
 
-    $Properties = @($OutputProperties.Keys)
-    $Output = $CommitLines | ForEach-Object {
-        $Values = $_ -split $OFS, $Properties.Count
-        $_Commit = [ordered]@{}
-        0..($Properties.Count - 1) |
-            ForEach-Object {$_Commit[$Properties[$_]] = $Values[$_]}
-        $Commit = [pscustomobject]$_Commit
-        $Commit.PSTypeNames.Insert(0, 'GitCommit')
-        $Commit
+    $Output = $CommitLines | ConvertFrom-Csv -Delimiter $OFS -Header $OutputProperties
+    $Output | ForEach-Object {$_.PSTypeNames.Insert(0, 'GitCommit')}
+
+
+    if ($Reflog)
+    {
+        $Output | ForEach-Object {
+            $Action = $_.Action
+            $Action = $Action -replace ": $([regex]::Escape($_.Summary))"
+            $Action = $Action -replace ': returning to.*'
+            $Action = $Action -replace ': checkout ', ' -> '
+            $Action = $Action -replace '^checkout: moving from (\S+) to (\S+)$', 'checkout ($1 -> $2)'
+            $_.Action = $Action
+        }
+        $Output | Add-Member -Force ScriptMethod ToString {'{0} {1} {2} {3}' -f $this.PSObject.Properties.Value}
+    }
+    elseif ($Undoable)
+    {
+        $ActionOutput = [Collections.Generic.List[psobject]]::new()
+
+        $Transaction  = $null
+        $Previous     = @{}
+        foreach ($Commit in $Output)
+        {
+            $Action = $Commit.Action
+
+            if ($Transaction)
+            {
+                if ($Action -match '^rebase \(start\)')
+                {
+                    $Transaction = $null
+                    # $Commit is now the commit we moved back to when we did the rebase, so skip this one too
+                }
+                continue
+            }
+
+            if ($Action -match '^rebase .*\(finish\)')
+            {
+                $Transaction = 'rebase'
+            }
+
+
+            $Previous.PreviousId = $Commit.Id
+            # Filter no-op refs (e.g. a reset to the same commit)
+            if ($Previous.Id -eq $Previous.PreviousId)
+            {
+                $ActionOutput.RemoveAt(($ActionOutput.Count -1))
+            }
+
+            $Action = $Action -replace '^commit .*\(amend\).*', 'amend'
+            $Action = $Action -replace '^checkout: moving from .* (\S+)$', 'checkout $1'
+            $Action = $Action -replace ':? .*'
+            $Commit.Action = $Action
+
+            $ActionOutput.Add($Commit)
+            $Previous = $Commit     # Still needs PreviousId
+        }
+
+        $Output = $ActionOutput | Select-Object -First $Count
+        $Output | Add-Member -Force ScriptMethod ToString {'{0} {1} {2}..{3} {4}' -f $this.PSObject.Properties.Value}
+    }
+    else
+    {
+        $Output | Add-Member -Force ScriptMethod ToString {"$($this.Id): $($this.Summary)"}
     }
 
 
@@ -350,21 +465,10 @@ function Get-GitLog
         [array]::Reverse($Output)
     }
 
+
+    Write-Information "`n    $Header Count: $($Output.Count)`n"
+
     $Output
-
-
-    if ($PSVersionTable.PSVersion.Major -ge 5)
-    {
-        if ($PSCmdlet.ParameterSetName -eq 'FromRef')
-        {
-            $Message = "First $($Output.Count) commits starting from $FromRef"
-        }
-        else
-        {
-            $Message = "Count: $($Output.Count)"
-        }
-        Write-Information "$([string][char]8 * 4)    $Message`n"
-    }
 }
 Set-Alias ggl Get-GitLog
 
