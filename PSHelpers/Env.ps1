@@ -22,5 +22,16 @@ if ($Global:IS_WINDOWS)
 
 $env:EDITOR = "code --wait"
 
-# Not always correct - may need to fix later
-$Global:MODULE_PATH = $env:PSModulePath -split [System.IO.Path]::PathSeparator -match [regex]::Escape($HOME) | Select-Object -First 1
+
+$DirSep = [System.IO.Path]::DirectorySeparatorChar
+$PathSep = [System.IO.Path]::PathSeparator
+$PSModulePath = $env:PSModulePath -split $PathSep
+$Global:MODULE_PATH = @($PSModulePath) -like "$HOME$DirSep*$DirSep`Modules" | Select-Object -First 1
+if ($MODULE_PATH)
+{
+    $GitModulePath = $MODULE_PATH -replace 'Modules$', 'GitModules'
+    if ($GitModulePath -notin $PSModulePath)
+    {
+        $env:PSModulePath = $GitModulePath, $env:PSModulePath -join $PathSep
+    }
+}
