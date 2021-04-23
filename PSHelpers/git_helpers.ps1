@@ -35,7 +35,7 @@ function Git-Commit
         [string[]]$MessageParts
     )
     if ($MessageParts) {$Message = "$Message $MessageParts"}
-    git commit -m "`"$Message`""
+    git commit -m $Message
 }
 Set-Alias c Git-Commit
 
