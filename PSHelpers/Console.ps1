@@ -1,4 +1,6 @@
 
+[console]::OutputEncoding = [Text.Encoding]::UTF8
+
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadlineKeyHandler -Chord Tab -Function TabCompleteNext
 Set-PSReadlineKeyHandler -Chord Shift+Tab -Function TabCompletePrevious
