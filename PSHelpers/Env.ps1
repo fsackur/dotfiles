@@ -35,3 +35,5 @@ if ($MODULE_PATH)
         $env:PSModulePath = $GitModulePath, $env:PSModulePath -join $PathSep
     }
 }
+
+$env:CDPATH = ('.', $HOME, $GitModulePath, $MODULE_PATH) -match '.' -join $PathSep
