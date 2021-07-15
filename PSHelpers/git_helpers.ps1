@@ -520,3 +520,122 @@ function CherryPick-Interactive
         while ($ShouldRetry)
     }
 }
+
+function Show-GithubCode
+{
+    <#
+        .SYNOPSIS
+        Opens the browser to a shareable link to a file in Github.
+
+        .PARAMETER Line
+        Provide one line number to link to a line, or two numbers to link to a range of lines.
+
+        .PARAMETER Permalink
+        By default, this command will link to a file in a branch, by branch name. If that branch
+        changes, the link may no longer be correct. Using -Permalink links to the branch head by
+        commit ID instead of branch name. This may stop showing the latest code, but will always
+        show the same code.
+    #>
+    [CmdletBinding()]
+    param
+    (
+        [Parameter()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            @(git remote) -like "*$wordToComplete*"
+        })]
+        [string]$Remote,
+
+        [Parameter()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            @(git branch) -replace '^..' -like "*$wordToComplete*"
+        })]
+        [string]$Branch,
+
+        [Parameter(Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            git rev-parse --git-dir | Resolve-Path | Split-Path | Push-Location
+
+            # We probably don't want to link to docs
+            $Files = Get-ChildItem -Exclude '.git', 'docs' |
+                Get-ChildItem -File -Recurse |
+                Select-Object -ExpandProperty FullName |
+                Sort-Object |
+                Resolve-Path -Relative
+
+            Pop-Location
+
+            $Files -replace '^\.\\' -replace '^\./' -like "*$wordToComplete*"
+        })]
+        [string]$File,
+
+        [Parameter(Position = 0)]
+        [ValidateCount(1, 2)]
+        [ValidateRange(1, 65535)]
+        [int[]]$Line,
+
+        [Parameter()]
+        [switch]$Permalink
+    )
+
+    $Output = git rev-parse --git-dir 2>&1
+    if (-not $?)
+    {
+        # fatal: not a git repository (or any of the parent directories): .git
+        throw $Output
+    }
+
+    if ($Branch)
+    {
+        $BranchText = @(git branch -vv) -match "^..$Branch " -replace "^.."
+    }
+    else
+    {
+        $BranchText = @(git branch -vv) -match '^\*' -replace '^\* '
+        $Branch     = $BranchText -replace ' .*'
+    }
+
+    if ($Remote)
+    {
+        $TrackingBranch = $Remote, $Branch -join '/'
+    }
+    else
+    {
+        $TrackingBranch = $BranchText -replace '.*?\[' -replace '[:\]].*'
+        $Remote         = $TrackingBranch -replace '/.*'
+    }
+
+    # Link to exact commit, so won't change if branch is updated
+    if ($Permalink)
+    {
+        $Ref = (git rev-parse $TrackingBranch).Substring(0, 7)
+    }
+    else
+    {
+        $Ref = $Branch
+    }
+
+    # Drop leading dot; convert \ to /
+    if ([System.IO.Path]::DirectorySeparatorChar -eq '\')
+    {
+        $File = $File -replace '^\.\\' -replace '\\', '/'
+    }
+    else
+    {
+        $File = $File -replace '^\./'
+    }
+
+    $RemoteUri = @(git remote -vv) -match "^$Remote" -replace "^\w+\s+" -replace ' .*' | Select-Object -First 1
+    $Uri       = $RemoteUri, "blob", $Ref, $File -join '/'
+
+    if ($Line)
+    {
+        $LineQuery = $Line -replace '^', 'L' -join '-'
+        $Uri       = $Uri, $LineQuery -join '#'
+    }
+
+    Start-Process $Uri
+}
