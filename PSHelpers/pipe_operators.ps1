@@ -103,3 +103,34 @@ function Switch-Order
     }
 }
 Set-Alias reverse Switch-Order
+
+
+function Split-Line
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object]$InputObject,
+
+        [switch]$SkipEmpty,
+
+        [switch]$SkipWhitespace
+    )
+
+    process
+    {
+        $Lines = $InputObject -split '\r?\n'
+
+        if ($SkipWhitespace)
+        {
+            $Lines = $Lines | Where-Object {-not [string]::IsNullOrWhiteSpace($_)}
+        }
+        elseif ($SkipEmpty)
+        {
+            $Lines = $Lines | Where-Object {-not [string]::IsNullOrEmpty($_)}
+        }
+
+        $Lines | Write-Output
+    }
+}
