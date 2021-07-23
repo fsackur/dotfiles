@@ -25,6 +25,7 @@ function join
 
         [Parameter(Mandatory, Position = 0, ValueFromRemainingArguments)]
         [ValidateCount(1, 3)]
+        [AllowEmptyString()]
         [string[]]$args
     )
 
