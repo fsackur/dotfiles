@@ -1,4 +1,7 @@
 
+Set-Alias clip Set-Clipboard
+
+
 [console]::OutputEncoding = [Text.Encoding]::UTF8
 
 Set-PSReadLineOption -PredictionSource History
