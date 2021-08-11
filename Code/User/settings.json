@@ -1,0 +1,428 @@
+{
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+
+
+    "[javascript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+
+
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+
+
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+
+
+    "[python]": {
+        "editor.formatOnPaste": false
+    },
+
+
+    "atlascode.bitbucket.enabled": false,
+    "atlascode.jira.enabled": true,
+    "atlascode.jira.explorer.monitorEnabled": false,
+    "atlascode.jira.explorer.refreshInterval": 15,
+    "atlascode.jira.jqlList": [
+        {
+            "id": "ce19f277-bd0c-4554-a356-a3fcd0f1fb97",
+            "siteId": "jira.rax.io",
+            "name": "GTSWAE",
+            "query": "project = \"GTS Windows Automation Engineers\"",
+            "enabled": false,
+            "monitor": true
+        },
+        {
+            "id": "ba506459-65ac-4966-ba1b-078eafc41266",
+            "siteId": "jira.rax.io",
+            "name": "My Work List",
+            "query": "project = GTSWAE AND assignee = currentUser() AND status not in (Done, Closed) ORDER BY status, priority DESC",
+            "enabled": true,
+            "monitor": true
+        }
+    ],
+    "atlascode.jira.lastCreateSiteAndProject": {
+        "siteId": "jira.rax.io",
+        "projectKey": "GTSWAE"
+    },
+
+
+    // "clipboard-manager.saveTo": "C:\\Users\\mich8638\\.clipboard",,
+
+    "clipboard-manager.saveTo": "~/.clipboard",
+
+
+    "customizeUI.stylesheet": {
+        // NOTE: Hides icons in top right of an editor tab. Only enable if you're already familiar with
+        // the editor icons, along with their functionality and keyboard shortcuts.
+        ".editor-actions": "display: none !important"
+    },
+
+
+    "debug.internalConsoleOptions": "neverOpen",
+    "debug.showBreakpointsInOverviewRuler": true,
+    "debug.toolBarLocation": "docked",
+
+
+    "diffEditor.ignoreTrimWhitespace": false,
+
+
+    "docker.containers.description": [
+        "RepositoryNameAndTag",
+        "Status"
+    ],
+    "docker.containers.groupBy": "Networks",
+    "docker.containers.label": "ContainerName",
+    "docker.containers.sortBy": "Label",
+    "docker.host": "tcp://localhost:2375",
+    "docker.images.description": [
+        "ImageId",
+        "RepositoryNameAndTag"
+    ],
+    "docker.images.groupBy": "RepositoryName",
+    "docker.images.label": "RepositoryNameAndTag",
+    "docker.networks.sortBy": "Label",
+    "docker.volumes.label": "VolumeName",
+
+
+    "easyRedis.address": "redis://redis",
+
+
+    "editor.acceptSuggestionOnEnter": "smart",
+    "editor.accessibilitySupport": "off",
+    "editor.detectIndentation": false,
+    "editor.emptySelectionClipboard": false,
+    "editor.fontFamily": "'Victor Mono', Consolas, 'Courier New', monospace",
+    "editor.minimap.enabled": false,
+    "editor.quickSuggestions": {
+        "other": false,
+        "comments": true,
+        "strings": false
+    },
+    "editor.renderControlCharacters": false,
+    "editor.renderLineHighlight": "none",
+    "editor.renderWhitespace": "none",
+    "editor.rulers": [
+        100
+    ],
+    "editor.suggest.showSnippets": false,
+    // Material themes make some tokens italic - this disables it
+
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": [
+                    "comment",
+                    "comment.block",
+                    "comment.block.documentation",
+                    "comment.line",
+                    "constant",
+                    "constant.character",
+                    "constant.character.escape",
+                    "constant.numeric",
+                    "constant.numeric.integer",
+                    "constant.numeric.float",
+                    "constant.numeric.hex",
+                    "constant.numeric.octal",
+                    "constant.other",
+                    "constant.regexp",
+                    "constant.rgb-value",
+                    "emphasis",
+                    "entity",
+                    "entity.name",
+                    "entity.name.class",
+                    "entity.name.function",
+                    "entity.name.method",
+                    "entity.name.section",
+                    "entity.name.selector",
+                    "entity.name.tag",
+                    "entity.name.type",
+                    "entity.other",
+                    "entity.other.attribute-name",
+                    "entity.other.inherited-class",
+                    "invalid",
+                    "invalid.deprecated",
+                    "invalid.illegal",
+                    "keyword",
+                    "keyword.control",
+                    "keyword.operator",
+                    "keyword.operator.new",
+                    "keyword.operator.assignment",
+                    "keyword.operator.arithmetic",
+                    "keyword.operator.logical",
+                    "keyword.other",
+                    "markup",
+                    "markup.bold",
+                    "markup.changed",
+                    "markup.deleted",
+                    "markup.heading",
+                    "markup.inline.raw",
+                    "markup.inserted",
+                    "markup.italic",
+                    "markup.list",
+                    "markup.list.numbered",
+                    "markup.list.unnumbered",
+                    "markup.other",
+                    "markup.quote",
+                    "markup.raw",
+                    "markup.underline",
+                    "markup.underline.link",
+                    "meta",
+                    "meta.block",
+                    "meta.cast",
+                    "meta.class",
+                    "meta.function",
+                    "meta.function-call",
+                    "meta.preprocessor",
+                    "meta.return-type",
+                    "meta.selector",
+                    "meta.tag",
+                    "meta.type.annotation",
+                    "meta.type",
+                    "punctuation.definition.string.begin",
+                    "punctuation.definition.string.end",
+                    "punctuation.separator",
+                    "punctuation.separator.continuation",
+                    "punctuation.terminator",
+                    "storage",
+                    "storage.modifier",
+                    "storage.type",
+                    "string",
+                    "string.interpolated",
+                    "string.other",
+                    "string.quoted",
+                    "string.quoted.double",
+                    "string.quoted.other",
+                    "string.quoted.single",
+                    "string.quoted.triple",
+                    "string.regexp",
+                    "string.unquoted",
+                    "strong",
+                    "support",
+                    "support.class",
+                    "support.constant",
+                    "support.function",
+                    "support.other",
+                    "support.type",
+                    "support.type.property-name",
+                    "support.variable",
+                    "variable",
+                    "variable.language",
+                    "variable.name",
+                    "variable.other",
+                    "variable.other.readwrite",
+                    "variable.parameter",
+                ],
+                "settings": {
+                    "fontStyle": "",
+                }
+            }
+        ]
+    },
+
+
+    "eslint.alwaysShowStatus": true,
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "html"
+    ],
+
+
+    "explorer.confirmDelete": false,
+    "explorer.confirmDragAndDrop": false,
+
+
+    "extensions.autoCheckUpdates": false,
+    "extensions.autoUpdate": false,
+    "extensions.showRecommendationsOnlyOnDemand": true,
+
+
+    "files.defaultLanguage": "${activeEditorLanguage}",
+    "files.trimTrailingWhitespace": true,
+
+
+    // "filewatcher.commands": [,
+
+
+
+    "git.allowForcePush": true,
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+    "git.ignoreLegacyWarning": true,
+    "git.ignoreMissingGitWarning": true,
+    "git.promptToSaveFilesBeforeCommit": "never",
+
+
+    "githubPullRequests.remotes": [
+        "origin",
+        "upstream",
+        "GTSWAE"
+    ],
+    "githubPullRequests.showInSCM": true,
+    "githubPullRequests.telemetry.enabled": false,
+
+
+    "gitlens.advanced.messages": {
+        "suppressCommitHasNoPreviousCommitWarning": false,
+        "suppressCommitNotFoundWarning": false,
+        "suppressFileNotUnderSourceControlWarning": false,
+        "suppressGitVersionWarning": false,
+        "suppressLineUncommittedWarning": false,
+        "suppressNoRepositoryWarning": false,
+        "suppressResultsExplorerNotice": false,
+        "suppressShowKeyBindingsNotice": true
+    },
+    "gitlens.advanced.telemetry.enabled": false,
+    "gitlens.blame.ignoreWhitespace": true,
+    "gitlens.codeLens.authors.enabled": false,
+    "gitlens.codeLens.recentChange.enabled": false,
+    "gitlens.views.repositories.autoRefresh": false,
+    "gitlens.views.repositories.autoReveal": false,
+    "gitlens.views.repositories.avatars": false,
+    "gitlens.views.repositories.files.layout": "tree",
+    "gitlens.views.repositories.showBranchComparison": false,
+    "gitlens.views.search.enabled": false,
+
+
+    "hediet.vscode-drawio.local-storage": "eyIuZHJhd2lvLWNvbmZpZyI6IntcImxhbmd1YWdlXCI6XCJcIixcImN1c3RvbUZvbnRzXCI6W10sXCJsaWJyYXJpZXNcIjpcImdlbmVyYWxcIixcImN1c3RvbUxpYnJhcmllc1wiOltcIkwuc2NyYXRjaHBhZFwiXSxcInBsdWdpbnNcIjpbXSxcInJlY2VudENvbG9yc1wiOltcIjBBMEEwQVwiLFwiRjBGMEYwXCIsXCIzNjM2MzZcIixcIjM4MzgzOFwiLFwiQzQ4RDg5XCIsXCI2NjAwMDBcIixcIjMzMzMzM1wiLFwiRThFOEU4XCIsXCIwMDAwMDBcIixcIjhGODc1NFwiLFwiNEE0QTRBXCJdLFwiZm9ybWF0V2lkdGhcIjpcIjI0MFwiLFwiY3JlYXRlVGFyZ2V0XCI6ZmFsc2UsXCJwYWdlRm9ybWF0XCI6e1wieFwiOjAsXCJ5XCI6MCxcIndpZHRoXCI6ODI3LFwiaGVpZ2h0XCI6MTE2OX0sXCJzZWFyY2hcIjp0cnVlLFwic2hvd1N0YXJ0U2NyZWVuXCI6dHJ1ZSxcImdyaWRDb2xvclwiOlwiI2QwZDBkMFwiLFwiZGFya0dyaWRDb2xvclwiOlwiIzZlNmU2ZVwiLFwiYXV0b3NhdmVcIjp0cnVlLFwicmVzaXplSW1hZ2VzXCI6bnVsbCxcIm9wZW5Db3VudGVyXCI6MCxcInZlcnNpb25cIjoxOCxcInVuaXRcIjoxLFwiaXNSdWxlck9uXCI6ZmFsc2UsXCJ1aVwiOlwiXCJ9In0=",
+
+
+    "jupyter.notebook.startupArgs": [
+        "--no-browser",
+        "--port=8888",
+        "--NotebookApp.allow_origin=\"*\"",
+        "--disable_check_xsrf=True",
+        "--token=\"\"",
+        "--allow-root"
+    ],
+
+
+    "kite.showWelcomeNotificationOnStartup": false,
+
+
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "PowerShell: Interactive Session",
+                "type": "PowerShell",
+                "request": "launch",
+                "cwd": ""
+            }
+        ]
+    },
+
+
+    "powershell.codeFormatting.autoCorrectAliases": true,
+    "powershell.codeFormatting.openBraceOnSameLine": false,
+    "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
+    "powershell.codeFormatting.preset": "Allman",
+    "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.developer.editorServicesLogLevel": "Verbose",
+    "powershell.developer.featureFlags": ["PSReadLine"],
+    "powershell.integratedConsole.showOnStartup": true,
+    "powershell.powerShellAdditionalExePaths": [
+        {
+            "versionName": "PS7",
+            "exePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+        },
+        {
+            "versionName": "PSv5",
+            "exePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        },
+    ],
+    "powershell.powerShellDefaultVersion": "PSv5",
+    "powershell.promptToUpdatePowerShell": false,
+    "powershell.scriptAnalysis.settingsPath": "C:\\Githubdata\\WaeStd\\WaeRules\\WaeRuleSettings.psd1",
+
+
+    "presentationMode.colorTheme": "Default Dark+",
+    // "presentationMode.editor.fontFamily": "",,
+
+    "presentationMode.editor.fontFamily": "'Meslo LG M DZ for Powerline', Hack, 'Fira Mono for Powerline', monospace",
+    // "presentationMode.terminal.fontFamily": "",,
+
+    "presentationMode.terminal.fontFamily": "'Meslo LG M DZ for Powerline', Hack, 'Fira Mono for Powerline', monospace",
+
+
+    "python.analysis.logLevel": "Information",
+    "python.autoComplete.extraPaths": [
+        "/mono/stepladder"
+    ],
+    "python.condaPath": "/home/freddie/anaconda3/bin/conda",
+    "python.dataScience.allowUnauthorizedRemoteConnection": true,
+    "python.dataScience.askForKernelRestart": false,
+    "python.dataScience.jupyterCommandLineArguments": [
+
+    ],
+    "python.globalModuleInstallation": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.pycodestyleArgs": [
+        "--max-line-length=120",
+        "--disable=E302"
+    ],
+    "python.linting.pylintArgs": [
+        "--max-line-length=120"
+    ],
+    "python.pythonPath": "C:\\Program Files\\Python37\\python.exe",
+    "python.showStartPage": false,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "stepladder/tests/iou",
+        "-p",
+        "*test*.py"
+    ],
+    "python.venvPath": "C:\\Users\\mich8638\\AppData\\Roaming\\Code\\.venv\\vscode",
+
+
+    "remote.SSH.useLocalServer": true,
+    "remote.WSL.debug": true,
+
+
+    "task.problemMatchers.neverPrompt": {
+        "shell": true
+    },
+
+
+    "telemetry.enableCrashReporter": false,
+    "telemetry.enableTelemetry": false,
+
+
+    "terminal.external.windowsExec": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "terminal.integrated.automationShell.linux": "/bin/sh",
+    "terminal.integrated.automationShell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "terminal.integrated.cursorStyle": "line",
+    "terminal.integrated.fontFamily": "FiraCode NF",
+    "terminal.integrated.shell.linux": "/bin/bash",
+    "terminal.integrated.shell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    // "terminal.integrated.shell.windows": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",,
+
+    "terminal.integrated.shellArgs.linux": ["-l"],
+
+
+    "window.zoomLevel": 0,
+
+
+    "workbench.activityBar.visible": true,
+    // "workbench.colorCustomizations": {,
+    "workbench.colorTheme": "Sapphire",
+    "workbench.editor.untitled.labelFormat": "name",
+    "workbench.startupEditor": "newUntitledFile",
+    "workbench.statusBar.visible": true,
+    "workbench.welcome.enabled": false,
+
+
+    "yaml.schemas": {
+        "file:///c%3A/Users/mich8638/.vscode/extensions/atlassian.atlascode-2.8.5/resources/schemas/pipelines-schema.json": "bitbucket-pipelines.yml"
+    }
+}
