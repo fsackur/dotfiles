@@ -13,7 +13,7 @@ else
 {
     Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId
 }
-$Global:IS_VSCODE = $ParentProcess.ProcessName -match '^node|(Code( - Insiders)?)$'
+$Global:IS_VSCODE = $ParentProcess.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
 
 if ($Global:IS_WINDOWS)
 {
