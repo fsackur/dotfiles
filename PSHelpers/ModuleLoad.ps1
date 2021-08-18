@@ -17,9 +17,12 @@
     process
     {
         [psmoduleinfo]$Module = Get-Module $Module -ErrorAction Stop | Select-Object -First 1
-        & $Module {
-            $Module = $args[0]
-            $ExportVariables = $args[1]
+        $Scriptblock = {
+            param
+            (
+                [psmoduleinfo]$Module,
+                [switch]$ExportVariables
+            )
 
             $Commands = Get-Command -Module $Module
             $ExportTable = $Module.ExportedCommands
@@ -28,7 +31,7 @@
             foreach ($Command in $PrivateCommands)
             {
                 Write-Verbose "Exporting private function '$($Command.Name)'"
-                Set-Content function:\Global:$($Command.Name) $Command.ScriptBlock # $Module.NewBoundScriptBlock([scriptblock]::Create($Command.Definition))
+                Set-Content function:\Global:$($Command.Name) $Command.ScriptBlock
             }
 
             if ($ExportVariables)
@@ -45,7 +48,14 @@
                 }
             }
 
-        } $Module $ExportVariables
+        }
+
+        <#
+            The call operator, &, can run a scriptblock within the scope of a module:
+                & (Get-Module Foo) {Do-Stuff}
+            The above works even if Do-Stuff is a private function in Foo.
+        #>
+        & $Module $Scriptblock -Module $Module -ExportVariables $ExportVariables
     }
 }
 
@@ -110,6 +120,10 @@ function Reload-Module
 
     [CmdletBinding()]
     [OutputType([PSModuleInfo])]
+    param
+    (
+        [switch]$ExportAll
+    )
 
     $ModuleBase = $PWD.Path
 
@@ -129,6 +143,10 @@ function Reload-Module
         {
             # Re-import module
             Import-Module -Name $Psd1Path -Force -DisableNameChecking -PassThru -Global
+            if ($ExportAll)
+            {
+                Export-PrivateModuleMember $ModuleName -ExportVariables
+            }
             return
         }
 
