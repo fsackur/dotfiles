@@ -120,6 +120,10 @@ function Reload-Module
 
     [CmdletBinding()]
     [OutputType([PSModuleInfo])]
+    param
+    (
+        [switch]$ExportAll
+    )
 
     $ModuleBase = $PWD.Path
 
@@ -139,6 +143,10 @@ function Reload-Module
         {
             # Re-import module
             Import-Module -Name $Psd1Path -Force -DisableNameChecking -PassThru -Global
+            if ($ExportAll)
+            {
+                Export-PrivateModuleMember $ModuleName -ExportVariables
+            }
             return
         }
 
