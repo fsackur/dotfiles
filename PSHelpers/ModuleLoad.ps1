@@ -155,3 +155,183 @@ function Reload-Module
 
     Write-Warning "Not in a Powershell module directory, no module imported"
 }
+
+function Import-GitModule
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory)]
+        [string]$GitRepoRoot,
+
+        [switch]$Global,
+
+        [ValidateNotNull()]
+        [string]$Prefix,
+
+        [Parameter(ParameterSetName = 'Name', Mandatory, Position = 0, ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'Branch', Mandatory, Position = 0, ValueFromPipeline)]
+        [string[]]$Name,
+
+        [Parameter(ParameterSetName = 'FullyQualifiedName', Mandatory, Position = 0, ValueFromPipeline)]
+        [Microsoft.PowerShell.Commands.ModuleSpecification[]]$FullyQualifiedName,
+
+        [ValidateNotNull()]
+        [string[]]$Function,
+
+        [ValidateNotNull()]
+        [string[]]$Cmdlet,
+
+        [ValidateNotNull()]
+        [string[]]$Variable,
+
+        [ValidateNotNull()]
+        [string[]]$Alias,
+
+        [switch]$Force,
+
+        [switch]$PassThru,
+
+        [switch]$AsCustomObject,
+
+        [Parameter(ParameterSetName = 'Name')]
+        [Alias('Version')]
+        [version]$MinimumVersion,
+
+        [Parameter(ParameterSetName = 'Name')]
+        [string]$MaximumVersion,
+
+        [Parameter(ParameterSetName = 'Name')]
+        [version]$RequiredVersion,
+
+        [Parameter(ParameterSetName = 'Branch')]
+        [Alias('Branch')]
+        [Alias('Tag')]
+        [string]$Ref,
+
+        [Alias('Args')]
+        [System.Object[]]$ArgumentList,
+
+        [switch]$DisableNameChecking,
+
+        [Alias('NoOverwrite')]
+        [switch]$NoClobber,
+
+        [ValidateSet('Local','Global')]
+        [string]$Scope
+    )
+
+    begin
+    {
+        #TODO: xplat
+        $TempFolder = Join-Path $env:TEMP TempModules
+        $null       = New-Item $TempFolder -ItemType Directory -Force -ErrorAction Stop
+    }
+
+    end
+    {
+        if (-not $MyInvocation.ExpectingInput)
+        {
+            if ($FullyQualifiedName)
+            {
+                $input = $FullyQualifiedName
+            }
+            else
+            {
+                $input = $Name
+            }
+        }
+
+        foreach ($Item in $input)
+        {
+            Remove-Variable Name
+
+            if ($FullyQualifiedName)
+            {
+                $ModuleSpec = $Item
+                $Name            = $ModuleSpec.Name
+                $MinimumVersion  = $ModuleSpec.Version
+                $MaximumVersion  = $ModuleSpec.MaximumVersion
+                $RequiredVersion = $ModuleSpec.RequiredVersion
+            }
+            else
+            {
+                $Name = $Item
+            }
+
+
+            $Repo   = Join-Path $GitRepoRoot $Name
+            $GitDir = Join-Path $Repo .git
+
+
+            $NotFoundMessage = "No valid version of module '$Name' was found in git history in '$Repo'."
+
+            if ($RequiredVersion)
+            {
+                $SelectedVersion = $RequiredVersion
+                $Ref = "v$SelectedVersion"
+
+                $GitOutput = git --git-dir=$GitDir name-rev --tags $Ref --name-only
+                if ($GitOutput -ne $Ref)
+                {
+                    Write-Error $NotFoundMessage
+                    continue
+                }
+            }
+            elseif (-not $Ref)
+            {
+                $Tags = git --git-dir=$GitDir tag --list 'v*'
+
+                [version[]]$AvailableVersions = @($Tags) -match '^v(\d+\.){2,3}\d+$' -replace '^v'
+                $AvailableVersions = $AvailableVersions | Sort-Object -Descending
+
+                $SelectedVersion = $AvailableVersions |
+                    Where-Object {
+                        ((-not $MinimumVersion) -or ($_ -ge $MinimumVersion)) -and
+                        ((-not $MaximumVersion) -or ($_ -le $MaximumVersion))
+                    } |
+                    Select-Object -First 1
+
+                if (-not $SelectedVersion)
+                {
+                    Write-Error $NotFoundMessage
+                    continue
+                }
+
+                $Ref = "v$SelectedVersion"
+            }
+
+
+            $OutputPath = $TempFolder |
+                Join-Path -ChildPath $Name |
+                Join-Path -ChildPath $SelectedVersion
+
+            Remove-Item $OutputPath -Recurse -Force -ErrorAction SilentlyContinue
+            $null = New-Item $OutputPath -ItemType Directory -Force -ErrorAction Stop
+
+
+            # Clones with --shared have hardlinks to the source; can break if you, e.g., delete
+            # branches in the source
+            $GitOutput = git clone --shared --branch $Ref $Repo $OutputPath *>&1
+            if ($LASTEXITCODE)
+            {
+                Write-Error $GitOutput
+                continue
+            }
+
+            $Psd1Path = Join-Path $OutputPath "$Name.psd1"
+
+            $Params = [hashtable]$PSBoundParameters
+            $null = (
+                'GitRepoRoot',
+                'Name',
+                'FullyQualifiedName',
+                'MinimumVersion',
+                'RequiredVersion',
+                'MaximumVersion'
+            ) | ForEach-Object {$Params.Remove($_)}
+
+            $Psd1Path | Import-Module @Params
+        }
+    }
+}
