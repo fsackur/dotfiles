@@ -116,12 +116,15 @@ function Split-Line
 
         [switch]$SkipEmpty,
 
-        [switch]$SkipWhitespace
+        [switch]$SkipWhitespace,
+
+        [switch]$SplitOnEmptyLines
     )
 
     process
     {
-        $Lines = $InputObject -split '\r?\n'
+        $EolPattern = if ($SplitOnEmptyLines) {'(\r?\n\s*)+\r?\n'} else {'\r?\n'}
+        $Lines = $InputObject -split $EolPattern
 
         if ($SkipWhitespace)
         {
@@ -135,3 +138,28 @@ function Split-Line
         $Lines | Write-Output
     }
 }
+
+function Split-Batch
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object]$InputObject,
+
+        [Parameter(Mandatory, Position = 1)]
+        [ValidateRange(2, 2147483647)]
+        [int]$BatchSize
+    )
+
+    $Enumerator = $input.GetEnumerator()
+
+    while ($true)
+    {
+        $Batch = 1..$BatchSize | ?{$Enumerator.MoveNext()} | %{$Enumerator.Current}
+        if (-not $Batch) {break}
+
+        $PSCmdlet.WriteObject($Batch)
+    }
+}
+Set-Alias batch Split-Batch
