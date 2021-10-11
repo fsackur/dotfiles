@@ -42,7 +42,7 @@ function replace
         [Parameter(ValueFromPipeline)]
         [string[]]$InputObject,
 
-        [Parameter(Mandatory, Position = 0, ValueFromRemainingArguments)]
+        [Parameter(Mandatory, Position = 0)]
         [ValidateCount(1, 2)]
         [string[]]$args
     )
