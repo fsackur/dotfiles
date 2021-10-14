@@ -156,6 +156,25 @@ function Reload-Module
     Write-Warning "Not in a Powershell module directory, no module imported"
 }
 
+
+function Clear-Modules
+{
+    $ModuleToKeepPatterns = (
+        'Microsoft\.PowerShell',
+        'CimCmdlets',
+        'PowerShellEditorServices',
+        'PSReadline',
+        'oh-my-posh',
+        'posh-git',
+        'Plugz',
+        'Configuration',
+        'Metadata'
+    )
+    $Pattern = $ModuleToKeepPatterns -join '|'
+    gmo | ? Name -NotMatch $Pattern | rmo -Force
+}
+
+
 function Import-GitModule
 {
     [CmdletBinding()]
