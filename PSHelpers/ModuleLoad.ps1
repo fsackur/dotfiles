@@ -180,6 +180,12 @@ function Uninstall-OldModule
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
     param
     (
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            @(Get-PSRepository | select -ExpandProperty Name) -like "*$wordToComplete*"
+        })]
+        [string[]]$Repository,
+
         [switch]$Force
     )
 
@@ -188,7 +194,9 @@ function Uninstall-OldModule
         $ConfirmPreference = 'None'
     }
 
+    $RepoFilter = if ($Repository) {{$_.Repository -in $Repository}} else {{$true}}
     $ModulePaths = Get-InstalledPSResource |
+        Where-Object $RepoFilter |
         Select-Object -ExpandProperty InstalledLocation |
         Split-Path |
         Sort-Object -Unique
