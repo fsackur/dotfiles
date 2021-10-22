@@ -5,9 +5,13 @@ function Git-Add
     (
         [Parameter(Position = 0)]
         [ValidateNotNullOrEmpty()]
-        [string]$File = '*'
+        [string[]]$File = '*',
+
+        [switch]$Patch
     )
-    git add $File; git status -v; git status
+    $ArgumentList = $File
+    if ($Patch) {$ArgumentList += '--patch'}
+    & git add $ArgumentList; git status -v; git status
 }
 Register-ArgumentCompleter -CommandName Git-Add -ParameterName File -ScriptBlock {
     param
