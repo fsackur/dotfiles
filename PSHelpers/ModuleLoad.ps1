@@ -195,8 +195,10 @@ function Uninstall-OldModule
     }
 
     $RepoFilter = if ($Repository) {{$_.Repository -in $Repository}} else {{$true}}
-    $ModulePaths = Get-InstalledPSResource |
+    $TypeFilter = {$_.Type -eq 'Module'}    # [Microsoft.PowerShell.PowerShellGet.UtilClasses.ResourceType] => None, Module, Script, Command, DscResource
+    $ModulePaths = Get-InstalledPSResource -Type  |
         Where-Object $RepoFilter |
+        Where-Object $TypeFilter |
         Select-Object -ExpandProperty InstalledLocation |
         Split-Path |
         Sort-Object -Unique
