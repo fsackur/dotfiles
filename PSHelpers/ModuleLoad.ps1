@@ -175,6 +175,44 @@ function Clear-Modules
 }
 
 
+function Uninstall-OldModule
+{
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    param
+    (
+        [switch]$Force
+    )
+
+    if ($Force)
+    {
+        $ConfirmPreference = 'None'
+    }
+
+    $ModulePaths = Get-InstalledPSResource |
+        Select-Object -ExpandProperty InstalledLocation |
+        Split-Path |
+        Sort-Object -Unique
+
+    $OldVersionPaths = $ModulePaths | ForEach-Object {
+        Push-Location $_
+
+        Get-ChildItem -Directory |
+            Where-Object Name -match '^\d+\.\d+\.\d+(\.\d+)?$' |
+            ForEach-Object {[version]$_.Name} |
+            Sort-Object |
+            Select-Object -SkipLast 1 |
+            Resolve-Path |
+            Select-Object -ExpandProperty Path
+
+        Pop-Location
+    }
+
+    $OldVersionPaths |
+        Where-Object {$PSBoundParameters.WhatIf -or $PSCmdlet.ShouldProcess($_, 'Remove Directory')} |
+        Remove-Item -Recurse -Force -WhatIf:$WhatIfPreference
+}
+
+
 function Import-GitModule
 {
     [CmdletBinding()]
