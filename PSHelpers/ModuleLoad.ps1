@@ -202,17 +202,30 @@ function Uninstall-OldModule
         Sort-Object -Unique
 
     $OldVersionPaths = $ModulePaths | ForEach-Object {
-        Push-Location $_
+        try
+        {
+            Push-Location $_ -ErrorAction Stop
+        }
+        catch
+        {
+            Write-Error -ErrorRecord $_
+            return
+        }
 
-        Get-ChildItem -Directory |
-            Where-Object Name -match '^\d+\.\d+\.\d+(\.\d+)?$' |
-            ForEach-Object {[version]$_.Name} |
-            Sort-Object |
-            Select-Object -SkipLast 1 |
-            Resolve-Path |
-            Select-Object -ExpandProperty Path
-
-        Pop-Location
+        try
+        {
+            Get-ChildItem -Directory |
+                Where-Object Name -match '^\d+\.\d+\.\d+(\.\d+)?$' |
+                ForEach-Object {[version]$_.Name} |
+                Sort-Object |
+                Select-Object -SkipLast 1 |
+                Resolve-Path |
+                Select-Object -ExpandProperty Path
+        }
+        finally
+        {
+            Pop-Location
+        }
     }
 
     $OldVersionPaths |
