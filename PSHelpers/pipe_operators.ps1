@@ -116,14 +116,12 @@ function Split-Line
 
         [switch]$SkipEmpty,
 
-        [switch]$SkipWhitespace,
-
-        [switch]$SplitOnEmptyLines
+        [switch]$SkipEmptyOrWhitespace
     )
 
     process
     {
-        $EolPattern = if ($SplitOnEmptyLines) {'(\r?\n\s*)+\r?\n'} else {'\r?\n'}
+        $EolPattern = '\r?\n'
         $Lines = $InputObject -split $EolPattern
 
         if ($SkipWhitespace)
