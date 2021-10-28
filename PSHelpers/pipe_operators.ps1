@@ -161,3 +161,45 @@ function Split-Batch
     }
 }
 Set-Alias batch Split-Batch
+
+
+function ConvertTo-ListExpression
+{
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object]$InputObject,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [switch]$Singleline,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [switch]$DoubleQuote,
+
+        [Parameter(ParameterSetName = 'Explicit')]
+        [ValidatePattern("(?s)^(['`"]).*\1$")]      # First char is a quotemark, last char is same as first
+        [string]$Join = "',$([Environment]::NewLine)'"
+    )
+
+    if ($MyInvocation.ExpectingInput)
+    {
+        $InputObject = $input
+    }
+
+    if ($DoubleQuote)
+    {
+        $Join = $Join -replace '(^.)|(.$)', '"'
+    }
+
+    if ($Singleline)
+    {
+        $Join = $Join -replace '\r?\n', ' '
+    }
+
+    $Quotemark = $Join[0]
+
+    $Items = $InputObject | Split-Line -SkipEmptyOrWhitespace
+
+    "$Quotemark$($Items -join $Join)$Quotemark"
+}
