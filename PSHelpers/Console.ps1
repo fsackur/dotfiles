@@ -22,6 +22,10 @@ Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut                      # http
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 
+function Get-PSReadlineHistory
+{
+    gc (Get-PSReadLineOption).HistorySavePath
+}
 
 Set-PoshPrompt pure
 
