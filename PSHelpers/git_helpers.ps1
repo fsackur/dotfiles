@@ -581,6 +581,12 @@ function Show-GithubCode
     Remove-Variable Branch -ErrorAction SilentlyContinue
 
 
+    $RepoRoot = git rev-parse --show-cdup 2>&1  # --git-dir follows symlinks; --show-cdup navs to repo root like, e.g., '../'
+    if (-not $?) {throw $RepoRoot}    # fatal: not a git repository (or any of the parent directories): .git
+    $RepoRoot = if ($RepoRoot) {$RepoRoot | Resolve-Path} else {$PWD}
+    Write-Verbose "Git repo root: '$RepoRoot'"
+
+
     $Item = Get-Item $Path
     if ($Item.Count -gt 1)
     {
@@ -588,10 +594,7 @@ function Show-GithubCode
     }
     $IsContainer = $Item.PSIsContainer
     $Path = $Item.FullName
-
-    $RepoRoot = git rev-parse --git-dir 2>&1
-    if (-not $?) {throw $RepoRoot}    # fatal: not a git repository (or any of the parent directories): .git
-    $RepoRoot = $RepoRoot | Resolve-Path | Split-Path
+    Write-Verbose "Item to show: '$Path'"
 
     if ($Path -eq $RepoRoot)
     {
@@ -602,7 +605,8 @@ function Show-GithubCode
         Push-Location $RepoRoot
         try
         {
-            $Path = Resolve-Path $Item.FullName -Relative
+            $Path = Resolve-Path $Path -Relative
+            Write-Verbose "Resolved path in repo: '$Path'"
         }
         finally
         {
