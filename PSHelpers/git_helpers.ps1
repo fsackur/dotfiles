@@ -560,24 +560,8 @@ function Show-GithubCode
         })]
         [string]$Branch,
 
-        [Parameter(Mandatory, Position = 0)]
-        [ArgumentCompleter({
-            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-
-            git rev-parse --git-dir | Resolve-Path | Split-Path | Push-Location
-
-            # We probably don't want to link to docs
-            $Files = Get-ChildItem -Exclude '.git', 'docs' |
-                Get-ChildItem -File -Recurse |
-                Select-Object -ExpandProperty FullName |
-                Sort-Object |
-                Resolve-Path -Relative
-
-            Pop-Location
-
-            $Files -replace '^\.\\' -replace '^\./' -like "*$wordToComplete*"
-        })]
-        [string]$File,
+        [Parameter(Position = 0)]
+        [string]$Path = '.',
 
         [Parameter(Position = 1)]
         [ValidateCount(1, 2)]
@@ -590,15 +574,48 @@ function Show-GithubCode
         [switch]$ShowWindow
     )
 
+    $ErrorActionPreference = 'Stop'
+
+
     $BranchName = $Branch
     Remove-Variable Branch -ErrorAction SilentlyContinue
 
-    $Output = git rev-parse --git-dir 2>&1
-    if (-not $?)
+
+    $Item = Get-Item $Path
+    if ($Item.Count -gt 1)
     {
-        # fatal: not a git repository (or any of the parent directories): .git
-        throw $Output
+        throw [ArgumentException]::new("Path '$Path' matched more than one item.", 'Path')
     }
+    $IsContainer = $Item.PSIsContainer
+    $Path = $Item.FullName
+
+    $RepoRoot = git rev-parse --git-dir 2>&1
+    if (-not $?) {throw $RepoRoot}    # fatal: not a git repository (or any of the parent directories): .git
+    $RepoRoot = $RepoRoot | Resolve-Path | Split-Path
+
+    if ($Path -eq $RepoRoot)
+    {
+        $Path = ''
+    }
+    else
+    {
+        Push-Location $RepoRoot
+        try
+        {
+            $Path = Resolve-Path $Item.FullName -Relative | Select-Object -ExpandProperty Path
+        }
+        finally
+        {
+            Pop-Location
+        }
+
+        $Path = $Path -replace '^\.\\' -replace '^\./'
+        if ([System.IO.Path]::DirectorySeparatorChar -eq '\')
+        {
+            $Path = $Path -replace '\\', '/'
+        }
+    }
+
 
     $Branches = Get-GitBranch
 
@@ -621,7 +638,7 @@ function Show-GithubCode
     }
 
 
-    if ($PSBoundParameters.ContainsKey('Remote') -or $Branch.Tracking -notmatch '/')
+    if ($PSBoundParameters.ContainsKey('Remote') -or -not $Branch.Tracking)
     {
         $Tracking = $Remote, $Branch.Name -join '/'
     }
@@ -642,27 +659,18 @@ function Show-GithubCode
         $Ref = $Branch.Name
     }
 
-    # Drop leading dot; convert \ to /
-    if ([System.IO.Path]::DirectorySeparatorChar -eq '\')
-    {
-        $File = $File -replace '^\.\\' -replace '\\', '/'
-    }
-    else
-    {
-        $File = $File -replace '^\./'
-    }
 
-    [uri]$RemoteUri = @(git remote -vv) -match "^$Remote" -replace "^\w+\s+" -replace ' .*' | Select-Object -First 1
-    if ($RemoteUri.Scheme -notmatch '^https?$')
+    $RemoteUri = @(git remote -vv) -match "^$Remote" -replace "^\w+\s+" -replace ' .*' -replace '\.git$' | Select-Object -First 1
+    if ($RemoteUri -notmatch '^https?://')
     {
         throw [NotImplementedException]::new("Only http schemes are supported: $RemoteUri")
     }
-    $Uri = $RemoteUri, "blob", $Ref, $File -join '/'
+    $Uri = $RemoteUri, $(if ($IsContainer) {"tree"} else {"blob"}), $Ref, $Path -join '/'
 
     if ($Line)
     {
-        $LineQuery = $Line -replace '^', 'L' -join '-'
-        $Uri       = $Uri, $LineQuery -join '#'
+        $L   = $Line -replace '^', 'L' -join '-'
+        $Uri = $Uri, $L -join '#'
     }
 
     $Uri
