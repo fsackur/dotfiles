@@ -548,12 +548,15 @@ function Show-GithubCode
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             @(git remote) -like "*$wordToComplete*"
         })]
-        [string]$Remote,
+        [string]$Remote = 'origin',
 
         [Parameter()]
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-            @(git branch) -replace '^..' -like "*$wordToComplete*"
+
+            $Branches = Get-GitBranch
+            $Completions = $Branches.Name, $Branches.Tracking | ForEach-Object {$_}
+            $Completions -like "*$wordToComplete*"
         })]
         [string]$Branch,
 
@@ -576,14 +579,19 @@ function Show-GithubCode
         })]
         [string]$File,
 
-        [Parameter(Position = 0)]
+        [Parameter(Position = 1)]
         [ValidateCount(1, 2)]
         [ValidateRange(1, 65535)]
         [int[]]$Line,
 
         [Parameter()]
-        [switch]$Permalink
+        [switch]$Permalink,
+
+        [switch]$ShowWindow
     )
+
+    $BranchName = $Branch
+    Remove-Variable Branch -ErrorAction SilentlyContinue
 
     $Output = git rev-parse --git-dir 2>&1
     if (-not $?)
@@ -592,34 +600,46 @@ function Show-GithubCode
         throw $Output
     }
 
-    if ($Branch)
+    $Branches = Get-GitBranch
+
+    if ($BranchName -match '/')
     {
-        $BranchText = @(git branch -vv) -match "^..$Branch " -replace "^.."
+        $Branch = $Branches | Where-Object Tracking -eq $BranchName | Select-Object -First 1
+    }
+    elseif ($BranchName)
+    {
+        $Branch = $Branches | Where-Object Name -eq $BranchName | Select-Object -First 1
     }
     else
     {
-        $BranchText = @(git branch -vv) -match '^\*' -replace '^\* '
-        $Branch     = $BranchText -replace ' .*'
+        $Branch = $Branches | Where-Object Current -eq $true
     }
 
-    if ($Remote)
+    if (-not $Branch)
     {
-        $TrackingBranch = $Remote, $Branch -join '/'
+        throw "No matching branch found."
+    }
+
+
+    if ($PSBoundParameters.ContainsKey('Remote') -or $Branch.Tracking -notmatch '/')
+    {
+        $Tracking = $Remote, $Branch.Name -join '/'
     }
     else
     {
-        $TrackingBranch = $BranchText -replace '.*?\[' -replace '[:\]].*'
-        $Remote         = $TrackingBranch -replace '/.*'
+        $Tracking = $Branch.Tracking
+        $Remote = $Tracking -replace '/.*'
     }
 
     # Link to exact commit, so won't change if branch is updated
     if ($Permalink)
     {
-        $Ref = (git rev-parse $TrackingBranch).Substring(0, 7)
+        $Ref = (git rev-parse $Tracking).Substring(0, 7)
+        if (-not $?) {throw $Ref}
     }
     else
     {
-        $Ref = $Branch
+        $Ref = $Branch.Name
     }
 
     # Drop leading dot; convert \ to /
@@ -632,8 +652,12 @@ function Show-GithubCode
         $File = $File -replace '^\./'
     }
 
-    $RemoteUri = @(git remote -vv) -match "^$Remote" -replace "^\w+\s+" -replace ' .*' | Select-Object -First 1
-    $Uri       = $RemoteUri, "blob", $Ref, $File -join '/'
+    [uri]$RemoteUri = @(git remote -vv) -match "^$Remote" -replace "^\w+\s+" -replace ' .*' | Select-Object -First 1
+    if ($RemoteUri.Scheme -notmatch '^https?$')
+    {
+        throw [NotImplementedException]::new("Only http schemes are supported: $RemoteUri")
+    }
+    $Uri = $RemoteUri, "blob", $Ref, $File -join '/'
 
     if ($Line)
     {
@@ -641,5 +665,30 @@ function Show-GithubCode
         $Uri       = $Uri, $LineQuery -join '#'
     }
 
-    Start-Process $Uri
+    $Uri
+
+    if ($ShowWindow) {Start-Process $Uri}
+}
+
+function Get-GitBranch
+{
+    $OutputProperties = 'Current', 'Name', 'Tracking', 'Sha'
+
+    $BranchPattern = (
+        '^(?<Current>.)',
+        '(?<Name>\S+)',
+        '(?<Sha>\S+)',
+        '(?:\[(?<Tracking>[^\]]+)\])?'
+    ) -join '\s+'
+
+    $BranchOutput = @(git branch -vv)
+    $BranchOutput | ForEach-Object {
+        if ($_ -match $BranchPattern)
+        {
+            $Matches.Remove(0)
+            $Output = [pscustomobject]$Matches
+            $Output.Current = $Output.Current -eq '*'
+            $Output
+        }
+    } | Select-Object $OutputProperties
 }
