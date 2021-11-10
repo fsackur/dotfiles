@@ -602,7 +602,7 @@ function Show-GithubCode
         Push-Location $RepoRoot
         try
         {
-            $Path = Resolve-Path $Item.FullName -Relative | Select-Object -ExpandProperty Path
+            $Path = Resolve-Path $Item.FullName -Relative
         }
         finally
         {
