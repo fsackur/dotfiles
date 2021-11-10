@@ -564,7 +564,6 @@ function Show-GithubCode
         [string]$Path = '.',
 
         [Parameter(Position = 1)]
-        [ValidateCount(1, 2)]
         [ValidateRange(1, 65535)]
         [int[]]$Line,
 
@@ -579,6 +578,12 @@ function Show-GithubCode
 
     $BranchName = $Branch
     Remove-Variable Branch -ErrorAction SilentlyContinue
+
+    if ($Line)
+    {
+        $Line = $Line | Sort-Object -Unique
+        $Line = @($Line)[0,-1] | Sort-Object -Unique
+    }
 
 
     $RepoRoot = git rev-parse --show-cdup 2>&1  # --git-dir follows symlinks; --show-cdup navs to repo root like, e.g., '../'
