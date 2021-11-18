@@ -27,7 +27,10 @@ function Get-PSReadlineHistory
     gc (Get-PSReadLineOption).HistorySavePath
 }
 
-Set-PoshPrompt pure
+if (-not $Global:IS_RASPBERRY_PI)   # too slow
+{
+    Set-PoshPrompt pure
+}
 
 Import-Module posh-git
 

@@ -1,9 +1,10 @@
 
-$Global:IS_ISE     = $Host.Name -eq 'Windows PowerShell ISE Host'
-$Global:IS_WSL     = [bool]$env:WSL_DISTRO_NAME
-$Global:IS_WINDOWS = [Environment]::OSVersion.Platform -match 'Win'
-$Global:IS_LINUX   = [Environment]::OSVersion.Platform -match 'Unix'
-$Global:IS_PS_CORE = $PSVersionTable.PSVersion.Major -ge 6
+$Global:IS_ISE          = $Host.Name -eq 'Windows PowerShell ISE Host'
+$Global:IS_WSL          = [bool]$env:WSL_DISTRO_NAME
+$Global:IS_WINDOWS      = [Environment]::OSVersion.Platform -match 'Win'
+$Global:IS_LINUX        = [Environment]::OSVersion.Platform -match 'Unix'
+$Global:IS_PS_CORE      = $PSVersionTable.PSVersion.Major -ge 6
+$Global:IS_RASPBERRY_PI = $IS_LINUX -and (gc /etc/os-release) -match 'raspbian'
 
 $ParentProcess = if ($IS_PS_CORE)
 {
