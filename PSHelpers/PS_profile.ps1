@@ -26,6 +26,9 @@ foreach ($Kvp in ([ordered]@{
 )
 [Collections.Generic.HashSet[string]]$CommonParameters = [Collections.Generic.HashSet[string]]::new($CommonParameters)
 
+
+Set-Alias os Out-String
+
 function ConvertTo-Sentence
 {
     <#

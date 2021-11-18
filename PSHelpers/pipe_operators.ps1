@@ -137,6 +137,25 @@ function Split-Line
     }
 }
 
+function Trim-String
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object]$InputObject,
+
+        [switch]$Stream
+    )
+
+    if ($MyInvocation.ExpectingInput)
+    {
+        $InputObject = $input
+    }
+    $InputObject | Out-String -Stream:$Stream | ForEach-Object {$_.Trim()}
+}
+Set-Alias trim Trim-String
+
 function Split-Batch
 {
     [CmdletBinding()]
