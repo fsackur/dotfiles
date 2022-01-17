@@ -191,3 +191,13 @@ function Export-TestCoverage
 
     & $ReportGeneratorPath -Reports:$CoverageFile -TargetDir:$Path -ReportTypes:'html'
 }
+
+function Enable-BreakOnError
+{
+    Set-PSBreakpoint -Variable StackTrace -Mode Write
+}
+
+function Disable-BreakOnError
+{
+    Get-PSBreakpoint -Variable StackTrace | Remove-PSBreakpoint
+}
