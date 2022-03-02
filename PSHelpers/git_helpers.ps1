@@ -1,3 +1,36 @@
+function Git-Branch
+{
+    param
+    (
+        [Parameter(Mandatory, Position=0)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Branch
+    )
+
+    $chbr = git checkout $Branch *>&1
+
+    if ($chbr.ToString() -match 'did not match any file')
+    {
+        Write-Host -ForegroundColor DarkYellow 'Creating new branch...'
+        $newbr = git checkout -b $Branch *>&1
+        $pushbr = git push -u origin $Branch *>&1
+        if (-not ($pushbr | Out-String) -match 'set up to track remote branch')
+        {
+            $pushbr
+        }
+    }
+}
+Set-Alias b Git-Branch
+
+
+
+if (ipmo Victor -Global -PassThru -ErrorAction SilentlyContinue)
+{
+    return
+}
+
+
+
 function Git-Add
 {
     [CmdletBinding()]
@@ -72,29 +105,6 @@ Register-ArgumentCompleter -CommandName Git-Fixup -ParameterName Message -Script
 }
 Set-Alias f Git-Fixup
 
-function Git-Branch
-{
-    param
-    (
-        [Parameter(Mandatory, Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Branch
-    )
-
-    $chbr = git checkout $Branch *>&1
-
-    if ($chbr.ToString() -match 'did not match any file')
-    {
-        Write-Host -ForegroundColor DarkYellow 'Creating new branch...'
-        $newbr = git checkout -b $Branch *>&1
-        $pushbr = git push -u origin $Branch *>&1
-        if (-not ($pushbr | Out-String) -match 'set up to track remote branch')
-        {
-            $pushbr
-        }
-    }
-}
-Set-Alias b Git-Branch
 
 function Git-Checkout
 {
