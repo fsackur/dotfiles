@@ -38,3 +38,5 @@ if ($MODULE_PATH)
 }
 
 $env:CDPATH = ('.', $HOME, $GitModulePath, $MODULE_PATH) -match '.' -join $PathSep
+
+$Disapproval = 'ಠ_ಠ'
