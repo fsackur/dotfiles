@@ -1,0 +1,69 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "blocks": [
+    {
+      "alignment": "left",
+      "segments": [
+        {
+          "foreground": "#45F1C2",
+          "properties": {
+            "template": "\uf508 {{ .UserName }} on"
+          },
+          "style": "plain",
+          "type": "session"
+        },
+        {
+          "foreground": "#0CA0D8",
+          "properties": {
+            "folder_separator_icon": "/",
+            "style": "full",
+            "template": " \uf07b {{ .Path }} "
+          },
+          "style": "plain",
+          "type": "path"
+        },
+        {
+          "foreground": "#14A5AE",
+          "powerline_symbol": "\ue0b0",
+          "properties": {
+            "branch_ahead_icon": "<#88C0D0>\u21e1 </>",
+            "branch_behind_icon": "<#88C0D0>\u21e3 </>",
+            "branch_icon": "",
+            "fetch_stash_count": true,
+            "fetch_status": true,
+            "fetch_upstream_icon": true,
+            "github_icon": "",
+            "template": "{{ .UpstreamIcon }}{{ .HEAD }}{{ .BranchStatus }}{{ if .Working.Changed }}<#FFAFD7>*</>{{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }} \uf046 {{ .Staging.String }}{{ end }}{{ if gt .StashCount 0 }} \uf692 {{ .StashCount }}{{ end }} "
+          },
+          "style": "plain",
+          "type": "git"
+        }
+      ],
+      "type": "prompt"
+    },
+    {
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "foreground": "#cd5e42",
+          "properties": {
+            "template": "\ue3bf "
+          },
+          "style": "plain",
+          "type": "root"
+        },
+        {
+          "foreground": "#CD4277",
+          "properties": {
+            "template": "# "
+          },
+          "style": "plain",
+          "type": "text"
+        }
+      ],
+      "type": "prompt"
+    }
+  ],
+  "version": 1
+}
