@@ -27,7 +27,20 @@ function Get-PSReadlineHistory
     gc (Get-PSReadLineOption).HistorySavePath
 }
 
-if (-not $Global:IS_RASPBERRY_PI)   # too slow
+if ($Global:IS_RASPBERRY_PI)   # too slow
+{}
+elseif ($PSVersionTable.PSVersion.Major -ge 7)
+{
+    ipmo oh-my-posh -Global
+    $AmroGit = $env:POSH_THEMES_PATH | Join-Path -ChildPath amro-git.omp.json
+    if (-not (Test-Path $AmroGit))
+    {
+        $LocalPath = $PSScriptRoot | Split-Path | Join-Path -ChildPath .oh-my-posh | Join-Path -ChildPath themes | Join-Path -ChildPath amro-git.omp.json
+        New-Item -ItemType SymbolicLink $AmroGit -Value $LocalPath
+    }
+    Set-PoshPrompt amro-git
+}
+else
 {
     Set-PoshPrompt pure
 }
