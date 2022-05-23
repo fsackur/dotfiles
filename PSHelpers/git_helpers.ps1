@@ -24,6 +24,30 @@ Set-Alias b Git-Branch
 
 
 
+function Git-AddRemote
+{
+    param
+    (
+        [string]$Name,
+
+        [Parameter(Mandatory, Position = 1)]
+        [string]$Owner
+    )
+
+    $Owner = $Owner.Trim()
+
+    if (-not $Name) {$Name = $Owner}
+
+    $Origin = git remote -v | sls origin | select -First 1
+    [uri]$OriginUrl = $Origin -replace '^origin\s+' -replace '\s.*'
+    $BaseUrl = $OriginUrl -replace [regex]::Escape($OriginUrl.LocalPath)
+    $NewUrl = $BaseUrl, $Owner, $OriginUrl.Segments[-1] -join '/'
+
+    git remote add $Name $NewUrl
+    git fetch $Name
+}
+
+
 if (ipmo Victor -Global -PassThru -ErrorAction SilentlyContinue)
 {
     return
@@ -132,28 +156,6 @@ Register-ArgumentCompleter -CommandName Git-Checkout -ParameterName Branch -Scri
 }
 Set-Alias gco Git-Checkout
 
-function Git-AddRemote
-{
-    param
-    (
-        [string]$Name,
-
-        [Parameter(Mandatory, Position = 1)]
-        [string]$Owner
-    )
-
-    $Owner = $Owner.Trim()
-
-    if (-not $Name) {$Name = $Owner}
-
-    $Origin = git remote -v | sls origin | select -First 1
-    [uri]$OriginUrl = $Origin -replace '^origin\s+' -replace '\s.*'
-    $BaseUrl = $OriginUrl -replace [regex]::Escape($OriginUrl.LocalPath)
-    $NewUrl = $BaseUrl, $Owner, $OriginUrl.Segments[-1] -join '/'
-
-    git remote add $Name $NewUrl
-    git fetch $Name
-}
 
 function Clear-DeletedRemoteBranches
 {
