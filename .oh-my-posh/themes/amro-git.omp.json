@@ -5,19 +5,11 @@
       "alignment": "left",
       "segments": [
         {
-          "foreground": "#45F1C2",
-          "properties": {
-            "template": "\uf508 {{ .UserName }} on"
-          },
-          "style": "plain",
-          "type": "session"
-        },
-        {
           "foreground": "#0CA0D8",
           "properties": {
             "folder_separator_icon": "/",
             "style": "full",
-            "template": " \uf07b {{ .Path }} "
+            "template": "{{ .Path }} "
           },
           "style": "plain",
           "type": "path"
@@ -56,7 +48,7 @@
         {
           "foreground": "#CD4277",
           "properties": {
-            "template": "# "
+            "template": "> "
           },
           "style": "plain",
           "type": "text"
