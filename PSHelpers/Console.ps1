@@ -32,6 +32,10 @@ if ($Global:IS_RASPBERRY_PI)   # too slow
 elseif ($PSVersionTable.PSVersion.Major -ge 7)
 {
     ipmo oh-my-posh -Global
+    if ($IS_LINUX -and -not $env:POSH_THEMES_PATH)
+    {
+        $env:POSH_THEMES_PATH = $env:POSH_THEME | Split-Path
+    }
     $AmroGit = $env:POSH_THEMES_PATH | Join-Path -ChildPath amro-git.omp.json
     if (-not (Test-Path $AmroGit))
     {
