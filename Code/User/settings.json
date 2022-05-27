@@ -3,6 +3,7 @@
     // },,
 
 
+
     "[html]": {
         // "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
@@ -20,6 +21,14 @@
 
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
+    },
+
+
+    "[powershell]": {
+        "debug.saveBeforeStart": "nonUntitledEditorsInActiveGroup",
+        "editor.bracketPairColorization.enabled": false,
+        // "editor.semanticHighlighting.enabled": false,
+        "editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?"
     },
 
 
@@ -66,6 +75,7 @@
 
     // "clipboard-manager.saveTo": "C:\\Users\\mich8638\\.clipboard",,
 
+
     "clipboard-manager.saveTo": "~/.clipboard",
 
 
@@ -74,10 +84,14 @@
 
 
     // "coverage-gutters.coverageFileNames": [""],,
+
     "coverage-gutters.showGutterCoverage": false,
     "coverage-gutters.showLineCoverage": true,
     "coverage-gutters.showRulerCoverage": true,
     "coverage-gutters.xmlname": "coverage.xml",
+
+
+    "cSpell.language": "en-GB",
 
 
     "customizeUI.stylesheet": {
@@ -126,14 +140,13 @@
     },
     "editor.renderControlCharacters": false,
     "editor.renderLineHighlight": "none",
-    "editor.renderWhitespace": "all",
+    "editor.renderWhitespace": "none",
     "editor.rulers": [
         100
     ],
     "editor.suggest.showSnippets": false,
-
-
     // Material themes make some tokens italic - this disables it
+
     "editor.tokenColorCustomizations": {
         "textMateRules": [
             {
@@ -273,7 +286,8 @@
     "files.exclude": {
         "**/__pycache__": true,
         "**/.mypy_cache": true,
-        "**/.pytest_cache": true
+        "**/.pytest_cache": true,
+        "**/Pester.psm1": true,
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": true,
@@ -302,9 +316,24 @@
         "powershell"
     ],
     "githubIssues.issueCompletions.enabled": false,
+    "githubIssues.queries": [
+        {
+            "label": "My Issues",
+            "query": "default"
+        },
+        {
+            "label": "Created Issues",
+            "query": "author:${user} state:open repo:${owner}/${repository} sort:created-desc"
+        },
+        {
+            "label": "Recent Issues",
+            "query": "state:open repo:${owner}/${repository} sort:updated-desc"
+        }
+    ],
     "githubIssues.userCompletions.enabled": false,
 
 
+    "githubPullRequests.createOnPublishBranch": "never",
     "githubPullRequests.remotes": [
         "origin",
         "upstream",
@@ -313,7 +342,6 @@
     ],
 
 
-    "gitlens.advanced.fileHistoryFollowsRenames": true,
     "gitlens.advanced.messages": {
         "suppressRebaseSwitchToTextWarning": true,
         // "suppressShowKeyBindingsNotice": true
@@ -322,6 +350,13 @@
     "gitlens.blame.ignoreWhitespace": true,
     "gitlens.codeLens.authors.enabled": false,
     "gitlens.codeLens.recentChange.enabled": false,
+    "gitlens.integrations.enabled": true,
+    "gitlens.remotes": [
+        {
+            "domain": "github.rackspace.com",
+            "type": "GitHub"
+        },
+    ],
     "gitlens.sortBranchesBy": "date:desc",
     "gitlens.views.repositories.autoRefresh": false,
     "gitlens.views.repositories.autoReveal": false,
@@ -334,18 +369,21 @@
     "hediet.vscode-drawio.local-storage": "eyIuZHJhd2lvLWNvbmZpZyI6IntcImxhbmd1YWdlXCI6XCJcIixcImN1c3RvbUZvbnRzXCI6W10sXCJsaWJyYXJpZXNcIjpcImdlbmVyYWw7ZXJcIixcImN1c3RvbUxpYnJhcmllc1wiOltcIkwuc2NyYXRjaHBhZFwiXSxcInBsdWdpbnNcIjpbXSxcInJlY2VudENvbG9yc1wiOltcIkYwRjBGMFwiLFwiQ0YzRTM0XCIsXCJFMDc2MzhcIixcIjNCMUUxMFwiLFwiMzMwMDAwXCIsXCJGRkZGRkZcIixcIjRENEQ0RFwiLFwiNjMzMzFDXCIsXCIyMTI5MUVcIixcIjM4NDUzM1wiLFwiMzkyRTQyXCJdLFwiZm9ybWF0V2lkdGhcIjpcIjI0MFwiLFwiY3JlYXRlVGFyZ2V0XCI6ZmFsc2UsXCJwYWdlRm9ybWF0XCI6e1wieFwiOjAsXCJ5XCI6MCxcIndpZHRoXCI6ODI3LFwiaGVpZ2h0XCI6MTE2OX0sXCJzZWFyY2hcIjp0cnVlLFwic2hvd1N0YXJ0U2NyZWVuXCI6dHJ1ZSxcImdyaWRDb2xvclwiOlwiI2QwZDBkMFwiLFwiZGFya0dyaWRDb2xvclwiOlwiIzZlNmU2ZVwiLFwiYXV0b3NhdmVcIjp0cnVlLFwicmVzaXplSW1hZ2VzXCI6bnVsbCxcIm9wZW5Db3VudGVyXCI6MCxcInZlcnNpb25cIjoxOCxcInVuaXRcIjoxLFwiaXNSdWxlck9uXCI6ZmFsc2UsXCJ1aVwiOlwiXCJ9In0=",
 
 
-    // "jupyter.alwaysScrollOnNewCell": true,
+    // "jupyter.alwaysScrollOnNewCell": true,,
     "jupyter.askForKernelRestart": false,
     "jupyter.collapseCellInputCodeByDefault": false,
-    // "jupyter.disableJupyterAutoStart": true,
-    // "jupyter.enableAutoMoveToNextCell": false,
+    // "jupyter.disableJupyterAutoStart": true,,
+    // "jupyter.enableAutoMoveToNextCell": false,,
     "jupyter.enableNativeInteractiveWindow": true,
-    // "jupyter.enableScrollingForCellOutputs": false,
-    // "jupyter.jupyterServerType": "local",
-    // "jupyter.maxOutputSize": 4000,
+    // "jupyter.enableScrollingForCellOutputs": false,,
+    // "jupyter.jupyterServerType": "local",,
+    // "jupyter.maxOutputSize": 4000,,
     "jupyter.sendSelectionToInteractiveWindow": true,
+
+
     // "jupyter.stopOnFirstLineWhileDebugging": false,,
     // "jupyter.textOutputLimit": 0,,
+
 
 
     "kite.showWelcomeNotificationOnStartup": false,
@@ -359,7 +397,15 @@
                 "type": "PowerShell",
                 "request": "launch",
                 // "cwd": ""
-            }
+            },
+            // {
+            //     "name": "Python: Debug Tests",
+            //     "type": "python",
+            //     "request": "launch",
+            //     "program": "${file}",
+            //     "purpose": ["debug-test"],
+            //     "justMyCode": false,
+            // }
         ]
     },
 
@@ -371,6 +417,7 @@
         "default": "right",
         "jupyter-notebook": "left"
     },
+    "notebook.output.textLineLimit": 300,
 
 
     "omnisharp.autoStart": true,
@@ -405,15 +452,18 @@
             "exePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
         },
     ],
-    "powershell.powerShellDefaultVersion": "PSv5",
+    "powershell.powerShellDefaultVersion": "PSv7",
     "powershell.promptToUpdatePowerShell": false,
+
+
     // "powershell.scriptAnalysis.settingsPath": "C:\\githubdata\\WaeStd\\WaeRules\\WaeRuleSettings.psd1",,
 
 
+
     "presentationMode.colorTheme": "Default Dark+",
-    // "presentationMode.editor.fontFamily": "",
+    // "presentationMode.editor.fontFamily": "",,
     "presentationMode.editor.fontFamily": "'Meslo LG M DZ for Powerline', Hack, 'Fira Mono for Powerline', monospace",
-    // "presentationMode.terminal.fontFamily": "",
+    // "presentationMode.terminal.fontFamily": "",,
     "presentationMode.terminal.fontFamily": "'Meslo LG M DZ for Powerline', Hack, 'Fira Mono for Powerline', monospace",
 
 
@@ -429,33 +479,41 @@
     // "python.dataScience.jupyterCommandLineArguments": [,
     //],
     // "python.globalModuleInstallation": true,
+
     "python.languageServer": "Pylance",
-    // "python.linting.mypyArgs": [],
-    // "python.linting.mypyEnabled": true,
-    // "python.linting.pycodestyleArgs": [,
+    // "python.linting.mypyArgs": [],,
+    // "python.linting.mypyEnabled": true,,
+    // "python.linting.pycodestyleArgs": [,,
     //     "--max-line-length=120",
     //     "--disable=E302"
     // ],
-    // "python.linting.pylintArgs": [,
+    // "python.linting.pylintArgs": [,,
     //     "--max-line-length=120"
     // ],
-    // "python.pythonPath": "C:\\Program Files\\Python37\\python.exe",
+    // "python.pythonPath": "C:\\Program Files\\Python37\\python.exe",,
     "python.showStartPage": false,
-    // "python.terminal.activateEnvironment": true,
-    // "python.testing.unittestArgs": [,
+    // "python.terminal.activateEnvironment": true,,
+    // "python.testing.unittestArgs": [,,
     //     "-v",
     //     "-s",
     //     "stepladder/tests/iou",
     //     "-p",
     //     "*test*.py"
     // ],
-    // "python.venvPath": "C:\\Users\\mich8638\\AppData\\Roaming\\Code\\.venv\\vscode",
+    // "python.venvPath": "C:\\Users\\mich8638\\AppData\\Roaming\\Code\\.venv\\vscode",,
 
 
     "redhat.telemetry.enabled": false,
 
 
-    "remote.SSH.useLocalServer": true,
+    "remote.SSH.remotePlatform": {
+        "devenv": "linux",
+        "devenv1": "linux",
+        "devenv2": "linux",
+        "bts1": "windows",
+        "bts2": "windows",
+    },
+    // "remote.SSH.useLocalServer": true,,
     "remote.WSL.debug": true,
 
 
@@ -477,10 +535,14 @@
 
 
     "terminal.external.windowsExec": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "terminal.integrated.commandsToSkipShell": [
+        "workbench.panel.output.focus"
+    ],
     "terminal.integrated.cursorStyle": "line",
     "terminal.integrated.defaultProfile.linux": "pwsh",
-    "terminal.integrated.defaultProfile.windows": "Windows PowerShell",
-    // "terminal.integrated.defaultProfile.windows": "pwsh",
+    // "terminal.integrated.defaultProfile.windows": "Windows PowerShell",,
+    "terminal.integrated.defaultProfile.windows": "pwsh",
+    "terminal.integrated.enableMultiLinePasteWarning": false,
     "terminal.integrated.fontFamily": "FiraCode NF",
     "terminal.integrated.profiles.windows": {
         "pwsh": {
