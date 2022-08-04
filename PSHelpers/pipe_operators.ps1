@@ -44,6 +44,7 @@ function replace
 
         [Parameter(Mandatory, Position = 0)]
         [ValidateCount(1, 2)]
+        [AllowEmptyString()]
         [string[]]$args
     )
 
