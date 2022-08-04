@@ -3,24 +3,39 @@ using namespace System.Collections.Generic
 
 function Git-Branch
 {
+    [CmdletBinding(DefaultParameterSetName = 'Track')]
     param
     (
-        [Parameter(Mandatory, Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Branch
+        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [string]$Head = 'HEAD',
+
+        [Parameter(ParameterSetName = 'Track')]
+        [string]$Remote = 'origin',
+
+        [Parameter(ParameterSetName = 'NoTrack')]
+        [switch]$NoTrack,
+
+        [switch]$NoSwitch
     )
 
-    $chbr = git checkout $Branch *>&1
+    $Output = git branch $Name $Head *>&1 | Out-String | foreach TrimEnd
+    if ($?) {Write-Host $Output} else {throw $Output}
 
-    if ($chbr.ToString() -match 'did not match any file')
+    if ($PSCmdlet.ParameterSetName -eq 'Track')
     {
-        Write-Host -ForegroundColor DarkYellow 'Creating new branch...'
-        $newbr = git checkout -b $Branch *>&1
-        $pushbr = git push -u origin $Branch *>&1
-        if (-not ($pushbr | Out-String) -match 'set up to track remote branch')
-        {
-            $pushbr
-        }
+        $Output = git push $Remote $Name`:$Name *>&1 | Out-String | foreach TrimEnd
+        if ($?) {Write-Host $Output} else {throw $Output}
+
+        $Output = git branch $Name --set-upstream-to $Remote/$Name *>&1 | Out-String | foreach TrimEnd
+        if ($?) {Write-Host $Output} else {throw $Output}
+    }
+
+    if (-not $NoSwitch)
+    {
+        $Output = git switch $Name *>&1 | Out-String | foreach TrimEnd
+        if (-not $?) {throw $Output}
     }
 }
 Set-Alias b Git-Branch
