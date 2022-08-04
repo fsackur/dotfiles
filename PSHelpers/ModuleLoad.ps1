@@ -26,7 +26,7 @@
 
             $Commands = Get-Command -Module $Module
             $ExportTable = $Module.ExportedCommands
-            $PrivateCommands = $Commands | Where-Object {-not $ExportTable.ContainsKey($_.Name)}
+            $PrivateCommands = $Commands | Where-Object {$_.Scriptblock -and -not $ExportTable.ContainsKey($_.Name)}
 
             foreach ($Command in $PrivateCommands)
             {
