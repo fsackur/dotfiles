@@ -6,7 +6,7 @@ function Git-Branch
     [CmdletBinding(DefaultParameterSetName = 'Track')]
     param
     (
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, Position = 0)]
         [string]$Name,
 
         [string]$Head = 'HEAD',
