@@ -31,3 +31,24 @@ function Switch-Dictionary
         $Output
     }
 }
+
+
+function New-ElevatedShell
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, Position = 0)]
+        [pscredential]
+        [Management.Automation.Credential()]$Credential
+    )
+
+    $Shell = if ($PSVersionTable.PSVersion.Major -le 5) {'powershell'} else {'pwsh'}
+    Start-Process $Shell -Credential $Credential -NoNewWindow -ArgumentList (
+        "-NoProfile",
+        "-NoLogo",
+        "-WindowStyle", "Hidden",
+        "-Command", "Start-Process $Shell -Verb RunAs -ArgumentList '-NoExit'"
+    )
+}
+Set-Alias elevate New-ElevatedShell
