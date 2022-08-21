@@ -1,10 +1,12 @@
 
 $Global:IS_ISE          = $Host.Name -eq 'Windows PowerShell ISE Host'
 $Global:IS_WSL          = [bool]$env:WSL_DISTRO_NAME
-$Global:IS_WINDOWS      = [Environment]::OSVersion.Platform -match 'Win'
-$Global:IS_LINUX        = [Environment]::OSVersion.Platform -match 'Unix'
 $Global:IS_PS_CORE      = $PSVersionTable.PSVersion.Major -ge 6
-$Global:IS_RASPBERRY_PI = $IS_LINUX -and (gc /etc/os-release) -match 'raspbian'
+if (-not $IS_PS_CORE)
+{
+    $Global:IsWindows = [Environment]::OSVersion.Platform -match 'Win'
+}
+$Global:IS_RASPBERRY_PI = $IsLinux -and (Test-Path /etc/os-release) -and (gc /etc/os-release) -match 'raspbian'
 
 $ParentProcess = if ($IS_PS_CORE)
 {
@@ -16,7 +18,7 @@ else
 }
 $Global:IS_VSCODE = $ParentProcess.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
 
-if ($Global:IS_WINDOWS)
+if ($Global:IsWindows)
 {
     $Global:XDG_CONFIG_HOME = Split-Path $PSScriptRoot
 }
