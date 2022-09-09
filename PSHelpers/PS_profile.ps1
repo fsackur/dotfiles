@@ -201,3 +201,6 @@ function Disable-BreakOnError
 {
     Get-PSBreakpoint -Variable StackTrace | Remove-PSBreakpoint
 }
+
+# Save typing out [pscustomobject]
+Add-Type 'public class o : System.Management.Automation.PSObject {}'
