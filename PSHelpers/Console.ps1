@@ -30,24 +30,32 @@ function Get-PSReadlineHistory
 
 if ($Global:IS_RASPBERRY_PI)   # too slow
 {}
-elseif ($PSVersionTable.PSVersion.Major -ge 7)
+elseif (Get-Command starship -ErrorAction SilentlyContinue)
 {
-    ipmo oh-my-posh -Global
-    if ($IsLinux -and -not $env:POSH_THEMES_PATH)
-    {
-        $env:POSH_THEMES_PATH = $env:POSH_THEME | Split-Path
-    }
-    $AmroGit = $env:POSH_THEMES_PATH | Join-Path -ChildPath amro-git.omp.json
-    if (-not (Test-Path $AmroGit))
-    {
-        $LocalPath = $PSScriptRoot | Split-Path | Join-Path -ChildPath .oh-my-posh | Join-Path -ChildPath themes | Join-Path -ChildPath amro-git.omp.json
-        New-Item -ItemType SymbolicLink $AmroGit -Value $LocalPath
-    }
-    Set-PoshPrompt amro-git
+    # brew install starship / choco install starship / winget install Starship.Starship
+    $env:STARSHIP_CONFIG = $PSScriptRoot | Split-Path | Join-Path -ChildPath starship.toml
+    starship init powershell --print-full-init | Out-String | Invoke-Expression
 }
-else
+elseif (Import-Module -PassThru oh-my-posh -Global -ErrorAction SilentlyContinue)
 {
-    Set-PoshPrompt pure
+    if ($PSVersionTable.PSVersion.Major -ge 7)
+    {
+        if ($IsLinux -and -not $env:POSH_THEMES_PATH)
+        {
+            $env:POSH_THEMES_PATH = $env:POSH_THEME | Split-Path
+        }
+        $AmroGit = $env:POSH_THEMES_PATH | Join-Path -ChildPath amro-git.omp.json
+        if (-not (Test-Path $AmroGit))
+        {
+            $LocalPath = $PSScriptRoot | Split-Path | Join-Path -ChildPath .oh-my-posh | Join-Path -ChildPath themes | Join-Path -ChildPath amro-git.omp.json
+            New-Item -ItemType SymbolicLink $AmroGit -Value $LocalPath
+        }
+        Set-PoshPrompt amro-git
+    }
+    else
+    {
+        Set-PoshPrompt pure
+    }
 }
 
 Import-Module posh-git

@@ -1,4 +1,22 @@
-{
+[
+    // Remove Mac defaults
+    {
+        "key": "ctrl+d",
+        "command": "-deleteRight",
+        "when": "textInputFocus"
+    },
+    {
+        "key": "ctrl+a",
+        "command": "-cursorLineStart",
+        "when": "textInputFocus"
+    },
+    {
+        "key": "ctrl+shift+a",
+        "command": "-cursorLineStartSelect",
+        "when": "textInputFocus"
+    },
+    // Remove Mac defaults
+
     {
         "key": "f8",
         "command": "-editor.action.marker.nextInFiles",
@@ -266,8 +284,7 @@
     {
         "key": "ctrl+k ctrl+p",
         "command": "PowerShell.RestartSession"
-    }
-,
+    },
     {
         "key": "ctrl+k ctrl+p",
         "command": "-workbench.action.showAllEditors"
@@ -294,4 +311,4 @@
         "key": "ctrl+alt+d",
         "command": "workbench.action.toggleMaximizedPanel"
     }
-}
+]
