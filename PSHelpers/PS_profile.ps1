@@ -204,3 +204,42 @@ function Disable-BreakOnError
 
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}'
+
+function New-Link
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Path,
+
+        [Parameter(Mandatory, Position = 1)]
+        [string]$Target,
+
+        [ValidateSet('Junction', 'SymbolicLink')]
+        [string]$LinkType,
+
+        [switch]$DontResolveTarget
+    )
+
+    if (-not $DontResolveTarget)
+    {
+        $Target = $Target | Resolve-Path -ErrorAction Stop
+    }
+
+    if (-not $LinkType)
+    {
+        $_IsWindows = [Environment]::OSVersion.Platform -match 'Win'
+
+        $LinkType = if ($_IsWindows -and (Test-Path $Target -PathType Container))
+        {
+            'Junction'
+        }
+        else
+        {
+            'SymbolicLink'
+        }
+    }
+
+    New-Item -ItemType $LinkType $Path -Value $Target
+}
