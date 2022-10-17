@@ -16,7 +16,7 @@ function Get-PSDefaultModulePath
 
     $AllUsersConfig = $CurrentUserConfig = $null
     $IsPSCore = $PSVersionTable.PSEdition -eq 'Core'
-    if ($IsCore -and -not $PowerShellGetV2CompatibilityMode)
+    if ($IsPSCore -and -not $PowerShellGetV2CompatibilityMode)
     {
         # https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_powershell_config
         if ($Scope -eq 'AllUsers')
@@ -52,6 +52,10 @@ function Get-PSDefaultModulePath
             elseif ([Environment]::OSVersion.Platform -match 'Win')
             {
                 "$HOME\Documents\PowerShell\Modules"
+            }
+            elseif($env:XDG_DATA_HOME)
+            {
+                "$env:XDG_DATA_HOME/powershell/Modules"
             }
             else
             {
