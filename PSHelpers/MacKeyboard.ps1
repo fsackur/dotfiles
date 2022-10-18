@@ -148,8 +148,6 @@ function Get-KarabinerRule
             $fakeBoundParameters.Remove($parameterName)
             $Rules = Get-KarabinerRule @fakeBoundParameters
             $Completions = (@($Rules.description) -ilike "$wordToComplete*"), (@($Rules.description) -ilike "*?$wordToComplete*") | Write-Output
-            # Write-Host $wordToComplete
-            # $Completions
             $Completions -replace '.*\s.*', "'`$0'"
         })]
         [SupportsWildcards()]

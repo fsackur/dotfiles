@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<Configuration>
+
+    <ViewDefinitions>
+
+        <View>
+            <Name>KarabinerRule</Name>
+            <ViewSelectedBy>
+                <TypeName>KarabinerRule</TypeName>
+            </ViewSelectedBy>
+
+            <TableControl>
+                <AutoSize/>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>description</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>manipulators</Label>
+                    </TableColumnHeader>
+                </TableHeaders>
+
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap/>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>description</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <PropertyName>manipulators</PropertyName>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+
+            </TableControl>
+        </View>
+
+        <View>
+            <Name>KarabinerManipulator</Name>
+            <ViewSelectedBy>
+                <TypeName>KarabinerManipulator</TypeName>
+            </ViewSelectedBy>
+
+            <TableControl>
+                <AutoSize/>
+                <TableHeaders>
+                    <TableColumnHeader>
+                        <Label>conditions</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Action</Label>
+                    </TableColumnHeader>
+                    <TableColumnHeader>
+                        <Label>Parameters</Label>
+                    </TableColumnHeader>
+                </TableHeaders>
+
+                <TableRowEntries>
+                    <TableRowEntry>
+                        <Wrap/>
+                        <TableColumnItems>
+                            <TableColumnItem>
+                                <PropertyName>conditions</PropertyName>
+                            </TableColumnItem>
+                            <TableColumnItem>
+                                <ScriptBlock>
+                                manipulators
+                                </ScriptBlock>
+                            </TableColumnItem>
+                        </TableColumnItems>
+                    </TableRowEntry>
+                </TableRowEntries>
+
+            </TableControl>
+        </View>
+
+    </ViewDefinitions>
+</Configuration>
