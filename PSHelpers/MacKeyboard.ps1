@@ -3,6 +3,36 @@ function Get-KarabinerConfigPath
     "~/.config/karabiner/karabiner.json" | Resolve-Path | Select-Object -ExpandProperty Path
 }
 
+function Get-KarabinerCommand
+{
+    Get-Command '/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli'
+}
+
+function Invoke-Karabiner
+{
+    param
+    (
+        [ValidateSet(
+            'select-profile',
+            'show-current-profile-name',
+            'list-profile-names',
+            'set-variables',
+            'copy-current-profile-to-system-default-profile',
+            'remove-system-default-profile',
+            'lint-complex-modifications',
+            'version',
+            'version-number',
+            'help'
+        )]
+        [string]$Command,
+
+        [Parameter(ValueFromRemainingArguments)]
+        $ArgumentList
+    )
+
+    & (Get-KarabinerCommand) "--$Command" $ArgumentList
+}
+
 function Get-KarabinerConfig
 {
     $Config = Get-KarabinerConfigPath | Resolve-Path | Get-Content | ConvertFrom-Json
