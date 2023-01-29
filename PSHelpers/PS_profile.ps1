@@ -28,6 +28,7 @@ foreach ($Kvp in ([ordered]@{
 
 
 Set-Alias os Out-String
+Set-Alias tf terraform
 
 function ConvertTo-Sentence
 {
