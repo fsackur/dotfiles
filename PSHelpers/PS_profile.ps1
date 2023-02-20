@@ -1,35 +1,4 @@
 
-if (-not $PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
-foreach ($Kvp in ([ordered]@{
-    'Out-Default:OutVariable' = '+LastOutput'
-    'Get-ChildItem:Force'     = $true
-}).GetEnumerator())
-{
-    $Global:PSDefaultParameterValues[$Kvp.Key] = $Kvp.Value
-}
-
-# https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
-[string[]]$CommonParameters = (
-    'Verbose',
-    'Debug',
-    'ErrorAction',
-    'WarningAction',
-    'InformationAction',
-    'ErrorVariable',
-    'WarningVariable',
-    'InformationVariable',
-    'OutVariable',
-    'OutBuffer',
-    'PipelineVariable',
-    'WhatIf',
-    'Confirm'
-)
-[Collections.Generic.HashSet[string]]$CommonParameters = [Collections.Generic.HashSet[string]]::new($CommonParameters)
-
-
-Set-Alias os Out-String
-Set-Alias tf terraform
-
 function ConvertTo-Sentence
 {
     <#
