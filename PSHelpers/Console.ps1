@@ -29,7 +29,7 @@ foreach ($Kvp in ([ordered]@{
 
 Set-Alias clip Set-Clipboard
 Set-Alias os Out-String
-
+Set-Alias cm chezmoi
 Set-Alias tf terraform
 Set-Alias k kubectl
 
