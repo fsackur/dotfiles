@@ -1,4 +1,4 @@
-﻿function Export-PrivateModuleMember
+function Export-PrivateModuleMember
 {
     <#
         .SYNOPSIS
