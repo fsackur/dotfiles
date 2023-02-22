@@ -42,5 +42,4 @@ echo $ssh_secrets | jq -r '.[] | select(.name=="github_ed25519").password' >> ~/
 
 [[ -n "$(ssh github.com 2>&1 | grep success)" ]] || (echo "SSH auth to github.com failed" && exit 1)
 
-chezmoi init fsackur/chezmoi-dotfiles --ssh
-chezmoi apply
+chezmoi init fsackur/dotfiles --ssh --branch chezmoi --recurse-submodules=false --apply
