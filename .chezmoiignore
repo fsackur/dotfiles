@@ -10,3 +10,10 @@ LICENSE
 README.md
 starship.toml
 Untitled-1.jsonc
+
+{{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") }}
+Documents
+{{ end }}
+{{ if eq .chezmoi.os "windows" }}
+.config
+{{ end }}
