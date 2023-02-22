@@ -44,6 +44,7 @@ function replace
 
         [Parameter(Mandatory, Position = 0)]
         [ValidateCount(1, 2)]
+        [AllowEmptyString()]
         [string[]]$args
     )
 
@@ -116,14 +117,12 @@ function Split-Line
 
         [switch]$SkipEmpty,
 
-        [switch]$SkipWhitespace,
-
-        [switch]$SplitOnEmptyLines
+        [switch]$SkipEmptyOrWhitespace
     )
 
     process
     {
-        $EolPattern = if ($SplitOnEmptyLines) {'(\r?\n\s*)+\r?\n'} else {'\r?\n'}
+        $EolPattern = '\r?\n'
         $Lines = $InputObject -split $EolPattern
 
         if ($SkipWhitespace)
@@ -138,6 +137,25 @@ function Split-Line
         $Lines | Write-Output
     }
 }
+
+function Trim-String
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object]$InputObject,
+
+        [switch]$Stream
+    )
+
+    if ($MyInvocation.ExpectingInput)
+    {
+        $InputObject = $input
+    }
+    $InputObject | Out-String -Stream:$Stream | ForEach-Object {$_.Trim()}
+}
+Set-Alias trim Trim-String
 
 function Split-Batch
 {
@@ -163,3 +181,45 @@ function Split-Batch
     }
 }
 Set-Alias batch Split-Batch
+
+
+function ConvertTo-ListExpression
+{
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [object]$InputObject,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [switch]$Singleline,
+
+        [Parameter(ParameterSetName = 'Default')]
+        [switch]$DoubleQuote,
+
+        [Parameter(ParameterSetName = 'Explicit')]
+        [ValidatePattern("(?s)^(['`"]).*\1$")]      # First char is a quotemark, last char is same as first
+        [string]$Join = "',$([Environment]::NewLine)'"
+    )
+
+    if ($MyInvocation.ExpectingInput)
+    {
+        $InputObject = $input
+    }
+
+    if ($DoubleQuote)
+    {
+        $Join = $Join -replace '(^.)|(.$)', '"'
+    }
+
+    if ($Singleline)
+    {
+        $Join = $Join -replace '\r?\n', ' '
+    }
+
+    $Quotemark = $Join[0]
+
+    $Items = $InputObject | Split-Line -SkipEmptyOrWhitespace
+
+    "$Quotemark$($Items -join $Join)$Quotemark"
+}

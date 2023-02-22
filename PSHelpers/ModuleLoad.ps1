@@ -26,7 +26,7 @@
 
             $Commands = Get-Command -Module $Module
             $ExportTable = $Module.ExportedCommands
-            $PrivateCommands = $Commands | Where-Object {-not $ExportTable.ContainsKey($_.Name)}
+            $PrivateCommands = $Commands | Where-Object {$_.Scriptblock -and -not $ExportTable.ContainsKey($_.Name)}
 
             foreach ($Command in $PrivateCommands)
             {
@@ -118,12 +118,15 @@ function Reload-Module
 
     #>
 
-    [CmdletBinding()]
     [OutputType([PSModuleInfo])]
+    [CmdletBinding()]
     param
     (
-        [switch]$ExportAll
+        [switch]$ExportAll,
+
+        [switch]$PassThru
     )
+
 
     $ModuleBase = $PWD.Path
 
@@ -142,7 +145,7 @@ function Reload-Module
         if (Test-Path -Path $Psd1Path)
         {
             # Re-import module
-            Import-Module -Name $Psd1Path -Force -DisableNameChecking -PassThru -Global
+            Import-Module -Name $Psd1Path -Force -DisableNameChecking -PassThru:$PassThru -Global
             if ($ExportAll)
             {
                 Export-PrivateModuleMember $ModuleName -ExportVariables

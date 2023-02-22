@@ -1,6 +1,11 @@
 {
+    // "[python]": {
+    // },,
+
+
+
     "[html]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        // "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
 
 
@@ -19,9 +24,20 @@
     },
 
 
-    "[python]": {
-        "editor.formatOnPaste": false
+    "[powershell]": {
+        "debug.saveBeforeStart": "nonUntitledEditorsInActiveGroup",
+        "editor.bracketPairColorization.enabled": false,
+        // "editor.semanticHighlighting.enabled": false,
+        "editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?"
     },
+
+
+    "[xml]": {
+        "editor.defaultFormatter": "redhat.vscode-xml"
+    },
+
+
+    "activity-heatmap.include.pattern": "**/modules/iou/**",
 
 
     "atlascode.bitbucket.enabled": false,
@@ -52,9 +68,30 @@
     },
 
 
+    // "autofold.types": [
+    //     {"ext": ".py", "level": 2},
+    // ],
+    // "autofold.default": 4,
+
     // "clipboard-manager.saveTo": "C:\\Users\\mich8638\\.clipboard",,
 
+
     "clipboard-manager.saveTo": "~/.clipboard",
+
+
+    "codestream.email": "freddie.sackur@rackspace.co.uk",
+    "codestream.requestFeedbackOnCommit": false,
+
+
+    // "coverage-gutters.coverageFileNames": [""],,
+
+    "coverage-gutters.showGutterCoverage": false,
+    "coverage-gutters.showLineCoverage": true,
+    "coverage-gutters.showRulerCoverage": true,
+    "coverage-gutters.xmlname": "coverage.xml",
+
+
+    "cSpell.language": "en-GB",
 
 
     "customizeUI.stylesheet": {
@@ -69,17 +106,13 @@
     "debug.toolBarLocation": "docked",
 
 
-    "diffEditor.ignoreTrimWhitespace": false,
-
-
     "docker.containers.description": [
         "RepositoryNameAndTag",
         "Status"
     ],
-    "docker.containers.groupBy": "Networks",
+    "docker.containers.groupBy": "None",
     "docker.containers.label": "ContainerName",
     "docker.containers.sortBy": "Label",
-    "docker.host": "tcp://localhost:2375",
     "docker.images.description": [
         "ImageId",
         "RepositoryNameAndTag"
@@ -97,12 +130,13 @@
     "editor.accessibilitySupport": "off",
     "editor.detectIndentation": false,
     "editor.emptySelectionClipboard": false,
+    "editor.find.seedSearchStringFromSelection": "never",
     "editor.fontFamily": "'Victor Mono', Consolas, 'Courier New', monospace",
     "editor.minimap.enabled": false,
     "editor.quickSuggestions": {
-        "other": false,
+        "other": true,
         "comments": true,
-        "strings": false
+        "strings": true
     },
     "editor.renderControlCharacters": false,
     "editor.renderLineHighlight": "none",
@@ -240,15 +274,24 @@
 
     "extensions.autoCheckUpdates": false,
     "extensions.autoUpdate": false,
-    "extensions.showRecommendationsOnlyOnDemand": true,
+    "extensions.ignoreRecommendations": true,
 
 
+    "files.associations": {
+        ".pyrc": "python",
+        ".drawio.svg": "drawio"
+    },
     "files.defaultLanguage": "${activeEditorLanguage}",
+    "files.eol": "\r\n",
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.mypy_cache": true,
+        "**/.pytest_cache": true,
+        "**/Pester.psm1": true,
+    },
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
     "files.trimTrailingWhitespace": true,
-
-
-    // "filewatcher.commands": [,
-
 
 
     "git.allowForcePush": true,
@@ -260,29 +303,61 @@
     "git.promptToSaveFilesBeforeCommit": "never",
 
 
+    "github-enterprise.uri": "https://github.rackspace.com/",
+
+
+    "githubIssues.ignoreCompletionTrigger": [
+        "python",
+        "makefile",
+        "powershell"
+    ],
+    "githubIssues.ignoreUserCompletionTrigger": [
+        "python",
+        "powershell"
+    ],
+    "githubIssues.issueCompletions.enabled": false,
+    "githubIssues.queries": [
+        {
+            "label": "My Issues",
+            "query": "default"
+        },
+        {
+            "label": "Created Issues",
+            "query": "author:${user} state:open repo:${owner}/${repository} sort:created-desc"
+        },
+        {
+            "label": "Recent Issues",
+            "query": "state:open repo:${owner}/${repository} sort:updated-desc"
+        }
+    ],
+    "githubIssues.userCompletions.enabled": false,
+
+
+    "githubPullRequests.createOnPublishBranch": "never",
     "githubPullRequests.remotes": [
         "origin",
         "upstream",
-        "GTSWAE"
+        "GTSWAE",
+        "GTSLAE"
     ],
-    "githubPullRequests.showInSCM": true,
-    "githubPullRequests.telemetry.enabled": false,
 
 
     "gitlens.advanced.messages": {
-        "suppressCommitHasNoPreviousCommitWarning": false,
-        "suppressCommitNotFoundWarning": false,
-        "suppressFileNotUnderSourceControlWarning": false,
-        "suppressGitVersionWarning": false,
-        "suppressLineUncommittedWarning": false,
-        "suppressNoRepositoryWarning": false,
-        "suppressResultsExplorerNotice": false,
-        "suppressShowKeyBindingsNotice": true
+        "suppressRebaseSwitchToTextWarning": true,
+        // "suppressShowKeyBindingsNotice": true
     },
     "gitlens.advanced.telemetry.enabled": false,
     "gitlens.blame.ignoreWhitespace": true,
     "gitlens.codeLens.authors.enabled": false,
     "gitlens.codeLens.recentChange.enabled": false,
+    "gitlens.integrations.enabled": true,
+    "gitlens.remotes": [
+        {
+            "domain": "github.rackspace.com",
+            "type": "GitHub"
+        },
+    ],
+    "gitlens.sortBranchesBy": "date:desc",
     "gitlens.views.repositories.autoRefresh": false,
     "gitlens.views.repositories.autoReveal": false,
     "gitlens.views.repositories.avatars": false,
@@ -291,17 +366,24 @@
     "gitlens.views.search.enabled": false,
 
 
-    "hediet.vscode-drawio.local-storage": "eyIuZHJhd2lvLWNvbmZpZyI6IntcImxhbmd1YWdlXCI6XCJcIixcImN1c3RvbUZvbnRzXCI6W10sXCJsaWJyYXJpZXNcIjpcImdlbmVyYWxcIixcImN1c3RvbUxpYnJhcmllc1wiOltcIkwuc2NyYXRjaHBhZFwiXSxcInBsdWdpbnNcIjpbXSxcInJlY2VudENvbG9yc1wiOltcIjBBMEEwQVwiLFwiRjBGMEYwXCIsXCIzNjM2MzZcIixcIjM4MzgzOFwiLFwiQzQ4RDg5XCIsXCI2NjAwMDBcIixcIjMzMzMzM1wiLFwiRThFOEU4XCIsXCIwMDAwMDBcIixcIjhGODc1NFwiLFwiNEE0QTRBXCJdLFwiZm9ybWF0V2lkdGhcIjpcIjI0MFwiLFwiY3JlYXRlVGFyZ2V0XCI6ZmFsc2UsXCJwYWdlRm9ybWF0XCI6e1wieFwiOjAsXCJ5XCI6MCxcIndpZHRoXCI6ODI3LFwiaGVpZ2h0XCI6MTE2OX0sXCJzZWFyY2hcIjp0cnVlLFwic2hvd1N0YXJ0U2NyZWVuXCI6dHJ1ZSxcImdyaWRDb2xvclwiOlwiI2QwZDBkMFwiLFwiZGFya0dyaWRDb2xvclwiOlwiIzZlNmU2ZVwiLFwiYXV0b3NhdmVcIjp0cnVlLFwicmVzaXplSW1hZ2VzXCI6bnVsbCxcIm9wZW5Db3VudGVyXCI6MCxcInZlcnNpb25cIjoxOCxcInVuaXRcIjoxLFwiaXNSdWxlck9uXCI6ZmFsc2UsXCJ1aVwiOlwiXCJ9In0=",
+    "hediet.vscode-drawio.local-storage": "eyIuZHJhd2lvLWNvbmZpZyI6IntcImxhbmd1YWdlXCI6XCJcIixcImN1c3RvbUZvbnRzXCI6W10sXCJsaWJyYXJpZXNcIjpcImdlbmVyYWw7ZXJcIixcImN1c3RvbUxpYnJhcmllc1wiOltcIkwuc2NyYXRjaHBhZFwiXSxcInBsdWdpbnNcIjpbXSxcInJlY2VudENvbG9yc1wiOltcIkYwRjBGMFwiLFwiQ0YzRTM0XCIsXCJFMDc2MzhcIixcIjNCMUUxMFwiLFwiMzMwMDAwXCIsXCJGRkZGRkZcIixcIjRENEQ0RFwiLFwiNjMzMzFDXCIsXCIyMTI5MUVcIixcIjM4NDUzM1wiLFwiMzkyRTQyXCJdLFwiZm9ybWF0V2lkdGhcIjpcIjI0MFwiLFwiY3JlYXRlVGFyZ2V0XCI6ZmFsc2UsXCJwYWdlRm9ybWF0XCI6e1wieFwiOjAsXCJ5XCI6MCxcIndpZHRoXCI6ODI3LFwiaGVpZ2h0XCI6MTE2OX0sXCJzZWFyY2hcIjp0cnVlLFwic2hvd1N0YXJ0U2NyZWVuXCI6dHJ1ZSxcImdyaWRDb2xvclwiOlwiI2QwZDBkMFwiLFwiZGFya0dyaWRDb2xvclwiOlwiIzZlNmU2ZVwiLFwiYXV0b3NhdmVcIjp0cnVlLFwicmVzaXplSW1hZ2VzXCI6bnVsbCxcIm9wZW5Db3VudGVyXCI6MCxcInZlcnNpb25cIjoxOCxcInVuaXRcIjoxLFwiaXNSdWxlck9uXCI6ZmFsc2UsXCJ1aVwiOlwiXCJ9In0=",
 
 
-    "jupyter.notebook.startupArgs": [
-        "--no-browser",
-        "--port=8888",
-        "--NotebookApp.allow_origin=\"*\"",
-        "--disable_check_xsrf=True",
-        "--token=\"\"",
-        "--allow-root"
-    ],
+    // "jupyter.alwaysScrollOnNewCell": true,,
+    "jupyter.askForKernelRestart": false,
+    "jupyter.collapseCellInputCodeByDefault": false,
+    // "jupyter.disableJupyterAutoStart": true,,
+    // "jupyter.enableAutoMoveToNextCell": false,,
+    "jupyter.enableNativeInteractiveWindow": true,
+    // "jupyter.enableScrollingForCellOutputs": false,,
+    // "jupyter.jupyterServerType": "local",,
+    // "jupyter.maxOutputSize": 4000,,
+    "jupyter.sendSelectionToInteractiveWindow": true,
+
+
+    // "jupyter.stopOnFirstLineWhileDebugging": false,,
+    // "jupyter.textOutputLimit": 0,,
+
 
 
     "kite.showWelcomeNotificationOnStartup": false,
@@ -314,10 +396,37 @@
                 "name": "PowerShell: Interactive Session",
                 "type": "PowerShell",
                 "request": "launch",
-                "cwd": ""
-            }
+                // "cwd": ""
+            },
+            // {
+            //     "name": "Python: Debug Tests",
+            //     "type": "python",
+            //     "request": "launch",
+            //     "program": "${file}",
+            //     "purpose": ["debug-test"],
+            //     "justMyCode": false,
+            // }
         ]
     },
+
+
+    "markdown-toc.depthFrom": 2,
+
+
+    "notebook.cellToolbarLocation": {
+        "default": "right",
+        "jupyter-notebook": "left"
+    },
+    "notebook.output.textLineLimit": 300,
+
+
+    "omnisharp.autoStart": true,
+
+
+    "pester.suppressCodeLensNotice": true,
+
+
+    "pesterExplorer.autoDiscoverOnOpen": true,
 
 
     "powershell.codeFormatting.autoCorrectAliases": true,
@@ -325,12 +434,17 @@
     "powershell.codeFormatting.pipelineIndentationStyle": "IncreaseIndentationForFirstPipeline",
     "powershell.codeFormatting.preset": "Allman",
     "powershell.codeFormatting.useCorrectCasing": true,
+    "powershell.codeFormatting.whitespaceInsideBrace": false,
     "powershell.developer.editorServicesLogLevel": "Verbose",
-    "powershell.developer.featureFlags": ["PSReadLine"],
-    "powershell.integratedConsole.showOnStartup": true,
+    "powershell.developer.featureFlags": [],
+    "powershell.integratedConsole.forceClearScrollbackBuffer": true,
+    "powershell.integratedConsole.showOnStartup": false,
+    "powershell.integratedConsole.suppressStartupBanner": true,
+    "powershell.pester.codeLens": false,
+    "powershell.pester.useLegacyCodeLens": false,
     "powershell.powerShellAdditionalExePaths": [
         {
-            "versionName": "PS7",
+            "versionName": "PSv7",
             "exePath": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
         },
         {
@@ -338,55 +452,78 @@
             "exePath": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
         },
     ],
-    "powershell.powerShellDefaultVersion": "PSv5",
+    "powershell.powerShellDefaultVersion": "PSv7",
     "powershell.promptToUpdatePowerShell": false,
-    "powershell.scriptAnalysis.settingsPath": "C:\\Githubdata\\WaeStd\\WaeRules\\WaeRuleSettings.psd1",
+
+
+    // "powershell.scriptAnalysis.settingsPath": "C:\\githubdata\\WaeStd\\WaeRules\\WaeRuleSettings.psd1",,
+
 
 
     "presentationMode.colorTheme": "Default Dark+",
     // "presentationMode.editor.fontFamily": "",,
-
     "presentationMode.editor.fontFamily": "'Meslo LG M DZ for Powerline', Hack, 'Fira Mono for Powerline', monospace",
     // "presentationMode.terminal.fontFamily": "",,
-
     "presentationMode.terminal.fontFamily": "'Meslo LG M DZ for Powerline', Hack, 'Fira Mono for Powerline', monospace",
 
 
-    "python.analysis.logLevel": "Information",
-    "python.autoComplete.extraPaths": [
+    "python.analysis.extraPaths": [
         "/mono/stepladder"
     ],
-    "python.condaPath": "/home/freddie/anaconda3/bin/conda",
-    "python.dataScience.allowUnauthorizedRemoteConnection": true,
-    "python.dataScience.askForKernelRestart": false,
-    "python.dataScience.jupyterCommandLineArguments": [
+    "python.analysis.logLevel": "Information",
+    // "python.autoComplete.extraPaths": [,
+    //     "/mono/stepladder"
+    // ],
+    // "python.dataScience.allowUnauthorizedRemoteConnection": true,,
+    // "python.dataScience.askForKernelRestart": false,
+    // "python.dataScience.jupyterCommandLineArguments": [,
+    //],
+    // "python.globalModuleInstallation": true,
 
-    ],
-    "python.globalModuleInstallation": true,
-    "python.linting.mypyEnabled": true,
-    "python.linting.pycodestyleArgs": [
-        "--max-line-length=120",
-        "--disable=E302"
-    ],
-    "python.linting.pylintArgs": [
-        "--max-line-length=120"
-    ],
-    "python.pythonPath": "C:\\Program Files\\Python37\\python.exe",
+    "python.languageServer": "Pylance",
+    // "python.linting.mypyArgs": [],,
+    // "python.linting.mypyEnabled": true,,
+    // "python.linting.pycodestyleArgs": [,,
+    //     "--max-line-length=120",
+    //     "--disable=E302"
+    // ],
+    // "python.linting.pylintArgs": [,,
+    //     "--max-line-length=120"
+    // ],
+    // "python.pythonPath": "C:\\Program Files\\Python37\\python.exe",,
     "python.showStartPage": false,
-    "python.terminal.activateEnvInCurrentTerminal": true,
-    "python.testing.pytestEnabled": true,
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "stepladder/tests/iou",
-        "-p",
-        "*test*.py"
-    ],
-    "python.venvPath": "C:\\Users\\mich8638\\AppData\\Roaming\\Code\\.venv\\vscode",
+    // "python.terminal.activateEnvironment": true,,
+    // "python.testing.unittestArgs": [,,
+    //     "-v",
+    //     "-s",
+    //     "stepladder/tests/iou",
+    //     "-p",
+    //     "*test*.py"
+    // ],
+    // "python.venvPath": "C:\\Users\\mich8638\\AppData\\Roaming\\Code\\.venv\\vscode",,
 
 
-    "remote.SSH.useLocalServer": true,
+    "redhat.telemetry.enabled": false,
+
+
+    "remote.SSH.remotePlatform": {
+        "devenv": "linux",
+        "devenv1": "linux",
+        "devenv2": "linux",
+        "bts1": "windows",
+        "bts2": "windows",
+    },
+    // "remote.SSH.useLocalServer": true,,
     "remote.WSL.debug": true,
+
+
+    "search.exclude": {
+        ".git/*": true,
+        "docs/**/*.md": true
+    },
+
+
+    "security.workspace.trust.untrustedFiles": "open",
 
 
     "task.problemMatchers.neverPrompt": {
@@ -394,32 +531,92 @@
     },
 
 
-    "telemetry.enableCrashReporter": false,
-    "telemetry.enableTelemetry": false,
+    "telemetry.telemetryLevel": "off",
 
 
     "terminal.external.windowsExec": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",
-    "terminal.integrated.automationShell.linux": "/bin/sh",
-    "terminal.integrated.automationShell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+    "terminal.integrated.commandsToSkipShell": [
+        "workbench.panel.output.focus"
+    ],
     "terminal.integrated.cursorStyle": "line",
+    "terminal.integrated.defaultProfile.linux": "pwsh",
+    // "terminal.integrated.defaultProfile.windows": "Windows PowerShell",,
+    "terminal.integrated.defaultProfile.windows": "pwsh",
+    "terminal.integrated.enableMultiLinePasteWarning": false,
     "terminal.integrated.fontFamily": "FiraCode NF",
-    "terminal.integrated.shell.linux": "/bin/bash",
-    "terminal.integrated.shell.windows": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
-    // "terminal.integrated.shell.windows": "C:\\windows\\Sysnative\\WindowsPowerShell\\v1.0\\powershell.exe",,
+    "terminal.integrated.profiles.windows": {
+        "pwsh": {
+            "path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+            "icon": "terminal-powershell",
+            "args": [
+                "-NoLogo"
+            ]
+        },
+        "Windows PowerShell": {
+            "path": "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+            "icon": "terminal-powershell",
+            "args": [
+                "-NoLogo"
+            ]
+        }
+    },
+    "terminal.integrated.scrollback": 10000,
+    "terminal.integrated.tabs.enabled": true,
 
-    "terminal.integrated.shellArgs.linux": ["-l"],
 
-
-    "window.zoomLevel": 0,
+    "window.newWindowDimensions": "maximized",
 
 
     "workbench.activityBar.visible": true,
-    // "workbench.colorCustomizations": {,
+    "workbench.colorCustomizations": {
+        "diffEditor.insertedTextBackground": "#0077001f",
+        "diffEditor.removedTextBackground": "#7700001f",
+        // "editorOverviewRuler.addedForeground": "#00ff00",
+        // "editorOverviewRuler.background": "#000000"
+        // "activityBarBadge.background": "#616161",
+        // "list.activeSelectionForeground": "#616161",
+        // "list.inactiveSelectionForeground": "#616161",
+        // "list.highlightForeground": "#616161",
+        // "scrollbarSlider.activeBackground": "#61616150",
+        // "editorSuggestWidget.highlightForeground": "#616161",
+        // "textLink.foreground": "#616161",
+        // "progressBar.background": "#616161",
+        // "pickerGroup.foreground": "#616161",
+        // "tab.activeBorder": "#616161",
+        // "notificationLink.foreground": "#616161",
+        // "editorWidget.resizeBorder": "#616161",
+        // "editorWidget.border": "#616161",
+        // "settings.modifiedItemIndicator": "#616161",
+        // "settings.headerForeground": "#616161",
+        // "panelTitle.activeBorder": "#616161",
+        // "breadcrumb.activeSelectionForeground": "#616161",
+        // "menu.selectionForeground": "#616161",
+        // "menubar.selectionForeground": "#616161",
+        // "editor.findMatchBorder": "#616161",
+        // "selection.background": "#61616140"
+    },
     "workbench.colorTheme": "Sapphire",
+    "workbench.editor.languageDetection": false,
     "workbench.editor.untitled.labelFormat": "name",
-    "workbench.startupEditor": "newUntitledFile",
+    "workbench.editor.wrapTabs": true,
+    "workbench.editorAssociations": {
+        "*.ipynb": "jupyter-notebook"
+    },
+    "workbench.startupEditor": "none",
     "workbench.statusBar.visible": true,
     "workbench.welcome.enabled": false,
+
+
+    "xml.fileAssociations": [
+        {
+            "systemId": "https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Format.xsd",
+            "pattern": "**/*.Format.ps1xml"
+        },
+        {
+            "systemId": "https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Schemas/Types.xsd",
+            "pattern": "**/*.Types.ps1xml"
+        }
+    ],
 
 
     "yaml.schemas": {

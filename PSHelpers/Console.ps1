@@ -1,5 +1,40 @@
 
+if (-not $PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
+foreach ($Kvp in ([ordered]@{
+    'Out-Default:OutVariable' = '+LastOutput'
+    'Get-ChildItem:Force'     = $true
+}).GetEnumerator())
+{
+    $Global:PSDefaultParameterValues[$Kvp.Key] = $Kvp.Value
+}
+
+# https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
+[string[]]$CommonParameters = (
+    'Verbose',
+    'Debug',
+    'ErrorAction',
+    'WarningAction',
+    'InformationAction',
+    'ErrorVariable',
+    'WarningVariable',
+    'InformationVariable',
+    'OutVariable',
+    'OutBuffer',
+    'PipelineVariable',
+    'WhatIf',
+    'Confirm'
+)
+[Collections.Generic.HashSet[string]]$CommonParameters = [Collections.Generic.HashSet[string]]::new($CommonParameters)
+
+
 Set-Alias clip Set-Clipboard
+Set-Alias os Out-String
+
+Set-Alias tf terraform
+Set-Alias k kubectl
+
+# Save typing out [pscustomobject]
+Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
 
 
 [console]::OutputEncoding = [Text.Encoding]::UTF8
@@ -19,18 +54,59 @@ Set-PSReadlineKeyHandler -Chord Ctrl+Shift+Home -Function SelectBackwardsLine
 Set-PSReadLineKeyHandler -Chord Ctrl-a -Function SelectAll
 Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine         # https://github.com/PowerShell/PSReadLine/issues/1993
 Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut                      # https://github.com/PowerShell/PSReadLine/issues/1993
+Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 
+function Get-PSReadlineHistory
+{
+    gc (Get-PSReadLineOption).HistorySavePath
+}
 
-Set-PoshPrompt pure
+if ($Global:IS_RASPBERRY_PI)   # too slow
+{}
+elseif (Get-Command starship -ErrorAction SilentlyContinue)
+{
+    # brew install starship / choco install starship / winget install Starship.Starship
+    $env:STARSHIP_CONFIG = $PSScriptRoot | Split-Path | Join-Path -ChildPath starship.toml
+    starship init powershell --print-full-init | Out-String | Invoke-Expression
+}
+elseif (Import-Module -PassThru oh-my-posh -Global -ErrorAction SilentlyContinue)
+{
+    if ($PSVersionTable.PSVersion.Major -ge 7)
+    {
+        if ($IsLinux -and -not $env:POSH_THEMES_PATH)
+        {
+            $env:POSH_THEMES_PATH = $env:POSH_THEME | Split-Path
+        }
+        $AmroGit = $env:POSH_THEMES_PATH | Join-Path -ChildPath amro-git.omp.json
+        if (-not (Test-Path $AmroGit))
+        {
+            $LocalPath = $PSScriptRoot | Split-Path | Join-Path -ChildPath .oh-my-posh | Join-Path -ChildPath themes | Join-Path -ChildPath amro-git.omp.json
+            New-Item -ItemType SymbolicLink $AmroGit -Value $LocalPath
+        }
+        Set-PoshPrompt amro-git
+    }
+    else
+    {
+        Set-PoshPrompt pure
+    }
+}
 
 Import-Module posh-git
+
 
 $PSDefaultParameterValues += @{
     'Out-Default:OutVariable' = '+LastOutput'
 }
 
+# dotnet tab-completion
+Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
+    param($commandName, $wordToComplete, $cursorPosition)
+        dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+           [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
+}
 
 $HistoryHandler = {
     <#

@@ -1,3 +1,78 @@
+using namespace System.Collections.Generic
+
+
+function Git-Branch
+{
+    [CmdletBinding(DefaultParameterSetName = 'Track')]
+    param
+    (
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Name,
+
+        [string]$Head = 'HEAD',
+
+        [Parameter(ParameterSetName = 'Track')]
+        [string]$Remote = 'origin',
+
+        [Parameter(ParameterSetName = 'NoTrack')]
+        [switch]$NoTrack,
+
+        [switch]$NoSwitch
+    )
+
+    $Output = git branch $Name $Head *>&1 | Out-String | foreach TrimEnd
+    if ($?) {Write-Host $Output} else {throw $Output}
+
+    if ($PSCmdlet.ParameterSetName -eq 'Track')
+    {
+        $Output = git push $Remote $Name`:$Name *>&1 | Out-String | foreach TrimEnd
+        if ($?) {Write-Host $Output} else {throw $Output}
+
+        $Output = git branch $Name --set-upstream-to $Remote/$Name *>&1 | Out-String | foreach TrimEnd
+        if ($?) {Write-Host $Output} else {throw $Output}
+    }
+
+    if (-not $NoSwitch)
+    {
+        $Output = git switch $Name *>&1 | Out-String | foreach TrimEnd
+        if (-not $?) {throw $Output}
+    }
+}
+Set-Alias b Git-Branch
+
+
+
+function Git-AddRemote
+{
+    param
+    (
+        [string]$Name,
+
+        [Parameter(Mandatory, Position = 1)]
+        [string]$Owner
+    )
+
+    $Owner = $Owner.Trim()
+
+    if (-not $Name) {$Name = $Owner}
+
+    $Origin = git remote -v | sls origin | select -First 1
+    [uri]$OriginUrl = $Origin -replace '^origin\s+' -replace '\s.*'
+    $BaseUrl = $OriginUrl -replace [regex]::Escape($OriginUrl.LocalPath)
+    $NewUrl = $BaseUrl, $Owner, $OriginUrl.Segments[-1] -join '/'
+
+    git remote add $Name $NewUrl
+    git fetch $Name
+}
+
+
+if (ipmo Victor -Global -PassThru -ErrorAction SilentlyContinue)
+{
+    return
+}
+
+
+
 function Git-Add
 {
     [CmdletBinding()]
@@ -72,29 +147,6 @@ Register-ArgumentCompleter -CommandName Git-Fixup -ParameterName Message -Script
 }
 Set-Alias f Git-Fixup
 
-function Git-Branch
-{
-    param
-    (
-        [Parameter(Mandatory, Position=0)]
-        [ValidateNotNullOrEmpty()]
-        [string]$Branch
-    )
-
-    $chbr = git checkout $Branch *>&1
-
-    if ($chbr.ToString() -match 'did not match any file')
-    {
-        Write-Host -ForegroundColor DarkYellow 'Creating new branch...'
-        $newbr = git checkout -b $Branch *>&1
-        $pushbr = git push -u origin $Branch *>&1
-        if (-not ($pushbr | Out-String) -match 'set up to track remote branch')
-        {
-            $pushbr
-        }
-    }
-}
-Set-Alias b Git-Branch
 
 function Git-Checkout
 {
@@ -122,28 +174,6 @@ Register-ArgumentCompleter -CommandName Git-Checkout -ParameterName Branch -Scri
 }
 Set-Alias gco Git-Checkout
 
-function Git-AddRemote
-{
-    param
-    (
-        [string]$Name,
-
-        [Parameter(Mandatory, Position = 1)]
-        [string]$Owner
-    )
-
-    $Owner = $Owner.Trim()
-
-    if (-not $Name) {$Name = $Owner}
-
-    $Origin = git remote -v | sls origin | select -First 1
-    [uri]$OriginUrl = $Origin -replace '^origin\s+' -replace '\s.*'
-    $BaseUrl = $OriginUrl -replace [regex]::Escape($OriginUrl.LocalPath)
-    $NewUrl = $BaseUrl, $Owner, $OriginUrl.Segments[-1] -join '/'
-
-    git remote add $Name $NewUrl
-    git fetch $Name
-}
 
 function Clear-DeletedRemoteBranches
 {
@@ -175,304 +205,109 @@ function Git-Reset
 Set-Alias rst Git-Reset
 
 
-
 function Get-GitLog
 {
-    <#
-        .SYNOPSIS
-        Gets the git log.
-
-        .DESCRIPTION
-        Gets the git log. By default, gets commits since the last merge.
-
-        .PARAMETER SinceLastPRMerge
-        Specifies to fetch commits as far back as the last merged PR or the last commit by
-        'whamapi-cicd-svc'.
-
-        .PARAMETER MergesOnly
-        Specifies to only show merges, not individual commits.
-
-        .PARAMETER Reflog
-        Specifies to retreive the reflog instead of the commit history. The reflog is git plumbing
-        that can help undo operations.
-
-        .PARAMETER Undoable
-        Specifies to retrieve a view of the reflog where atomic operations in an action such as a
-        rebase are combined into a single object, representing an action such as a rebase.
-
-        .PARAMETER Count
-        Specify how many commits to retrieve.
-
-        .PARAMETER FromRef
-        Providing a starting reference (branch, tag or commit).
-
-        .PARAMETER Remote
-        Specify the remote name of the ref from which to fetch commits. Defaults to the local clone.
-
-        .PARAMETER Branch
-        Specify the branch name of the ref from which to fetch commits. Defaults to the current branch.
-
-        .PARAMETER Weeks
-        Specify how many weeks to look back. Defaults to 8.
-
-        .PARAMETER SortDescending
-        Specifies to return commits in chronological order.
-
-        .OUTPUTS
-        [psobject]
-
-        .EXAMPLE
-        ggl
-
-            Count: 5
-
-        Id      Author         UpdatedAt      Summary
-        --      ------         ---------      -------
-        23cdb63 Freddie Sackur 26 seconds ago Version increment 1.2.2.0 =>1.2.3.0
-        efa2bbd Freddie Sackur 2 minutes ago  Colourised Get-GitLog output
-        e9b62ae Freddie Sackur 31 minutes ago Added some usability tweaks to Get-GitLog
-        8b912e7 Freddie Sackur 81 minutes ago New function Get-GitLog
-        34c2df5 Freddie Sackur 82 minutes ago Tidy
-
-        Gets the git log since the last merge.
-    #>
-    [CmdletBinding(DefaultParameterSetName = 'SinceLastPRMerge')]
-    [OutputType([psobject])]
+    [CmdletBinding(DefaultParameterSetName = 'SinceLastMerge')]
     param
     (
-        [Parameter(ParameterSetName = 'SinceLastPRMerge')]
-        [switch]$SinceLastPRMerge,
+        [Parameter(ParameterSetName = 'Path')]
+        [string]$Path,
 
-        [Parameter(ParameterSetName = 'MergesOnly', Mandatory)]
-        [switch]$MergesOnly,
+        [Parameter(ParameterSetName = 'Path')]
+        [switch]$Follow,
 
-        [Parameter(ParameterSetName = 'Reflog', Mandatory)]
-        [switch]$Reflog,
+        [Parameter(ParameterSetName = 'SinceLastMerge')]
+        [switch]$SinceLastMerge,
 
-        [Parameter(ParameterSetName = 'ReflogAction', Mandatory)]
-        [switch]$Undoable,
-
-        [Parameter(ParameterSetName = 'Reflog', Position = 0)]
-        [Parameter(ParameterSetName = 'ReflogAction', Position = 0)]
-        [Parameter(ParameterSetName = 'MergesOnly', Position = 0)]
-        [Parameter(ParameterSetName = 'Default', Position = 0)]
+        [Parameter(ParameterSetName = 'ByCount', Position = 0)]
         [ValidateRange(1, 5000)]
-        [Alias('Commits')]  # Backward-compatibility
-        [int]$Count,
+        [int]$Count = 30,
 
-        [Parameter(ParameterSetName = 'Reflog')]
-        [Parameter(ParameterSetName = 'MergesOnly')]
-        [Parameter(ParameterSetName = 'Default')]
-        [string]$FromRef,
+        [Parameter(ParameterSetName = 'FromRef')]
+        [Parameter(ParameterSetName = 'Path')]
+        [string]$From,
 
         [Parameter()]
-        [string]$Remote,
+        [switch]$SortDescending,
 
         [Parameter()]
-        [string]$Branch,
-
-        [Parameter(ParameterSetName = 'Default')]
-        [Parameter()]
-        [int]$Weeks,
-
-        [Parameter()]
-        [switch]$SortDescending
+        [ValidateSet('Relative', 'DateTime')]
+        [string]$DateFormat = 'Relative'
     )
 
+    $AsDatetime = $DateFormat -eq 'DateTime'
 
-    $SinceLastPRMerge = $PSCmdlet.ParameterSetName -eq 'SinceLastPRMerge'
-
-    if (-not $PSBoundParameters.ContainsKey('InformationAction'))
+    if ($PSCmdlet.ParameterSetName -eq 'SinceLastMerge')
     {
-        # Caller was a function in this module
-        if ((Get-PSCallStack)[1].InvocationInfo.MyCommand.Module -eq $MyInvocation.MyCommand.Module)
+        $From = git log --merges -n 1 --format=%h
+
+        if (-not $From)
         {
-            $InformationPreference = 'SilentlyContinue'
-        }
-        else
-        {
-            $InformationPreference = 'Continue'
+            $From = git rev-list --max-parents=0 HEAD --abbrev-commit | Select-Object -First 1
         }
     }
 
 
-    $ToRef  = "HEAD"
-    $Header = ""
+    $LogArgs = [List[string]]::new()
+    $LogArgs.Add("log")
 
-    # https://git-scm.com/docs/git-log#_pretty_formats
-    $Format = if ($Reflog)
+    if ($From)
     {
-        [ordered]@{
-            ReflogId = '%gd'
-            Action   = '%gs'
-            Id       = '%h'
-            Summary  = '%s'
-        }
-    }
-    elseif ($Undoable)
-    {
-        [ordered]@{
-            ReflogId   = '%gd'
-            Action     = '%gs'
-            PreviousId = ''
-            Id         = '%h'
-            Summary    = '%s'
-        }
+        $LogArgs.Add("$From..HEAD")
     }
     else
     {
-        [ordered]@{
-            Id        = '%h'
-            Author    = '%an'
-            UpdatedAt = '%ar'
-            Summary   = '%s'
-        }
+        $LogArgs.Add("-n $Count")
+    }
+
+    if ($SortDescending)
+    {
+        $LogArgs.Add("--reverse")
+    }
+
+    # https://git-scm.com/docs/git-log#_pretty_formats
+    $Format = [ordered]@{
+        Id         = '%h'
+        Author     = '%an'
+        AuthorDate = if ($AsDatetime) {'%ai'} else {'%ar'}
+        Summary    = '%s'
     }
     $OutputProperties = @($Format.Keys)
 
+    $Delim        = [char]0x2007    # unusual space char that we don't expect to find in git output
+    $FormatString = $Format.Values -join $Delim
+    $LogArgs.Add("--pretty=format:$FormatString")
 
-    [string[]]$LogArgs = if ($Reflog -or $Undoable) {'reflog'} else {'log'}
-
-
-    $OFS          = [char]31    # random non-printing char that we don't expect to find in git output
-    $FormatString = $Format.Values -join $OFS
-    $LogArgs += "--pretty=format:$FormatString"
-
-
-    if (-not $Count -and -not $FromRef)
+    if ($Follow)
     {
-        $Count = switch ($PSCmdlet.ParameterSetName)
-        {
-            'MergesOnly'        {6}
-            'SinceLastPRMerge'  {500}
-            'Reflog'            {60}
-            'ReflogAction'      {500}
-            default             {12}
-        }
+        $LogArgs.Add("--follow")
     }
 
-    if ($Count -and -not $Undoable) {$LogArgs += "-n $Count"}
-
-    if ($MergesOnly) {$LogArgs += "--merges"}
-
-    if ($Weeks) {$LogArgs += "--since=$Weeks.weeks"}
-
-    if ($Remote -or $Branch)
+    if ($Path)
     {
-        if (-not $Branch) {$Branch = git branch --show-current}
-
-        $ToRef = $Remote, $Branch -join '/' -replace '^/'
-        $Header = "Branch: $ToRef"
-    }
-
-    if ($SinceLastPRMerge)
-    {
-        $LastMerge = Get-GitLog -MergesOnly -Count 1
-        $FromRef = $LastMerge.Id
-    }
-
-    if ($FromRef)
-    {
-        $RefRange = "$FromRef..$ToRef"
-        $LogArgs += $RefRange
-
-        if ($PSBoundParameters.ContainsKey('FromRef'))
-        {
-            $Header = "Range: $RefRange"
-        }
-    }
-    else
-    {
-        $LogArgs += $ToRef
+        $LogArgs.Add("--name-only")
+        $LogArgs.Add("-p")
+        $LogArgs.Add($Path)
     }
 
 
     # Do the thing
     $CommitLines = & git $LogArgs
 
+    $Commits = $CommitLines | ConvertFrom-Csv -Delimiter $Delim -Header $OutputProperties
 
-    if ($SinceLastPRMerge)
+    if ($Path)
     {
-        $CommitLines = $CommitLines.Where({$_ -match 'whamapi-cicd-svc|;Merge pull request'}, 'Until')
+        # Hack until I can get rid of diff output entirely
+        $Commits = $Commits | Where-Object -Property Author
     }
 
-
-    $Output = $CommitLines | ConvertFrom-Csv -Delimiter $OFS -Header $OutputProperties
-    $Output | ForEach-Object {$_.PSTypeNames.Insert(0, 'GitCommit')}
-
-
-    if ($Reflog)
+    if ($AsDatetime)
     {
-        $Output | ForEach-Object {
-            $Action = $_.Action
-            $Action = $Action -replace ": $([regex]::Escape($_.Summary))"
-            $Action = $Action -replace ': returning to.*'
-            $Action = $Action -replace ': checkout ', ' -> '
-            $Action = $Action -replace '^checkout: moving from (\S+) to (\S+)$', 'checkout ($1 -> $2)'
-            $_.Action = $Action
-        }
-        $Output | Add-Member -Force ScriptMethod ToString {'{0} {1} {2} {3}' -f $this.PSObject.Properties.Value}
-    }
-    elseif ($Undoable)
-    {
-        $ActionOutput = [Collections.Generic.List[psobject]]::new()
-
-        $Transaction  = $null
-        $Previous     = @{}
-        foreach ($Commit in $Output)
-        {
-            $Action = $Commit.Action
-
-            if ($Transaction)
-            {
-                if ($Action -match '^rebase \(start\)')
-                {
-                    $Transaction = $null
-                    # $Commit is now the commit we moved back to when we did the rebase, so skip this one too
-                }
-                continue
-            }
-
-            if ($Action -match '^rebase .*\(finish\)')
-            {
-                $Transaction = 'rebase'
-            }
-
-
-            $Previous.PreviousId = $Commit.Id
-            # Filter no-op refs (e.g. a reset to the same commit)
-            if ($Previous.Id -eq $Previous.PreviousId)
-            {
-                $ActionOutput.RemoveAt(($ActionOutput.Count -1))
-            }
-
-            $Action = $Action -replace '^commit .*\(amend\).*', 'amend'
-            $Action = $Action -replace '^checkout: moving from .* (\S+)$', 'checkout $1'
-            $Action = $Action -replace ':? .*'
-            $Commit.Action = $Action
-
-            $ActionOutput.Add($Commit)
-            $Previous = $Commit     # Still needs PreviousId
-        }
-
-        $Output = $ActionOutput | Select-Object -First $Count
-        $Output | Add-Member -Force ScriptMethod ToString {'{0} {1} {2}..{3} {4}' -f $this.PSObject.Properties.Value}
-    }
-    else
-    {
-        $Output | Add-Member -Force ScriptMethod ToString {"$($this.Id): $($this.Summary)"}
+        $Commits | ForEach-Object {$_.AuthorDate = [datetime]$_.AuthorDate}
     }
 
-
-    if ($SortDescending)
-    {
-        [array]::Reverse($Output)
-    }
-
-
-    Write-Information "`n    $Header Count: $($Output.Count)`n"
-
-    $Output
+    $Commits
 }
 Set-Alias ggl Get-GitLog
 
@@ -548,98 +383,164 @@ function Show-GithubCode
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             @(git remote) -like "*$wordToComplete*"
         })]
-        [string]$Remote,
+        [string]$Remote = 'origin',
 
         [Parameter()]
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-            @(git branch) -replace '^..' -like "*$wordToComplete*"
+
+            $Branches = Get-GitBranch
+            $Completions = $Branches.Name, $Branches.Tracking | ForEach-Object {$_}
+            $Completions -like "*$wordToComplete*"
         })]
         [string]$Branch,
 
-        [Parameter(Mandatory, Position = 0)]
-        [ArgumentCompleter({
-            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-
-            git rev-parse --git-dir | Resolve-Path | Split-Path | Push-Location
-
-            # We probably don't want to link to docs
-            $Files = Get-ChildItem -Exclude '.git', 'docs' |
-                Get-ChildItem -File -Recurse |
-                Select-Object -ExpandProperty FullName |
-                Sort-Object |
-                Resolve-Path -Relative
-
-            Pop-Location
-
-            $Files -replace '^\.\\' -replace '^\./' -like "*$wordToComplete*"
-        })]
-        [string]$File,
-
         [Parameter(Position = 0)]
-        [ValidateCount(1, 2)]
+        [string]$Path = '.',
+
+        [Parameter(Position = 1)]
         [ValidateRange(1, 65535)]
         [int[]]$Line,
 
         [Parameter()]
-        [switch]$Permalink
+        [switch]$Permalink,
+
+        [switch]$ShowWindow
     )
 
-    $Output = git rev-parse --git-dir 2>&1
-    if (-not $?)
+    $ErrorActionPreference = 'Stop'
+
+
+    $BranchName = $Branch
+    Remove-Variable Branch -ErrorAction SilentlyContinue
+
+    if ($Line)
     {
-        # fatal: not a git repository (or any of the parent directories): .git
-        throw $Output
+        $Line = $Line | Sort-Object -Unique
+        $Line = @($Line)[0,-1] | Sort-Object -Unique
     }
 
-    if ($Branch)
+
+    $RepoRoot = git rev-parse --show-cdup 2>&1  # --git-dir follows symlinks; --show-cdup navs to repo root like, e.g., '../'
+    if (-not $?) {throw $RepoRoot}    # fatal: not a git repository (or any of the parent directories): .git
+    $RepoRoot = if ($RepoRoot) {$RepoRoot | Resolve-Path} else {$PWD}
+    Write-Verbose "Git repo root: '$RepoRoot'"
+
+
+    $Item = Get-Item $Path
+    if ($Item.Count -gt 1)
     {
-        $BranchText = @(git branch -vv) -match "^..$Branch " -replace "^.."
+        throw [ArgumentException]::new("Path '$Path' matched more than one item.", 'Path')
+    }
+    $IsContainer = $Item.PSIsContainer
+    $Path = $Item.FullName
+    Write-Verbose "Item to show: '$Path'"
+
+    if ($Path -eq $RepoRoot)
+    {
+        $Path = ''
     }
     else
     {
-        $BranchText = @(git branch -vv) -match '^\*' -replace '^\* '
-        $Branch     = $BranchText -replace ' .*'
+        Push-Location $RepoRoot
+        try
+        {
+            $Path = Resolve-Path $Path -Relative
+            Write-Verbose "Resolved path in repo: '$Path'"
+        }
+        finally
+        {
+            Pop-Location
+        }
+
+        $Path = $Path -replace '^\.\\' -replace '^\./'
+        if ([System.IO.Path]::DirectorySeparatorChar -eq '\')
+        {
+            $Path = $Path -replace '\\', '/'
+        }
     }
 
-    if ($Remote)
+
+    $Branches = Get-GitBranch
+
+    if ($BranchName -match '/')
     {
-        $TrackingBranch = $Remote, $Branch -join '/'
+        $Branch = $Branches | Where-Object Tracking -eq $BranchName | Select-Object -First 1
+    }
+    elseif ($BranchName)
+    {
+        $Branch = $Branches | Where-Object Name -eq $BranchName | Select-Object -First 1
     }
     else
     {
-        $TrackingBranch = $BranchText -replace '.*?\[' -replace '[:\]].*'
-        $Remote         = $TrackingBranch -replace '/.*'
+        $Branch = $Branches | Where-Object Current -eq $true
+    }
+
+    if (-not $Branch)
+    {
+        throw "No matching branch found."
+    }
+
+
+    if ($PSBoundParameters.ContainsKey('Remote') -or -not $Branch.Tracking)
+    {
+        $Tracking = $Remote, $Branch.Name -join '/'
+    }
+    else
+    {
+        $Tracking = $Branch.Tracking
+        $Remote = $Tracking -replace '/.*'
     }
 
     # Link to exact commit, so won't change if branch is updated
     if ($Permalink)
     {
-        $Ref = (git rev-parse $TrackingBranch).Substring(0, 7)
+        $Ref = (git rev-parse $Tracking).Substring(0, 7)
+        if (-not $?) {throw $Ref}
     }
     else
     {
-        $Ref = $Branch
+        $Ref = $Branch.Name
     }
 
-    # Drop leading dot; convert \ to /
-    if ([System.IO.Path]::DirectorySeparatorChar -eq '\')
-    {
-        $File = $File -replace '^\.\\' -replace '\\', '/'
-    }
-    else
-    {
-        $File = $File -replace '^\./'
-    }
 
-    $RemoteUri = @(git remote -vv) -match "^$Remote" -replace "^\w+\s+" -replace ' .*' | Select-Object -First 1
-    $Uri       = $RemoteUri, "blob", $Ref, $File -join '/'
+    $RemoteUri = @(git remote -vv) -match "^$Remote" -replace "^\w+\s+" -replace ' .*' -replace '\.git$' | Select-Object -First 1
+    if ($RemoteUri -notmatch '^https?://')
+    {
+        throw [NotImplementedException]::new("Only http schemes are supported: $RemoteUri")
+    }
+    $Uri = $RemoteUri, $(if ($IsContainer) {"tree"} else {"blob"}), $Ref, $Path -join '/'
 
     if ($Line)
     {
-        $LineQuery = $Line -replace '^', 'L' -join '-'
-        $Uri       = $Uri, $LineQuery -join '#'
+        $L   = $Line -replace '^', 'L' -join '-'
+        $Uri = $Uri, $L -join '#'
     }
 
-    Start-Process $Uri
+    $Uri
+
+    if ($ShowWindow) {Start-Process $Uri}
+}
+
+function Get-GitBranch
+{
+    $OutputProperties = 'Current', 'Name', 'Tracking', 'Sha'
+
+    $BranchPattern = (
+        '^(?<Current>.)',
+        '(?<Name>\S+)',
+        '(?<Sha>\S+)',
+        '(?:\[(?<Tracking>[^\]]+)\])?'
+    ) -join '\s+'
+
+    $BranchOutput = @(git branch -vv)
+    $BranchOutput | ForEach-Object {
+        if ($_ -match $BranchPattern)
+        {
+            $Matches.Remove(0)
+            $Output = [pscustomobject]$Matches
+            $Output.Current = $Output.Current -eq '*'
+            $Output
+        }
+    } | Select-Object $OutputProperties
 }

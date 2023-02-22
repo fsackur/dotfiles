@@ -1,0 +1,19 @@
+# https://starship.rs/config/
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# $all is shorthand for $username$hostname$localip$shlvl$singularity$kubernetes$directory$vcsh$git_branch$git_commit$git_state$git_metrics$git_status$hg_branch$docker_context$package$bun$c$cmake$cobol$daml$dart$deno$dotnet$elixir$elm$erlang$golang$haskell$helm$java$julia$kotlin$lua$nim$nodejs$ocaml$perl$php$pulumi$purescript$python$raku$rlang$red$ruby$rust$scala$swift$terraform$vlang$vagrant$zig$buf$nix_shell$conda$spack$memory_usage$aws$gcloud$openstack$azure$env_var$crystal$custom$sudo$cmd_duration$line_break$jobs$battery$time$status$container$shell$character
+format = "$all$time$line_break$character"
+add_newline = false
+
+[character]
+# https://starship.rs/config/#character
+# success_symbol = "[>](bold green)"
+# error_symbol = "[>](bold red)"
+
+[directory]
+# https://starship.rs/config/#directory
+
+[time]
+# https://starship.rs/config/#time
+disabled = false
+format = "[$time](bright-black) "
