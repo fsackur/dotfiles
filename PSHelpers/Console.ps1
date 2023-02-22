@@ -96,10 +96,6 @@ elseif (Import-Module -PassThru oh-my-posh -Global -ErrorAction SilentlyContinue
 Import-Module posh-git
 
 
-$PSDefaultParameterValues += @{
-    'Out-Default:OutVariable' = '+LastOutput'
-}
-
 # dotnet tab-completion
 Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
     param($commandName, $wordToComplete, $cursorPosition)
