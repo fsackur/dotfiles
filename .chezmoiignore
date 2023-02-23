@@ -6,6 +6,7 @@ macOS
 PSHelpers
 WindowsTerminal
 init-computer.sh
+init-computer.ps1
 LICENSE
 README.md
 starship.toml
