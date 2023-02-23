@@ -2,7 +2,7 @@
 name = Freddie Sackur
 email = github@dustyfox.uk
 
-[includeif "gitdir:githubdata/"]
+[includeif "hasconfig:remote.*.url:*//github.rackspace.com/**"]
     path = .gitconfig-rackspace
 
 [core]
