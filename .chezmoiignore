@@ -1,7 +1,6 @@
 Code
 Code - Insiders
 ConEmu
-Corp
 macOS
 PSHelpers
 WindowsTerminal
@@ -11,6 +10,7 @@ LICENSE
 README.md
 starship.toml
 Untitled-1.jsonc
+Work
 
 {{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") }}
 Documents
