@@ -13,6 +13,7 @@ whitespace = cr-at-eol
 
 [push]
 default = upstream
+autoSetupRemote = true
 
 [credential]
 helper = wincred
