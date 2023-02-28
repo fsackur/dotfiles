@@ -117,7 +117,9 @@ function Find-GithubLatestReleaseAssetUri
         [string]$Tag = '*',
 
         [SupportsWildcards()]
-        [string[]]$Asset = '*',
+        [string[]]$Filter,
+
+        [switch]$Regex,
 
         [switch]$AllowPrerelease
     )
@@ -132,10 +134,27 @@ function Find-GithubLatestReleaseAssetUri
         Where-Object {$AllowPrerelease -or -not $_.prerelease} |
         Select-Object -First 1
 
+    $AssetFilter = if ($Regex)
+    {
+        {$_ -match $Filter}
+    }
+    elseif ($Filter)
+    {
+        {$_ -like $Filter}
+    }
+    else
+    {
+        {$true}
+    }
+    $Filters = $Filter
+
     $Assets = $Latest.assets |
         Where-Object {
-            $_Asset = $_
-            $Asset | Where-Object {$_Asset.name -like $_}
+            $AssetObject = $_
+            $Filters | ForEach-Object {
+                $Filter = $_
+                $AssetObject | Where-Object $AssetFilter
+            }
         }
 
     $Assets.browser_download_url
