@@ -37,7 +37,8 @@ Set-Alias k kubectl
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
 
 
-[console]::OutputEncoding = [Text.Encoding]::UTF8
+$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
+
 
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadlineKeyHandler -Chord Tab -Function TabCompleteNext
@@ -99,9 +100,18 @@ Import-Module posh-git
 # dotnet tab-completion
 Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
     param($commandName, $wordToComplete, $cursorPosition)
-        dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
-           [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }
+    dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+        [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+    }
+}
+
+Register-ArgumentCompleter -Native -CommandName winget -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+    $word = $wordToComplete.Replace('"', '""')
+    $ast = $commandAst.ToString().Replace('"', '""')
+    winget complete --word=$word --commandline $ast --position $cursorPosition | ForEach-Object {
+        [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+    }
 }
 
 $HistoryHandler = {
