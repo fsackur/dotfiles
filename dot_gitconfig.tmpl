@@ -16,7 +16,11 @@ default = upstream
 autoSetupRemote = true
 
 [credential]
+{{ if eq .chezmoi.os "windows" -}}
 helper = wincred
+{{- else -}}
+helper = store
+{{- end }}
 
 [merge]
 conflictstyle = diff3
