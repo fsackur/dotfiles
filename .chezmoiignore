@@ -13,6 +13,7 @@ Untitled-1.jsonc
 Work
 
 {{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") }}
+AppData
 Documents
 {{ end }}
 {{ if eq .chezmoi.os "windows" }}
