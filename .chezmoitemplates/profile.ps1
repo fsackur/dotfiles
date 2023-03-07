@@ -8,6 +8,8 @@ if (Test-Path "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1")
     . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
     {{ if hasSuffix "dev.wham.rackspace.net" (lower .chezmoi.fqdnHostname)}}. "{{ .chezmoi.sourceDir }}/Work/DevenvEnv.ps1"{{ end }}
 }
+elseif (Test-VSCode)
+{}
 elseif (Test-Path /gitroot)
 {
     Set-Location /gitroot

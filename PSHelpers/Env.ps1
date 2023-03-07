@@ -8,16 +8,6 @@ if (-not $IS_PS_CORE)
 }
 $Global:IS_RASPBERRY_PI = $IsLinux -and (Test-Path /etc/os-release) -and (gc /etc/os-release) -match 'raspbian'
 
-$ParentProcess = if ($IS_PS_CORE)
-{
-    (Get-Process -Id $PId).Parent
-}
-else
-{
-    Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId
-}
-$Global:IS_VSCODE = $ParentProcess.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
-
 if ($Global:IsWindows)
 {
     $Global:XDG_CONFIG_HOME = Split-Path $PSScriptRoot

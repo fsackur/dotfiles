@@ -64,9 +64,24 @@ function Get-PSReadlineHistory
     gc (Get-PSReadLineOption).HistorySavePath
 }
 
-if ($Global:IS_RASPBERRY_PI)   # too slow
-{}
-elseif (Get-Command starship -ErrorAction SilentlyContinue)
+function Test-VSCode
+{
+    if ($null -eq $Global:IsVscode)
+    {
+        $ParentProcess = if ($PSVersionTable.PSVersion.Major -gt 5)
+        {
+            (Get-Process -Id $PID).Parent
+        }
+        else
+        {
+            Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId
+        }
+        $Global:IsVscode = $ParentProcess.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
+    }
+    return $Global:IsVscode
+}
+
+if (Get-Command starship -ErrorAction SilentlyContinue)
 {
     # brew install starship / choco install starship / winget install Starship.Starship
     $env:STARSHIP_CONFIG = $PSScriptRoot | Split-Path | Join-Path -ChildPath starship.toml
