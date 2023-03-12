@@ -159,3 +159,29 @@ function Find-GithubLatestReleaseAssetUri
 
     $Assets.browser_download_url
 }
+
+function Install-WinGet
+{
+    $msStoreDownloadAPIURL = 'https://store.rg-adguard.net/api/GetFiles'
+    $msWinGetStoreURL = 'https://www.microsoft.com/en-us/p/app-installer/9nblggh4nns1'
+    $architecture = 'x64'
+    $appxPackageName = 'Microsoft.DesktopAppInstaller'
+    $msWinGetMSIXBundlePath = ".\$appxPackageName.msixbundle"
+    $msWinGetLicensePath = ".\$appxPackageName.license.xml"
+    $msVCLibPattern = "*Microsoft.VCLibs*UWPDesktop*$architecture*appx*"
+    $msVCLibDownloadPath = '.\Microsoft.VCLibs.UWPDesktop.appx'
+    $msUIXamlPattern = "*Microsoft.UI.Xaml*$architecture*appx*"
+    $msUIXamlDownloadPath = '.\Microsoft.UI.Xaml.appx'
+
+    $MsixUri = Find-GithubLatestReleaseAssetUri microsoft winget-cli -Asset *.msixbundle
+    $LicenseUri = Find-GithubLatestReleaseAssetUri microsoft winget-cli -Asset *License*.xml
+    iwr $MsixUri -OutFile $msWinGetMSIXBundlePath
+    iwr $LicenseUri -OutFile $msWinGetLicensePath
+
+
+    $Response = Invoke-WebRequest -Uri $msStoreDownloadAPIURL -Method Post -Body "type=url&url=$msWinGetStoreURL&ring=Retail&lang=en-US"
+    $Uri = $Response.Links | ? OuterHtml -Like $msVCLibPattern | Select-Object -First 1 -ExpandProperty href
+    iwr $Uri -OutFile $msVCLibDownloadPath
+    $Uri = $Response.Links | ? OuterHtml -Like $msUIXamlPattern | Select-Object -First 1 -ExpandProperty href
+    iwr $Uri -OutFile $msUIXamlDownloadPath
+}
