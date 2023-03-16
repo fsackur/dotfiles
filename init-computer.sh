@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 #
 #   Usage:
-#       bash -c "$(curl -fsSL https://raw.githubusercontent.com/fsackur/dotfiles/dev/init-computer.sh)"
+#       bash -c "$(curl -fsSL https://raw.githubusercontent.com/fsackur/dotfiles/chezmoi/init-computer.sh)"
 #
 
-if [[ -z "$(which brew)" ]]; then
+which brew || \
     sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
     (echo; echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"') >> ~/.profile && \
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-fi
 
-[[ -f "$(which git)" ]] || brew install git
-[[ -f "$(which chezmoi)" ]] || brew install chezmoi
 
-if [[ -z "$(which pwsh)" ]]; then
+which git || brew install git
+which chezmoi || brew install chezmoi
+
+which pwsh || \
     if [[ "$(uname)" == "Darwin" ]]; then
         brew install --cask powershell
     else
@@ -25,12 +25,12 @@ if [[ -z "$(which pwsh)" ]]; then
         sudo apt-get install -y powershell && \
         sudo apt-get clean
     fi
-fi
+
 
 [[ -n "$(cat /etc/shells | grep pwsh)" ]] && chsh -s "$(which pwsh)"
 
-[[ -f "$(which jq)" ]] || brew install jq
-[[ -f "$(which bw)" ]] || brew install bitwarden-cli
+which jq || brew install jq
+which bw || brew install bitwarden-cli
 
 export BW_SESSION=$(bw unlock --raw || bw login --raw)
 
