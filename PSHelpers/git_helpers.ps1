@@ -40,7 +40,60 @@ function Git-Branch
 }
 Set-Alias b Git-Branch
 
+function Git-Clone
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [uri]$Remote,
 
+        [switch]$Ssh,
+
+        [switch]$Https,
+
+        [switch]$Upstream,
+
+        # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
+        [switch]$NoBlob,
+
+        # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
+        [switch]$NoTree
+    )
+
+    if ($Ssh -and $Https)
+    {
+        throw [Management.Automation.ParameterBindingException]::new("Cannot use -Ssh and -Https together.")
+    }
+
+    $Scheme = if ($Ssh) {'ssh'} elseif ($Https) {'https'}
+    if ($Scheme)
+    {
+        $Uri = $Uri -replace '^\w+(?=://)', $Scheme
+    }
+
+    $CloneArgs = @('clone', $Uri)
+
+    if ($Upstream)
+    {
+        $CloneArgs += '--origin', 'upstream'
+    }
+
+    if ($NoBlob)
+    {
+        $CloneArgs += '--filter=blob:none'
+    }
+
+    if ($NoTree)
+    {
+        $CloneArgs += '--filter=tree:0'
+    }
+
+    $CloneArgs | Write-Warning
+
+    git @CloneArgs
+}
+Set-Alias clone Git-Clone
 
 function Git-AddRemote
 {
