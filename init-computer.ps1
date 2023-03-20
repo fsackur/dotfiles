@@ -16,9 +16,18 @@ $ErrorActionPreference = 'Stop'
 
 if (-not (Get-Command winget -ErrorAction Ignore))
 {
-    iwr -UseBasicParsing https://raw.githubusercontent.com/ethanbergstrom/Cobalt/main/Install-WinGet.ps1 | % Content | iex
+    Invoke-RestMethod aka.ms/getwinget -OutFile winget.msixbundle
+    Add-AppxPackage .\winget.msixbundle
 }
-$null = Get-Command winget
+try
+{
+    $null = Get-Command winget -ErrorAction Stop
+}
+catch
+{
+    $_.ErrorDetails = "WinGet not found; you may need to restart your shell: $_"
+    Write-Error -ErrorRecord $_ -ErrorAction Stop
+}
 
 if (-not (
     (Get-Command git -ErrorAction Ignore) -and
