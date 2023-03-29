@@ -195,3 +195,24 @@ $HistoryHandler = {
     }
 }
 Set-PSReadlineOption -AddToHistoryHandler $HistoryHandler
+
+function Get-EnumValues
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateScript({$_.IsEnum})]
+        [type]$Enum
+    )
+
+    process
+    {
+        [Enum]::GetValues($Enum) | ForEach-Object {
+            [pscustomobject]@{
+                Value = $_.value__
+                Name  = [string]$_
+            }
+        }
+    }
+}
