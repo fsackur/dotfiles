@@ -102,66 +102,6 @@ function New-HelpBlock
     }
 }
 
-function Export-TestCoverage
-{
-    <#
-        https://www.donovanbrown.com/post/how-to-generate-a-report-from-pester-5-code-coverage
-
-        # Takes a very long time if you don't specify a version...
-        Install-Package -Source nuget.org -Name ReportGenerator -MinimumVersion 4.8.13
-    #>
-
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
-    param
-    (
-        [string]$CoverageFile = './coverage.xml',
-
-        [string]$Path = '.'
-    )
-
-    $ErrorActionPreference = 'Stop'
-
-    try
-    {
-        $Package = PackageManagement\Get-Package ReportGenerator
-    }
-    catch
-    {
-        if ($_ -match 'No package found' -and $PSCmdlet.ShouldProcess('ReportGenerator nuget package', 'Install'))
-        {
-            $null = Install-Package -Source nuget.org -Name ReportGenerator -Scope CurrentUser -Force
-            $Package = PackageManagement\Get-Package ReportGenerator
-        }
-        else
-        {
-            throw
-        }
-    }
-
-    $Package.Source | Split-Path | Push-Location
-
-    try
-    {
-        sl tools
-
-        switch ($PSVersionTable.PSVersion.Major)
-        {
-            5       {sl net47}
-            7       {sl net5.0}
-            default {throw "PS version not supported"}
-        }
-
-        $ReportGeneratorPath = Get-Item ReportGenerator.exe
-    }
-    finally
-    {
-        Pop-Location
-    }
-
-
-    & $ReportGeneratorPath -Reports:$CoverageFile -TargetDir:$Path -ReportTypes:'html'
-}
-
 function Enable-BreakOnError
 {
     Set-PSBreakpoint -Variable StackTrace -Mode Write
