@@ -1,5 +1,20 @@
 using namespace System.Collections.Generic
 
+function Get-ChangedFile
+{
+    [CmdletBinding()]
+    param
+    (
+        [string]$Base
+    )
+
+    if (-not $Base)
+    {
+        $Base = Get-GitBranch -Default -NameOnly
+    }
+
+    git diff "$Base...HEAD" --name-only | ForEach-Object {Join-Path $PWD $_}
+}
 
 function Git-Branch
 {
@@ -124,8 +139,6 @@ if (ipmo Victor -Global -PassThru -ErrorAction SilentlyContinue)
     return
 }
 
-
-
 function Git-Add
 {
     [CmdletBinding()]
@@ -200,7 +213,6 @@ Register-ArgumentCompleter -CommandName Git-Fixup -ParameterName Message -Script
 }
 Set-Alias f Git-Fixup
 
-
 function Git-Checkout
 {
     param
@@ -226,7 +238,6 @@ Register-ArgumentCompleter -CommandName Git-Checkout -ParameterName Branch -Scri
     @((git branch -a) -match '^  remotes/' -replace '^  remotes/') -like "$wordToComplete*"
 }
 Set-Alias gco Git-Checkout
-
 
 function Clear-DeletedRemoteBranches
 {
@@ -256,7 +267,6 @@ function Git-Reset
     git reset HEAD~$Commits $args
 }
 Set-Alias rst Git-Reset
-
 
 function Get-GitLog
 {
@@ -363,7 +373,6 @@ function Get-GitLog
     $Commits
 }
 Set-Alias ggl Get-GitLog
-
 
 function CherryPick-Interactive
 {
