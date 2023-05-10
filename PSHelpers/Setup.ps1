@@ -116,6 +116,7 @@ function Find-GithubLatestReleaseAssetUri
         [SupportsWildcards()]
         [string]$Tag = '*',
 
+        [Parameter(ValueFromPipeline)]
         [SupportsWildcards()]
         [string[]]$Filter,
 
@@ -124,40 +125,40 @@ function Find-GithubLatestReleaseAssetUri
         [switch]$AllowPrerelease
     )
 
-    # Get all releases and then get the first matching release. Necessary because a project's "latest"
-    # release according to Github might be of a different product or component than the one you're
-    # looking for. Also, Github's 'latest' release doesn't include prereleases.
-    $Releases = Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Org/$Repo/releases"
-
-    $Latest = $Releases |
-        Where-Object {$_.tag_name -like $Tag} |
-        Where-Object {$AllowPrerelease -or -not $_.prerelease} |
-        Select-Object -First 1
-
-    $AssetFilter = if ($Regex)
+    begin
     {
-        {$_ -match $Filter}
-    }
-    elseif ($Filter)
-    {
-        {$_ -like $Filter}
-    }
-    else
-    {
-        {$true}
-    }
-    $Filters = $Filter
+        # Get all releases and then get the first matching release. Necessary because a project's "latest"
+        # release according to Github might be of a different product or component than the one you're
+        # looking for. Also, Github's 'latest' release doesn't include prereleases.
+        $Releases = Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Org/$Repo/releases"
 
-    $Assets = $Latest.assets |
-        Where-Object {
-            $AssetObject = $_
-            $Filters | ForEach-Object {
-                $Filter = $_
-                $AssetObject | Where-Object $AssetFilter
+        $Latest = $Releases |
+            Where-Object {$_.tag_name -like $Tag} |
+            Where-Object {$AllowPrerelease -or -not $_.prerelease} |
+            Select-Object -First 1
+    }
+
+    process
+    {
+        $Assets = if ($Regex)
+        {
+            $Pattern = $Filter -join '|'
+            $Latest.assets | Where-Object {$_.name -match $Pattern}
+        }
+        elseif ($Filter)
+        {
+            foreach ($Filter in $Filter)
+            {
+                $Latest.assets | Where-Object {$_.name -like $Filter}
             }
         }
+        else
+        {
+            $Latest.assets
+        }
 
-    $Assets.browser_download_url
+        $Assets.browser_download_url
+    }
 }
 
 function Install-WinGet
@@ -185,3 +186,60 @@ function Install-WinGet
     $Uri = $Response.Links | ? OuterHtml -Like $msUIXamlPattern | Select-Object -First 1 -ExpandProperty href
     iwr $Uri -OutFile $msUIXamlDownloadPath
 }
+
+function Install-NerdFont
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string[]]$Font
+    )
+
+    end
+    {
+        if ($MyInvocation.ExpectingInput)
+        {
+            $Font = $Input
+        }
+
+        $Font = $Font | Select-Object -Unique | % {"$_.zip"}
+
+        [uri[]]$FontUris = Find-GithubLatestReleaseAssetUri ryanoasis nerd-fonts -Filter $Font
+
+        $Folders = $FontUris | % {
+            $FontName = $_.Segments[-1] -replace '\.zip$'
+            $ZipPath = "$env:TEMP\$FontName.zip"
+            $Folder = "$env:TEMP\$FontName"
+
+            iwr $_ -OutFile $ZipPath
+            Expand-Archive -Path $ZipPath -DestinationPath $Folder -Force
+            Remove-Item $ZipPath -Force
+
+            gci $Folder | ? Extension -notmatch '^\.[ot]tf$' | del
+            $Folder
+        }
+
+        if (-not $Folders)
+        {
+            throw "No fonts found."
+        }
+
+        $Shell = New-Object -ComObject Shell.Application
+        $FontsFolder = $Shell.NameSpace(0x14)
+
+        # https://learn.microsoft.com/en-us/windows/win32/shell/folder-copyhere#parameters
+        $Quiet = 0x14
+        $YesToAll = 0x10
+
+        $Folders | % {
+            $Folder = $Shell.NameSpace($_)
+            $FontsFolder.CopyHere($Folder.Items(), $YesToAll)
+        }
+
+        $Folders | del -Recurse -Force
+    }
+}
+
+$FontNames = 'Meslo', 'Hack', 'FiraCode'
+# $FontNames | Install-NerdFont
