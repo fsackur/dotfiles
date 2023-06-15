@@ -8,6 +8,8 @@ foreach ($Kvp in ([ordered]@{
     $Global:PSDefaultParameterValues[$Kvp.Key] = $Kvp.Value
 }
 
+$Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C:\Windows\System32\drivers\etc\hosts'}
+
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
 [string[]]$CommonParameters = (
     'Verbose',
