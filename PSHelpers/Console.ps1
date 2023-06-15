@@ -34,6 +34,10 @@ Set-Alias os Out-String
 Set-Alias cm chezmoi
 Set-Alias tf terraform
 Set-Alias k kubectl
+Set-Alias p podman
+Set-Alias pc podman-compose
+function pcu {param ($Path='.') Push-Location $Path; try {podman-compose up -d} finally {Pop-Location}}
+function pcd {param ($Path='.') Push-Location $Path; try {podman-compose down} finally {Pop-Location}}
 
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
