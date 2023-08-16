@@ -45,19 +45,39 @@ if [ ! "$(ssh github.com 2>&1 | grep success)" ]; then
     ssh_secrets=$(bw list items --folderid $folder_id)
 
     mkdir -p ~/.ssh
-    echo $ssh_secrets | jq -r '.[] | select(.name=="config").notes' >> ~/.ssh/config
-    echo $ssh_secrets | jq -r '.[] | select(.name=="github_ed25519").login.username' > ~/.ssh/github_ed25519.pub
-    echo $ssh_secrets | jq -r '.[] | select(.name=="github_ed25519").notes' > ~/.ssh/github_ed25519 && chmod 600 ~/.ssh/github_ed25519
+    config=$(echo $ssh_secrets | jq -r '.[] | select(.name=="config").notes')
+    printf "%s\n" "${config[@]}" >> ~/.ssh/config && chmod 600 ~/.ssh/config
+
+    key_names=$(echo $ssh_secrets | jq -r '.[] | select(.name!="config").name')
+    for key_name in $key_names; do
+        key=$(echo $ssh_secrets | jq -r ".[] | select(.name==\"${key_name}\")")
+        pubkey=$(echo $key | jq -r '.login.username')
+        privkey=$(echo $key | jq -r '.notes')
+        printf "%s\n" "${pubkey[@]}" > ~/.ssh/$key_name.pub
+        printf "%s\n" "${privkey[@]}" > ~/.ssh/$key_name && chmod 600 ~/.ssh/$key_name
+    done
 
     [[ -n "$(ssh github.com 2>&1 | grep success)" ]] || (echo "SSH auth to github.com failed" && exit 1)
 fi
 
+read -n 1 -a response -p "Run ansible playbook for $(hostname)? [y/N] "
+echo
+if [ ${response,,} != "y" ]; then
+    exit 0
+fi
+
+folder=~/gitroot
+if [ ! -f "$folder/ansible/run_ansible.sh" ]; then
+    read -a response -p "Root folder to clone ansible playbook repo into? [$folder] "
+    echo
+    if [ $response ]; then folder=$response; fi
+fi
+
 # Clone the ansible playbook repo
-mkdir -p ~/gitroot && pushd ~/gitroot > /dev/null || exit 1
-if [ ! -f ./ansible/run_ansible.sh ]; then
+mkdir -p $folder && pushd $folder > /dev/null || exit 1
+if [ ! -f "$folder/ansible/run_ansible.sh" ]; then
     git clone ssh://github.com/fsackur/ansible || exit 1
 fi
 
 # Apply the ansible playbook locally
-pushd ansible
-./run_ansible.sh
+$folder/ansible/run_ansible.sh
