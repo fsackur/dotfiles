@@ -72,19 +72,17 @@ function Get-PSReadlineHistory
 
 function Test-VSCode
 {
-    if ($null -eq $Global:IsVscode)
+    if ($null -eq $Global:IsVSCode)
     {
-        $ParentProcess = if ($PSVersionTable.PSVersion.Major -gt 5)
+        $Process = Get-Process -Id $PID
+        do
         {
-            (Get-Process -Id $PID).Parent
+            $Global:IsVSCode = $Process.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
+            $Process = $Process.Parent
         }
-        else
-        {
-            Get-Process -Id (Get-CimInstance Win32_Process -Filter "ProcessId = $PID").ParentProcessId
-        }
-        $Global:IsVscode = $ParentProcess.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
+        while ($Process -and -not $Global:IsVSCode)
     }
-    return $Global:IsVscode
+    return $Global:IsVSCode
 }
 
 if (Get-Command starship -ErrorAction SilentlyContinue)
