@@ -11,8 +11,14 @@ case $(uname -v) in
         bitwarden_installer="apt install snapd && snap install bw"
         ansible_installer="apt install ansible";;
     *)
-        echo "Distro not supported."
-        exit 1;;
+        if [ -d /usr/lib/rpm/suse ]; then
+            jq_installer="zypper install jq"
+            bitwarden_installer="zypper install flatpak && flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo && flatpak install com.bitwarden.desktop"
+            ansible_installer="zypper install ansible"
+        else
+            echo "Distro not supported."
+            exit 1
+        fi;;
 esac
 
 if [ ! "$(which jq)" ]; then
