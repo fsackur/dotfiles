@@ -76,7 +76,7 @@ fi
 # Clone the ansible playbook repo
 mkdir -p $folder && pushd $folder > /dev/null || exit 1
 if [ ! -f "$folder/ansible/run_ansible.sh" ]; then
-    git clone ssh://github.com/fsackur/ansible || exit 1
+    git clone ssh://github.com/fsackur/ansible --filter:blob:none || exit 1
 fi
 
 # Apply the ansible playbook locally
