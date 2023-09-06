@@ -44,16 +44,7 @@ if (-not (Get-Command chezmoi -ErrorAction Ignore))
 
 if (-not (Get-Command bw -ErrorAction Ignore))
 {
-    $InstallPath = Join-Path $env:LOCALAPPDATA 'BitWarden CLI'
-    $null = New-Item $InstallPath -ItemType Directory -Force
-    $ZipPath = Join-Path $env:TEMP bitwarden-cli.zip
-    iwr https://vault.bitwarden.com/download/?app=cli&platform=windows -OutFile $ZipPath
-    Expand-Archive $ZipPath -DestinationPath $InstallPath
-    Remove-Item $ZipPath
-    $_Path = [Environment]::GetEnvironmentVariable('Path', 'User')
-    $_Path = $_Path, $InstallPath -join [IO.Path]::PathSeparator
-    [Environment]::SetEnvironmentVariable('Path', $_Path, 'User')
-    $env:Path =  $env:Path, $InstallPath -join [IO.Path]::PathSeparator
+    winget install Bitwarden.cli
 }
 
 $env:BW_SESSION = bw unlock --raw *>&1
@@ -65,15 +56,10 @@ if (-not $?)
 $FolderId = bw list folders --search SSH | ConvertFrom-Json | ? name -eq "SSH" | % id
 $SshSecrets = bw list items --folderid $FolderId | ConvertFrom-Json
 $SshSecrets | ? name -eq "config" | % notes >> ~/.ssh/config
-$SshSecrets | ? name -eq "github_ed25519" | % login | % username >> ~/.ssh/github_ed25519.pub
-$SshSecrets | ? name -eq "github_ed25519" | % login | % password >> ~/.ssh/github_ed25519
+$SshSecrets | ? name -ne "config" | % {
+    $KeyName = $_.name
+    $_.login.username > ~/.ssh/$KeyName.pub
+    $_.notes > ~/.ssh/$KeyName
+}
 
 chezmoi init fsackur/dotfiles --ssh --branch chezmoi --recurse-submodules=false --apply
-
-# if (-not (
-#     (Get-Command pwsh -ErrorAction Ignore) -and
-#     ((pwsh --version) -replace '.* ' -as [version]).Major -ge 7
-# ))
-# {
-#     winget install Microsoft.PowerShell
-# }
