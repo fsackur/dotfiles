@@ -65,6 +65,13 @@ Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 
+function Disable-BracketedPaste
+{
+    # https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
+    printf "\e[?2004l"
+    # reset
+}
+
 function Get-PSReadlineHistory
 {
     gc (Get-PSReadLineOption).HistorySavePath
