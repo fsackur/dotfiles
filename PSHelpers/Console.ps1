@@ -227,3 +227,10 @@ function Get-EnumValues
         }
     }
 }
+
+if ($IsLinux -and -not ($env:SSH_AUTH_SOCK -and $env:SSH_AGENT_PID))
+{
+    [string[]]$Agent = $(ssh-agent) -replace ';.*' | Select-Object -SkipLast 1
+    $env:SSH_AUTH_SOCK = $Agent -match 'SSH_AUTH_SOCK' -replace '.*='
+    $env:SSH_AGENT_PID = $Agent -match 'SSH_AGENT_PID' -replace '.*='
+}
