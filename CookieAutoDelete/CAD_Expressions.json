@@ -1,0 +1,348 @@
+{
+  "default": [
+    {
+      "expression": "*.bitwarden.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "zqacSGkzs"
+    },
+    {
+      "expression": "*.dvlp.casa",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "AhzPkyKTX"
+    },
+    {
+      "expression": "*.ebay.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "RPws5_DR_"
+    },
+    {
+      "expression": "*.etsy.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Pze0aP-Y2"
+    },
+    {
+      "expression": "*.github.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "rcQqgeX6B"
+    },
+    {
+      "expression": "*.kagi.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "2a0gYTlqq"
+    },
+    {
+      "expression": "*.leigh.delamere",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "oCzXkt5lw"
+    },
+    {
+      "expression": "*.microsoft.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "MScArA02r"
+    },
+    {
+      "expression": "*.proxmox.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "d6LtJRQdR"
+    },
+    {
+      "expression": "*.reddit.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "yIBZ671tT"
+    },
+    {
+      "expression": "*.runbox.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "KBazgN7K1"
+    },
+    {
+      "expression": "*.stackoverflow.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "ufGmXH__K"
+    },
+    {
+      "expression": "*.steampowered.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "3hEOwic3V"
+    },
+    {
+      "expression": "backoops",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "0bexXDs4-"
+    },
+    {
+      "expression": "bitwarden.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "5p-DoJFKf"
+    },
+    {
+      "expression": "cellar",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "GRHd9xW6tR"
+    },
+    {
+      "expression": "ebay.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Iu3Ap3eyE"
+    },
+    {
+      "expression": "etsy.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "s5t-tsPJP"
+    },
+    {
+      "expression": "github.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "LgR5S4STS"
+    },
+    {
+      "expression": "jellyfin",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Qp6j_BPy3"
+    },
+    {
+      "expression": "kagi.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "4ItlMfp3E"
+    },
+    {
+      "expression": "microsoft.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "e7HW0VvjF"
+    },
+    {
+      "expression": "neuromancer",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "FH1-layEmh"
+    },
+    {
+      "expression": "opnsense",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "pico2OigY"
+    },
+    {
+      "expression": "p2p",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Rg26sgJrSH"
+    },
+    {
+      "expression": "palazzo",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "n4KTIsLzQu"
+    },
+    {
+      "expression": "pihole",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "hsUIYUvkX1"
+    },
+    {
+      "expression": "proxbox",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "s2rC7qH8js"
+    },
+    {
+      "expression": "proxmox.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "rPAdAR32a"
+    },
+    {
+      "expression": "reddit.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "n9C5Jx1p9"
+    },
+    {
+      "expression": "runbox.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "rD-iWRn4l"
+    },
+    {
+      "expression": "serverfault.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "o_IfpWfLg"
+    },
+    {
+      "expression": "sink",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "nFfjTCmrUf"
+    },
+    {
+      "expression": "splurple",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "By5JOmaJp"
+    },
+    {
+      "expression": "stackoverflow.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "bvNLPje2E"
+    },
+    {
+      "expression": "steampowered.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "l4cK35jT7"
+    },
+    {
+      "expression": "stevedore",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "EhRtOyWCZ2"
+    },
+    {
+      "expression": "superuser.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "CytPsOdw4"
+    },
+    {
+      "expression": "tailscale",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "fb300vbK-V"
+    },
+    {
+      "expression": "tipi",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "FoY18dKkv7"
+    },
+    {
+      "expression": "unifi",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "e3yaeHa_LU"
+    },
+    {
+      "expression": "wifeeye",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Vk0Q33AnsO"
+    },
+    {
+      "expression": "_Default:GREY",
+      "listType": "GREY",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "EtN6pqcbW"
+    }
+  ]
+}
