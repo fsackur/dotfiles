@@ -5,10 +5,19 @@
 #
 
 
-case $(uname -v) in
+case $(cat /etc/lsb-release) in
     *Ubuntu*|*Debian*)
         jq_installer="apt install jq"
-        bitwarden_installer="apt install snapd && snap install bw"
+
+        # works, but fuck snap
+        # bitwarden_installer="apt install snapd && snap install bw"
+
+        tags="$(curl https://api.github.com/repos/bitwarden/clients/git/refs/tags)"
+        tag="$(echo $tags | jq -r '.[] | select(.ref | startswith("refs/tags/cli")) | .ref' | tail -n 1 | sed 's|.*/||')"
+        release=$(curl https://api.github.com/repos/bitwarden/clients/releases/tags/$tag)
+        url="$(echo $release | jq -r '.assets | .[] | select(.name | startswith("bw-linux")) | select(.name | endswith(".zip")) | .browser_download_url')"
+        file="$(echo $url | sed 's|.*/||')"
+        bitwarden_installer="apt install unzip && wget $url && unzip -o $file -d /usr/local/bin/ && chmod +x /usr/local/bin/bw && rm $file"
         ansible_installer="apt install ansible";;
     *)
         if [ -d /usr/lib/rpm/suse ]; then
