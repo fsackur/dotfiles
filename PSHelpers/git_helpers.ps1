@@ -606,3 +606,5 @@ function Get-GitBranch
         }
     } | Select-Object $OutputProperties
 }
+
+Import-Module posh-git

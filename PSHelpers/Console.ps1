@@ -43,9 +43,6 @@ function pcd {param ($Path='.') Push-Location $Path; try {podman-compose down} f
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
 
 
-$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
-
-
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadlineKeyHandler -Chord Tab -Function TabCompleteNext
 Set-PSReadlineKeyHandler -Chord Shift+Tab -Function TabCompletePrevious
@@ -65,63 +62,13 @@ Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 
-function Disable-BracketedPaste
-{
-    # https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
-    printf "\e[?2004l"
-    # reset
-}
+# https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
+if ($IsLinux) {printf "\e[?2004l"}
 
 function Get-PSReadlineHistory
 {
     gc (Get-PSReadLineOption).HistorySavePath
 }
-
-function Test-VSCode
-{
-    if ($null -eq $Global:IsVSCode)
-    {
-        $Process = Get-Process -Id $PID
-        do
-        {
-            $Global:IsVSCode = $Process.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
-            $Process = $Process.Parent
-        }
-        while ($Process -and -not $Global:IsVSCode)
-    }
-    return $Global:IsVSCode
-}
-
-if (Get-Command starship -ErrorAction SilentlyContinue)
-{
-    # brew install starship / choco install starship / winget install Starship.Starship
-    $env:STARSHIP_CONFIG = $PSScriptRoot | Split-Path | Join-Path -ChildPath starship.toml
-    starship init powershell --print-full-init | Out-String | Invoke-Expression
-}
-elseif (Import-Module -PassThru oh-my-posh -Global -ErrorAction SilentlyContinue)
-{
-    if ($PSVersionTable.PSVersion.Major -ge 7)
-    {
-        if ($IsLinux -and -not $env:POSH_THEMES_PATH)
-        {
-            $env:POSH_THEMES_PATH = $env:POSH_THEME | Split-Path
-        }
-        $AmroGit = $env:POSH_THEMES_PATH | Join-Path -ChildPath amro-git.omp.json
-        if (-not (Test-Path $AmroGit))
-        {
-            $LocalPath = $PSScriptRoot | Split-Path | Join-Path -ChildPath .oh-my-posh | Join-Path -ChildPath themes | Join-Path -ChildPath amro-git.omp.json
-            New-Item -ItemType SymbolicLink $AmroGit -Value $LocalPath
-        }
-        Set-PoshPrompt amro-git
-    }
-    else
-    {
-        Set-PoshPrompt pure
-    }
-}
-
-Import-Module posh-git
-
 
 # dotnet tab-completion
 Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
