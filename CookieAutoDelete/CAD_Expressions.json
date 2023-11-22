@@ -1,12 +1,52 @@
 {
   "default": [
     {
+      "expression": "*.aliexpress.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "06rDMFjOW"
+    },
+    {
+      "expression": "*.amazon.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "k8aqMO8-1"
+    },
+    {
+      "expression": "*.askubuntu.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "58TDmZmYA"
+    },
+    {
       "expression": "*.bitwarden.com",
       "listType": "WHITE",
       "storeId": "default",
       "cleanSiteData": [],
       "cookieNames": [],
       "id": "zqacSGkzs"
+    },
+    {
+      "expression": "*.cloudflare.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "hF_Eg2p4d"
+    },
+    {
+      "expression": "*.docker.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Ka_iPpZI4"
     },
     {
       "expression": "*.dvlp.casa",
@@ -41,6 +81,30 @@
       "id": "rcQqgeX6B"
     },
     {
+      "expression": "*.github1s.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Y9DIgTh0-"
+    },
+    {
+      "expression": "*.google.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "6zceLyCIZ"
+    },
+    {
+      "expression": "*.google.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Vg6sl-rP9"
+    },
+    {
       "expression": "*.kagi.com",
       "listType": "WHITE",
       "storeId": "default",
@@ -65,6 +129,30 @@
       "id": "MScArA02r"
     },
     {
+      "expression": "*.microsoftonline.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "nRSBUaZ_B"
+    },
+    {
+      "expression": "*.mozilla.org",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "mn8n6aLff"
+    },
+    {
+      "expression": "*.namecheap.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Mn_HL5va3"
+    },
+    {
       "expression": "*.proxmox.com",
       "listType": "WHITE",
       "storeId": "default",
@@ -81,12 +169,28 @@
       "id": "yIBZ671tT"
     },
     {
+      "expression": "*.rightmove.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Y9nXrMC6r"
+    },
+    {
       "expression": "*.runbox.com",
       "listType": "WHITE",
       "storeId": "default",
       "cleanSiteData": [],
       "cookieNames": [],
       "id": "KBazgN7K1"
+    },
+    {
+      "expression": "*.stackexchange.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "g6rJG95T4B"
     },
     {
       "expression": "*.stackoverflow.com",
@@ -103,6 +207,46 @@
       "cleanSiteData": [],
       "cookieNames": [],
       "id": "3hEOwic3V"
+    },
+    {
+      "expression": "*.youtube.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "HnUJ7LwEMa"
+    },
+    {
+      "expression": "*.zoopla.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "S0KkbwtyE"
+    },
+    {
+      "expression": "/10\\.\\d+\\.\\d+\\.\\d+/",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "qtOFhiRqs"
+    },
+    {
+      "expression": "/192\\.168\\.\\d+\\.\\d+/",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "eICBtiH_G"
+    },
+    {
+      "expression": "10.1.1.2",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "BytvsMwKL"
     },
     {
       "expression": "backoops",
@@ -129,6 +273,14 @@
       "id": "GRHd9xW6tR"
     },
     {
+      "expression": "cloudflare.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "5sbIg91JJ"
+    },
+    {
       "expression": "ebay.co.uk",
       "listType": "WHITE",
       "storeId": "default",
@@ -153,6 +305,14 @@
       "id": "LgR5S4STS"
     },
     {
+      "expression": "github1s.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "1JPutTjAe"
+    },
+    {
       "expression": "jellyfin",
       "listType": "WHITE",
       "storeId": "default",
@@ -175,6 +335,14 @@
       "cleanSiteData": [],
       "cookieNames": [],
       "id": "e7HW0VvjF"
+    },
+    {
+      "expression": "namecheap.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "-_M0R1waz"
     },
     {
       "expression": "neuromancer",
@@ -249,6 +417,14 @@
       "id": "rD-iWRn4l"
     },
     {
+      "expression": "salvation",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "O-AN5zt7t"
+    },
+    {
       "expression": "serverfault.com",
       "listType": "WHITE",
       "storeId": "default",
@@ -271,6 +447,14 @@
       "cleanSiteData": [],
       "cookieNames": [],
       "id": "By5JOmaJp"
+    },
+    {
+      "expression": "stackexchange.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "zSSGLnRQ7"
     },
     {
       "expression": "stackoverflow.com",
@@ -303,6 +487,14 @@
       "cleanSiteData": [],
       "cookieNames": [],
       "id": "CytPsOdw4"
+    },
+    {
+      "expression": "switch-gs108",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "uyZL6UM80"
     },
     {
       "expression": "tailscale",
