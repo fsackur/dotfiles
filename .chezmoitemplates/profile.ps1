@@ -34,30 +34,68 @@ if (Get-Command starship -ErrorAction SilentlyContinue)
     starship init powershell --print-full-init | Out-String | Invoke-Expression
 }
 
+$DebugPreference = 'Continue'
+function Write-DeferredLoadLog
+{
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string]$Message
+    )
+
+    if ($DebugPreference -eq 'Ignore' -or $DebugPreference -eq 'SilentlyContinue')
+    {
+        return
+    }
+    $Now = [datetime]::Now
+    $LogPath = Join-Path $HOME DeferredLoad.log
+    $Timestamp = $Now.ToString('o')
+    "$Timestamp $($Now - $Start) $Message" | Out-File -FilePath $LogPath -Append
+}
+
 
 # https://seeminglyscience.github.io/powershell/2017/09/30/invocation-operators-states-and-scopes
 $GlobalState = [psmoduleinfo]::new($false)
 $GlobalState.SessionState = $ExecutionContext.SessionState
 
-$Job = Start-ThreadJob -Name TestJob -ArgumentList $GlobalState -ScriptBlock {
+$Deferred = {
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/git_helpers.ps1"
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/pipe_operators.ps1"
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/ModuleLoad.ps1"
+
+    if (Test-Path "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1")
+    {
+        . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
+    }
+}
+
+$Start = [datetime]::Now
+"=== Starting deferred load ===" | Write-DeferredLoadLog
+$Job = Start-ThreadJob -Name TestJob -ArgumentList $GlobalState, $Deferred -ScriptBlock {
     $GlobalState = $args[0]
+    $Deferred = $args[1]
     . $GlobalState {
         # We always need to wait so that Get-Command itself is available
         do {Start-Sleep -Milliseconds 200} until (Get-Command Import-Module -ErrorAction Ignore)
 
-        . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
-        . "{{ .chezmoi.sourceDir }}/PSHelpers/git_helpers.ps1"
-        . "{{ .chezmoi.sourceDir }}/PSHelpers/pipe_operators.ps1"
-        . "{{ .chezmoi.sourceDir }}/PSHelpers/ModuleLoad.ps1"
-
-        if (Test-Path "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1")
-        {
-            . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
-        }
+        "dot-sourcing script" | Write-DeferredLoadLog
     }
+    . $GlobalState $Deferred
+
+    $Private = [System.Reflection.BindingFlags]'Instance, NonPublic'
+    $ECProperty = [System.Management.Automation.Runspaces.Runspace].GetProperty('GetExecutionContext', $Private)
+    $RealEC = $ECProperty.GetValue([runspace]::DefaultRunspace)
+
+    $ACProperty = $RealEC.GetType().GetProperty('CustomArgumentCompleters', $Private)
+    $ArgumentCompleters = $ACProperty.GetValue($RealEC)
+    # ...also NativeArgumentCompleters
+
+    . $GlobalState {$Callback = $Deferred}
 }
 
-$null = Register-ObjectEvent -InputObject $Job -EventName StateChanged -MessageData ($globalState, $sb) -SourceIdentifier Job.Monitor -Action {
+# Invoke callback code and clean up
+$null = Register-ObjectEvent -InputObject $Job -EventName StateChanged -SourceIdentifier Job.Monitor -Action {
     # JobState: NotStarted = 0, Running = 1, Completed = 2, etc.
     if ($Event.SourceEventArgs.JobStateInfo.State -ge 2)
     {
@@ -66,6 +104,13 @@ $null = Register-ObjectEvent -InputObject $Job -EventName StateChanged -MessageD
 
         if ($Event.SourceEventArgs.JobStateInfo.State -eq 2)
         {
+            "receiving deferred load job" | Write-DeferredLoadLog
+            if ($Callback -is [scriptblock])
+            {
+                & $Callback
+                "completed deferred callback" | Write-DeferredLoadLog
+            }
+
             $Event.Sender | Remove-Job
             Unregister-Event Job.Monitor
             Get-Job Job.Monitor | Remove-Job
@@ -73,5 +118,6 @@ $null = Register-ObjectEvent -InputObject $Job -EventName StateChanged -MessageD
     }
 }
 
-Remove-Variable GlobalState
-Remove-Variable Job
+# Remove-Variable GlobalState
+# Remove-Variable Job
+"synchronous load complete" | Write-DeferredLoadLog
