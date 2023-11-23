@@ -113,7 +113,7 @@ function Show-CoverageReport
         {
             if ($PSCmdlet.ShouldProcess($PackageName, "Install-Package"))
             {
-                Install-Package @PackageParams -Force -ForceBootstrap
+                Install-Package @PackageParams -Force -ForceBootstrap -Scope CurrentUser
                 $Package = Get-Package @PackageParams
             }
             else

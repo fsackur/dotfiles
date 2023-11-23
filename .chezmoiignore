@@ -1,0 +1,22 @@
+Code
+Code - Insiders
+ConEmu
+CookieAutoDelete
+macOS
+PSHelpers
+**/Microsoft.WindowsTerminal_8wekyb3d8bbwe
+init-computer.sh
+init-computer.ps1
+LICENSE
+README.md
+starship.toml
+Untitled-1.jsonc
+Work
+
+{{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") }}
+AppData
+Documents
+{{ end }}
+{{ if eq .chezmoi.os "windows" }}
+.config
+{{ end }}

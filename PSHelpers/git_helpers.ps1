@@ -1,5 +1,20 @@
 using namespace System.Collections.Generic
 
+function Get-ChangedFile
+{
+    [CmdletBinding()]
+    param
+    (
+        [string]$Base
+    )
+
+    if (-not $Base)
+    {
+        $Base = Get-GitBranch -Default -NameOnly
+    }
+
+    git diff "$Base...HEAD" --name-only | ForEach-Object {Join-Path $PWD $_}
+}
 
 function Git-Branch
 {
@@ -40,7 +55,60 @@ function Git-Branch
 }
 Set-Alias b Git-Branch
 
+function Git-Clone
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [uri]$Remote,
 
+        [switch]$Ssh,
+
+        [switch]$Https,
+
+        [switch]$Upstream,
+
+        # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
+        [switch]$NoBlob,
+
+        # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
+        [switch]$NoTree
+    )
+
+    if ($Ssh -and $Https)
+    {
+        throw [Management.Automation.ParameterBindingException]::new("Cannot use -Ssh and -Https together.")
+    }
+
+    $Scheme = if ($Ssh) {'ssh'} elseif ($Https) {'https'}
+    if ($Scheme)
+    {
+        $Uri = $Uri -replace '^\w+(?=://)', $Scheme
+    }
+
+    $CloneArgs = @('clone', $Uri)
+
+    if ($Upstream)
+    {
+        $CloneArgs += '--origin', 'upstream'
+    }
+
+    if ($NoBlob)
+    {
+        $CloneArgs += '--filter=blob:none'
+    }
+
+    if ($NoTree)
+    {
+        $CloneArgs += '--filter=tree:0'
+    }
+
+    $CloneArgs | Write-Warning
+
+    git @CloneArgs
+}
+Set-Alias clone Git-Clone
 
 function Git-AddRemote
 {
@@ -70,8 +138,6 @@ if (ipmo Victor -Global -PassThru -ErrorAction SilentlyContinue)
 {
     return
 }
-
-
 
 function Git-Add
 {
@@ -147,7 +213,6 @@ Register-ArgumentCompleter -CommandName Git-Fixup -ParameterName Message -Script
 }
 Set-Alias f Git-Fixup
 
-
 function Git-Checkout
 {
     param
@@ -173,7 +238,6 @@ Register-ArgumentCompleter -CommandName Git-Checkout -ParameterName Branch -Scri
     @((git branch -a) -match '^  remotes/' -replace '^  remotes/') -like "$wordToComplete*"
 }
 Set-Alias gco Git-Checkout
-
 
 function Clear-DeletedRemoteBranches
 {
@@ -203,7 +267,6 @@ function Git-Reset
     git reset HEAD~$Commits $args
 }
 Set-Alias rst Git-Reset
-
 
 function Get-GitLog
 {
@@ -310,7 +373,6 @@ function Get-GitLog
     $Commits
 }
 Set-Alias ggl Get-GitLog
-
 
 function CherryPick-Interactive
 {
@@ -544,3 +606,5 @@ function Get-GitBranch
         }
     } | Select-Object $OutputProperties
 }
+
+Import-Module posh-git

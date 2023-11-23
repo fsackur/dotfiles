@@ -1,7 +1,16 @@
 {
+    "$help": "https://aka.ms/terminal-documentation",
     "$schema": "https://aka.ms/terminal-profiles-schema",
     "actions":
     [
+        {
+            "command": "paste",
+            "keys": "ctrl+v"
+        },
+        {
+            "command": "find",
+            "keys": "ctrl+shift+f"
+        },
         {
             "command":
             {
@@ -19,14 +28,6 @@
             "keys": "enter"
         },
         {
-            "command": "find",
-            "keys": "ctrl+shift+f"
-        },
-        {
-            "command": "paste",
-            "keys": "ctrl+v"
-        },
-        {
             "command":
             {
                 "action": "newTab"
@@ -36,15 +37,18 @@
         {
             "command":
             {
+                "action": "closeTab"
+            },
+            "keys": "ctrl+w"
+        },
+        {
+            "command":
+            {
                 "action": "splitPane",
                 "split": "auto",
                 "splitMode": "duplicate"
             },
             "keys": "alt+shift+d"
-        },
-        {
-            "command": "closeTab",
-            "keys": "ctrl+w"
         }
     ],
     "confirmCloseAllTabs": false,
@@ -56,14 +60,17 @@
     {
         "defaults":
         {
-            "fontFace": "FiraCode NF",
-            "fontSize": 11
+            "font":
+            {
+                "face": "FiraCode NF",
+                "size": 11
+            }
         },
         "list":
         [
             {
                 "colorScheme": "ToyChest",
-                "commandline": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+                "commandline": "pwsh.exe",
                 "experimental.retroTerminalEffect": false,
                 "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
                 "hidden": false,
@@ -72,13 +79,11 @@
             },
             {
                 "colorScheme": "Vaughn",
-                "commandline": "powershell.exe",
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "hidden": false,
                 "name": "Windows PowerShell"
             },
             {
-                "commandline": "cmd.exe",
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
                 "hidden": true,
                 "name": "Command Prompt"
@@ -88,19 +93,6 @@
                 "hidden": true,
                 "name": "Azure Cloud Shell",
                 "source": "Windows.Terminal.Azure"
-            },
-            {
-                "guid": "{2c4de342-38b7-51cf-b940-2309a097f518}",
-                "hidden": true,
-                "name": "WSL",
-                "source": "Windows.Terminal.Wsl",
-                "startingDirectory": "~"
-            },
-            {
-                "guid": "{f89198dc-ced5-5169-90bb-79400856b302}",
-                "hidden": false,
-                "name": "stepladder WSL",
-                "source": "Windows.Terminal.Wsl"
             }
         ]
     },

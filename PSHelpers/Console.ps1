@@ -8,6 +8,8 @@ foreach ($Kvp in ([ordered]@{
     $Global:PSDefaultParameterValues[$Kvp.Key] = $Kvp.Value
 }
 
+$Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C:\Windows\System32\drivers\etc\hosts'}
+
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
 [string[]]$CommonParameters = (
     'Verbose',
@@ -29,15 +31,17 @@ foreach ($Kvp in ([ordered]@{
 
 Set-Alias clip Set-Clipboard
 Set-Alias os Out-String
-
+Set-Alias cm chezmoi
 Set-Alias tf terraform
 Set-Alias k kubectl
+Set-Alias p podman
+Set-Alias pc podman-compose
+function pcu {param ($Path='.') Push-Location $Path; try {podman-compose up -d} finally {Pop-Location}}
+function pcd {param ($Path='.') Push-Location $Path; try {podman-compose down} finally {Pop-Location}}
 
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
 
-
-[console]::OutputEncoding = [Text.Encoding]::UTF8
 
 Set-PSReadLineOption -PredictionSource History
 Set-PSReadlineKeyHandler -Chord Tab -Function TabCompleteNext
@@ -58,50 +62,29 @@ Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 
+# https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
+if ($IsLinux) {printf "\e[?2004l"}
+
 function Get-PSReadlineHistory
 {
     gc (Get-PSReadLineOption).HistorySavePath
 }
 
-if ($Global:IS_RASPBERRY_PI)   # too slow
-{}
-elseif (Get-Command starship -ErrorAction SilentlyContinue)
-{
-    # brew install starship / choco install starship / winget install Starship.Starship
-    $env:STARSHIP_CONFIG = $PSScriptRoot | Split-Path | Join-Path -ChildPath starship.toml
-    starship init powershell --print-full-init | Out-String | Invoke-Expression
-}
-elseif (Import-Module -PassThru oh-my-posh -Global -ErrorAction SilentlyContinue)
-{
-    if ($PSVersionTable.PSVersion.Major -ge 7)
-    {
-        if ($IsLinux -and -not $env:POSH_THEMES_PATH)
-        {
-            $env:POSH_THEMES_PATH = $env:POSH_THEME | Split-Path
-        }
-        $AmroGit = $env:POSH_THEMES_PATH | Join-Path -ChildPath amro-git.omp.json
-        if (-not (Test-Path $AmroGit))
-        {
-            $LocalPath = $PSScriptRoot | Split-Path | Join-Path -ChildPath .oh-my-posh | Join-Path -ChildPath themes | Join-Path -ChildPath amro-git.omp.json
-            New-Item -ItemType SymbolicLink $AmroGit -Value $LocalPath
-        }
-        Set-PoshPrompt amro-git
-    }
-    else
-    {
-        Set-PoshPrompt pure
-    }
-}
-
-Import-Module posh-git
-
-
 # dotnet tab-completion
 Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
     param($commandName, $wordToComplete, $cursorPosition)
-        dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
-           [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
-        }
+    dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+        [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+    }
+}
+
+Register-ArgumentCompleter -Native -CommandName winget -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+    $word = $wordToComplete.Replace('"', '""')
+    $ast = $commandAst.ToString().Replace('"', '""')
+    winget complete --word=$word --commandline $ast --position $cursorPosition | ForEach-Object {
+        [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+    }
 }
 
 $HistoryHandler = {
@@ -170,3 +153,31 @@ $HistoryHandler = {
     }
 }
 Set-PSReadlineOption -AddToHistoryHandler $HistoryHandler
+
+function Get-EnumValues
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateScript({$_.IsEnum})]
+        [type]$Enum
+    )
+
+    process
+    {
+        [Enum]::GetValues($Enum) | ForEach-Object {
+            [pscustomobject]@{
+                Value = $_.value__
+                Name  = [string]$_
+            }
+        }
+    }
+}
+
+if ($IsLinux -and -not ($env:SSH_AUTH_SOCK -and $env:SSH_AGENT_PID))
+{
+    [string[]]$Agent = $(ssh-agent) -replace ';.*' | Select-Object -SkipLast 1
+    $env:SSH_AUTH_SOCK = $Agent -match 'SSH_AUTH_SOCK' -replace '.*='
+    $env:SSH_AGENT_PID = $Agent -match 'SSH_AGENT_PID' -replace '.*='
+}

@@ -116,27 +116,130 @@ function Find-GithubLatestReleaseAssetUri
         [SupportsWildcards()]
         [string]$Tag = '*',
 
+        [Parameter(ValueFromPipeline)]
         [SupportsWildcards()]
-        [string[]]$Asset = '*',
+        [string[]]$Filter,
+
+        [switch]$Regex,
 
         [switch]$AllowPrerelease
     )
 
-    # Get all releases and then get the first matching release. Necessary because a project's "latest"
-    # release according to Github might be of a different product or component than the one you're
-    # looking for. Also, Github's 'latest' release doesn't include prereleases.
-    $Releases = Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Org/$Repo/releases"
+    begin
+    {
+        # Get all releases and then get the first matching release. Necessary because a project's "latest"
+        # release according to Github might be of a different product or component than the one you're
+        # looking for. Also, Github's 'latest' release doesn't include prereleases.
+        $Releases = Invoke-RestMethod -Method Get -Uri "https://api.github.com/repos/$Org/$Repo/releases"
 
-    $Latest = $Releases |
-        Where-Object {$_.tag_name -like $Tag} |
-        Where-Object {$AllowPrerelease -or -not $_.prerelease} |
-        Select-Object -First 1
+        $Latest = $Releases |
+            Where-Object {$_.tag_name -like $Tag} |
+            Where-Object {$AllowPrerelease -or -not $_.prerelease} |
+            Select-Object -First 1
+    }
 
-    $Assets = $Latest.assets |
-        Where-Object {
-            $_Asset = $_
-            $Asset | Where-Object {$_Asset.name -like $_}
+    process
+    {
+        $Assets = if ($Regex)
+        {
+            $Pattern = $Filter -join '|'
+            $Latest.assets | Where-Object {$_.name -match $Pattern}
+        }
+        elseif ($Filter)
+        {
+            foreach ($Filter in $Filter)
+            {
+                $Latest.assets | Where-Object {$_.name -like $Filter}
+            }
+        }
+        else
+        {
+            $Latest.assets
         }
 
-    $Assets.browser_download_url
+        $Assets.browser_download_url
+    }
 }
+
+function Install-WinGet
+{
+    $msStoreDownloadAPIURL = 'https://store.rg-adguard.net/api/GetFiles'
+    $msWinGetStoreURL = 'https://www.microsoft.com/en-us/p/app-installer/9nblggh4nns1'
+    $architecture = 'x64'
+    $appxPackageName = 'Microsoft.DesktopAppInstaller'
+    $msWinGetMSIXBundlePath = ".\$appxPackageName.msixbundle"
+    $msWinGetLicensePath = ".\$appxPackageName.license.xml"
+    $msVCLibPattern = "*Microsoft.VCLibs*UWPDesktop*$architecture*appx*"
+    $msVCLibDownloadPath = '.\Microsoft.VCLibs.UWPDesktop.appx'
+    $msUIXamlPattern = "*Microsoft.UI.Xaml*$architecture*appx*"
+    $msUIXamlDownloadPath = '.\Microsoft.UI.Xaml.appx'
+
+    $MsixUri = Find-GithubLatestReleaseAssetUri microsoft winget-cli -Asset *.msixbundle
+    $LicenseUri = Find-GithubLatestReleaseAssetUri microsoft winget-cli -Asset *License*.xml
+    iwr $MsixUri -OutFile $msWinGetMSIXBundlePath
+    iwr $LicenseUri -OutFile $msWinGetLicensePath
+
+
+    $Response = Invoke-WebRequest -Uri $msStoreDownloadAPIURL -Method Post -Body "type=url&url=$msWinGetStoreURL&ring=Retail&lang=en-US"
+    $Uri = $Response.Links | ? OuterHtml -Like $msVCLibPattern | Select-Object -First 1 -ExpandProperty href
+    iwr $Uri -OutFile $msVCLibDownloadPath
+    $Uri = $Response.Links | ? OuterHtml -Like $msUIXamlPattern | Select-Object -First 1 -ExpandProperty href
+    iwr $Uri -OutFile $msUIXamlDownloadPath
+}
+
+function Install-NerdFont
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [string[]]$Font
+    )
+
+    end
+    {
+        if ($MyInvocation.ExpectingInput)
+        {
+            $Font = $Input
+        }
+
+        $Font = $Font | Select-Object -Unique | % {"$_.zip"}
+
+        [uri[]]$FontUris = Find-GithubLatestReleaseAssetUri ryanoasis nerd-fonts -Filter $Font
+
+        $Folders = $FontUris | % {
+            $FontName = $_.Segments[-1] -replace '\.zip$'
+            $ZipPath = "$env:TEMP\$FontName.zip"
+            $Folder = "$env:TEMP\$FontName"
+
+            iwr $_ -OutFile $ZipPath
+            Expand-Archive -Path $ZipPath -DestinationPath $Folder -Force
+            Remove-Item $ZipPath -Force
+
+            gci $Folder | ? Extension -notmatch '^\.[ot]tf$' | del
+            $Folder
+        }
+
+        if (-not $Folders)
+        {
+            throw "No fonts found."
+        }
+
+        $Shell = New-Object -ComObject Shell.Application
+        $FontsFolder = $Shell.NameSpace(0x14)
+
+        # https://learn.microsoft.com/en-us/windows/win32/shell/folder-copyhere#parameters
+        $Quiet = 0x14
+        $YesToAll = 0x10
+
+        $Folders | % {
+            $Folder = $Shell.NameSpace($_)
+            $FontsFolder.CopyHere($Folder.Items(), $YesToAll)
+        }
+
+        $Folders | del -Recurse -Force
+    }
+}
+
+$FontNames = 'Meslo', 'Hack', 'FiraCode'
+# $FontNames | Install-NerdFont

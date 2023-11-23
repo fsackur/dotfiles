@@ -1,0 +1,29 @@
+[user]
+name = Freddie Sackur
+email = github@dustyfox.uk
+
+[includeif "hasconfig:remote.*.url:*//github.rackspace.com/**"]
+    path = .gitconfig-rackspace
+
+[core]
+autocrlf = 0
+editor = code --wait
+whitespace = cr-at-eol
+# ignoreCase = true
+
+[push]
+default = upstream
+autoSetupRemote = true
+
+[credential]
+{{ if eq .chezmoi.os "windows" -}}
+helper = wincred
+{{- else -}}
+helper = store
+{{- end }}
+
+[merge]
+conflictstyle = diff3
+
+[pull]
+rebase = true
