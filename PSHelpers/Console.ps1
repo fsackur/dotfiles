@@ -188,3 +188,40 @@ if ($IsLinux -and -not ($env:SSH_AUTH_SOCK -and $env:SSH_AGENT_PID))
     $env:SSH_AUTH_SOCK = $Agent -match 'SSH_AUTH_SOCK' -replace '.*='
     $env:SSH_AGENT_PID = $Agent -match 'SSH_AGENT_PID' -replace '.*='
 }
+
+function Sync-Chezmoi
+{
+    param
+    (
+        [switch]$Force,
+        [switch]$Stash = $true
+    )
+
+    $CM = chezmoi data | ConvertFrom-Json | % chezmoi
+
+    $Pattern = '^diff (--\w+ )*a/(?<Path>.*) b/'
+    $Lines = (cm diff) -match $Pattern
+    $Paths = $Lines | ForEach-Object {
+        $null = $_ -match $Pattern
+        $Matches.Path
+    }
+
+    $Modified = $null
+    Push-Location $CM.sourceDir
+    try
+    {
+        $Modified = (git status -s) -replace '^...'
+        if ('.chezmoitemplates/profile.ps1' -in $Modified)
+        {
+            git stash push '.chezmoitemplates/profile.ps1' -m "Sync-Chezmoi: stash profile.ps1"
+        }
+    }
+    finally
+    {
+        Pop-Location
+    }
+
+    $Source = $PROFILE.CurrentUserAllHosts
+    $Dest = Join-Path $CM.sourceDir '.chezmoitemplates/profile.ps1'
+    (Get-Content -Raw $Source).Replace($CM.sourceDir, '{{ .chezmoi.sourceDir }}', [System.StringComparison]::OrdinalIgnoreCase) > $Dest
+}
