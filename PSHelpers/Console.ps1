@@ -71,19 +71,26 @@ function Get-PSReadlineHistory
 }
 
 # dotnet tab-completion
-Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
-    param($commandName, $wordToComplete, $cursorPosition)
-    dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
-        [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+if (Get-Command dotnet -ErrorAction Ignore)
+{
+    Register-ArgumentCompleter -Native -CommandName dotnet -ScriptBlock {
+        param($commandName, $wordToComplete, $cursorPosition)
+        dotnet complete --position $cursorPosition "$wordToComplete" | ForEach-Object {
+            [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
     }
 }
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 
-Register-ArgumentCompleter -Native -CommandName winget -ScriptBlock {
-    param($wordToComplete, $commandAst, $cursorPosition)
-    $word = $wordToComplete.Replace('"', '""')
-    $ast = $commandAst.ToString().Replace('"', '""')
-    winget complete --word=$word --commandline $ast --position $cursorPosition | ForEach-Object {
-        [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+if ($IsWindows)
+{
+    Register-ArgumentCompleter -Native -CommandName winget -ScriptBlock {
+        param($wordToComplete, $commandAst, $cursorPosition)
+        $word = $wordToComplete.Replace('"', '""')
+        $ast = $commandAst.ToString().Replace('"', '""')
+        winget complete --word=$word --commandline $ast --position $cursorPosition | ForEach-Object {
+            [Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+        }
     }
 }
 
