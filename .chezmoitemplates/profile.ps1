@@ -1,6 +1,7 @@
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
 
+#region PWD
 function Test-VSCode
 {
     if ($null -eq $Global:IsVSCode)
@@ -26,6 +27,7 @@ elseif (Test-Path ~/gitroot)
 {
     Set-Location ~/gitroot
 }
+#endregion PWD
 
 if (Get-Command starship -ErrorAction SilentlyContinue)
 {
@@ -34,6 +36,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue)
     starship init powershell --print-full-init | Out-String | Invoke-Expression
 }
 
+
 function Write-DeferredLoadLog
 {
     param
@@ -41,12 +44,6 @@ function Write-DeferredLoadLog
         [Parameter(Mandatory, ValueFromPipeline)]
         [string]$Message
     )
-
-    $Now = [datetime]::Now
-    if (-not $Start)
-    {
-        $Global:Start = $Now
-    }
 
     $LogPath = if ($env:XDG_CACHE_HOME)
     {
@@ -57,6 +54,12 @@ function Write-DeferredLoadLog
         Join-Path $HOME .cache/PowerShellDeferredLoad.log
     }
 
+    $Now = [datetime]::Now
+    if (-not $Start)
+    {
+        $Global:Start = $Now
+    }
+
     $Timestamp = $Now.ToString('o')
     (
         $Timestamp,
@@ -65,11 +68,9 @@ function Write-DeferredLoadLog
         $Message
     ) -join '  ' | Out-File -FilePath $LogPath -Append
 }
-"=== Starting deferred load ===" | Write-DeferredLoadLog
 
-# https://seeminglyscience.github.io/powershell/2017/09/30/invocation-operators-states-and-scopes
-$GlobalState = [psmoduleinfo]::new($false)
-$GlobalState.SessionState = $ExecutionContext.SessionState
+
+"=== Starting deferred load ===" | Write-DeferredLoadLog
 
 $Deferred = {
     "dot-sourcing script" | Write-DeferredLoadLog
@@ -87,53 +88,105 @@ $Deferred = {
     "completed dot-sourcing script" | Write-DeferredLoadLog
 }
 
-$Job = Start-ThreadJob -Name TestJob -ArgumentList $GlobalState, $Deferred -ScriptBlock {
-    $GlobalState = $args[0]
-    $Deferred = $args[1]
 
-    . $GlobalState {
-        # We always need to wait so that Get-Command itself is available
-        do {Start-Sleep -Milliseconds 200} until (Get-Command Import-Module -ErrorAction Ignore)
-    }
+# https://seeminglyscience.github.io/powershell/2017/09/30/invocation-operators-states-and-scopes
+$GlobalState = [psmoduleinfo]::new($false)
+$GlobalState.SessionState = $ExecutionContext.SessionState
 
-    . $GlobalState $Deferred
+# A runspace to run our code asynchronously; pass in $Host to support Write-Host
+$Runspace = [runspacefactory]::CreateRunspace($Host)
+$Powershell = [powershell]::Create($Runspace)
+$Runspace.Open()
+$Runspace.SessionStateProxy.PSVariable.Set('GlobalState', $GlobalState)
 
-    # ArgumentCompleters are added to the ExecutionContext object (not $ExecutionContext), not the SessionState object
-    # Since this job has a different context, argument completers don't work
-    # Workaround; re-run the deferred load in the event handler, which uses the correct context
-    # This is still an improvement, because we've warmed up the script cache
-    # However... code will be run twice in the global state, which could be undesirable...
-    . $GlobalState {$Callback = $args[0]} $Deferred
+# ArgumentCompleters are set on the ExecutionContext, not the SessionState
+# Note that $ExecutionContext is not an ExecutionContext, it's an EngineIntrinsics
+$Private = [System.Reflection.BindingFlags]'Instance, NonPublic'
+$ContextField = [System.Management.Automation.EngineIntrinsics].GetField('_context', $Private)
+$GlobalContext = $ContextField.GetValue($ExecutionContext)
+
+# Get the ArgumentCompleters. If null, initialise them.
+$ContextCACProperty = $GlobalContext.GetType().GetProperty('CustomArgumentCompleters', $Private)
+$ContextNACProperty = $GlobalContext.GetType().GetProperty('NativeArgumentCompleters', $Private)
+$CAC = $ContextCACProperty.GetValue($GlobalContext)
+$NAC = $ContextNACProperty.GetValue($GlobalContext)
+if ($null -eq $CAC)
+{
+    $CAC = [System.Collections.Generic.Dictionary[string, scriptblock]]::new()
+    $ContextCACProperty.SetValue($GlobalContext, $CAC)
+}
+if ($null -eq $NAC)
+{
+    $NAC = [System.Collections.Generic.Dictionary[string, scriptblock]]::new()
+    $ContextNACProperty.SetValue($GlobalContext, $NAC)
 }
 
-# Invoke callback code and clean up
-$null = Register-ObjectEvent -InputObject $Job -MessageData $GlobalState -EventName StateChanged -SourceIdentifier Job.Monitor -Action {
-    # JobState: NotStarted = 0, Running = 1, Completed = 2, etc.
-    if ($Event.SourceEventArgs.JobStateInfo.State -ge 2)
+# Get the AutomationEngine and ExecutionContext of the runspace
+$RSEngineField = $Runspace.GetType().GetField('_engine', $Private)
+$RSEngine = $RSEngineField.GetValue($Runspace)
+$EngineContextField = $RSEngine.GetType().GetFields($Private) | Where-Object {$_.FieldType.Name -eq 'ExecutionContext'}
+$RSContext = $EngineContextField.GetValue($RSEngine)
+
+# Set the runspace to use the global ArgumentCompleters
+$ContextCACProperty.SetValue($RSContext, $CAC)
+$ContextNACProperty.SetValue($RSContext, $NAC)
+
+Remove-Variable -ErrorAction Ignore (
+    'Private',
+    'GlobalContext',
+    'ContextField',
+    'ContextCACProperty',
+    'ContextNACProperty',
+    'CAC',
+    'NAC',
+    'RSEngineField',
+    'RSEngine',
+    'EngineContextField',
+    'RSContext',
+    'Runspace'
+)
+
+$Wrapper = {
+    # Without a sleep, you get issues:
+    #   - occasional crashes
+    #   - prompt not rendered
+    #   - no highlighting
+    # Assumption: this is related to PSReadLine.
+    # 20ms seems to be enough on my machine, but let's be generous - this is non-blocking
+    Start-Sleep -Milliseconds 200
+
+    . $GlobalState {. $Deferred; Remove-Variable Deferred}
+}
+
+$AsyncResult = $Powershell.AddScript($Wrapper.ToString()).BeginInvoke()
+
+$null = Register-ObjectEvent -MessageData $AsyncResult -InputObject $Powershell -EventName InvocationStateChanged -SourceIdentifier __DeferredLoaderCleanup -Action {
+    $AsyncResult = $Event.MessageData
+    $Powershell = $Event.Sender
+    if ($Powershell.InvocationStateInfo.State -ge 2)
     {
-        "receiving deferred load job: $($Event.SourceEventArgs.JobStateInfo.State)" | Write-DeferredLoadLog
-
-        # propagate warnings and errors
-        $Event.Sender | Receive-Job
-
-        if ($Event.SourceEventArgs.JobStateInfo.State -eq 2)
+        if ($Powershell.Streams.Error)
         {
-            # if $Callback is defined, run it in the interactive ExecutionContext
-            if ($Callback -is [scriptblock])
-            {
-                "starting deferred callback" | Write-DeferredLoadLog
-                . $Callback
-                "completed deferred callback" | Write-DeferredLoadLog
-            }
-
-            $Event.Sender | Remove-Job
-            Unregister-Event Job.Monitor
-            Get-Job Job.Monitor | Remove-Job
-
-            "cleaned up deferred load job" | Write-DeferredLoadLog
+            $Powershell.Streams.Error | Out-String | Write-Host -ForegroundColor Red
         }
+
+        try
+        {
+            # Profiles swallow output; it would be weird to output anything here
+            $null = $Powershell.EndInvoke($AsyncResult)
+        }
+        catch
+        {
+            $_ | Out-String | Write-Host -ForegroundColor Red
+        }
+
+        $PowerShell.Dispose()
+        $Runspace.Dispose()
+        Unregister-Event __DeferredLoaderCleanup
+        Get-Job __DeferredLoaderCleanup | Remove-Job
     }
 }
 
-Remove-Variable GlobalState, Job, Callback -ErrorAction Ignore
+Remove-Variable Wrapper, Powershell, AsyncResult, GlobalState
+
 "synchronous load complete" | Write-DeferredLoadLog
