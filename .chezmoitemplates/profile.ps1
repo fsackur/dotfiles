@@ -34,7 +34,6 @@ if (Get-Command starship -ErrorAction SilentlyContinue)
     starship init powershell --print-full-init | Out-String | Invoke-Expression
 }
 
-$DebugPreference = 'Continue'
 function Write-DeferredLoadLog
 {
     param
@@ -43,22 +42,38 @@ function Write-DeferredLoadLog
         [string]$Message
     )
 
-    if ($DebugPreference -eq 'Ignore' -or $DebugPreference -eq 'SilentlyContinue')
-    {
-        return
-    }
     $Now = [datetime]::Now
-    $LogPath = Join-Path $HOME DeferredLoad.log
-    $Timestamp = $Now.ToString('o')
-    "$Timestamp $($Now - $Start) $Message" | Out-File -FilePath $LogPath -Append
-}
+    if (-not $Start)
+    {
+        $Global:Start = $Now
+    }
 
+    $LogPath = if ($env:XDG_CACHE_HOME)
+    {
+        Join-Path $env:XDG_CACHE_HOME PowerShellDeferredLoad.log
+    }
+    else
+    {
+        Join-Path $HOME .cache/PowerShellDeferredLoad.log
+    }
+
+    $Timestamp = $Now.ToString('o')
+    (
+        $Timestamp,
+        ($Now - $Start).ToString('ss\.ffffff'),
+        [System.Environment]::CurrentManagedThreadId.ToString().PadLeft(3, ' '),
+        $Message
+    ) -join '  ' | Out-File -FilePath $LogPath -Append
+}
+"=== Starting deferred load ===" | Write-DeferredLoadLog
 
 # https://seeminglyscience.github.io/powershell/2017/09/30/invocation-operators-states-and-scopes
 $GlobalState = [psmoduleinfo]::new($false)
 $GlobalState.SessionState = $ExecutionContext.SessionState
 
 $Deferred = {
+    "dot-sourcing script" | Write-DeferredLoadLog
+
     . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
     . "{{ .chezmoi.sourceDir }}/PSHelpers/git_helpers.ps1"
     . "{{ .chezmoi.sourceDir }}/PSHelpers/pipe_operators.ps1"
@@ -68,56 +83,57 @@ $Deferred = {
     {
         . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
     }
+
+    "completed dot-sourcing script" | Write-DeferredLoadLog
 }
 
-$Start = [datetime]::Now
-"=== Starting deferred load ===" | Write-DeferredLoadLog
 $Job = Start-ThreadJob -Name TestJob -ArgumentList $GlobalState, $Deferred -ScriptBlock {
     $GlobalState = $args[0]
     $Deferred = $args[1]
+
     . $GlobalState {
         # We always need to wait so that Get-Command itself is available
         do {Start-Sleep -Milliseconds 200} until (Get-Command Import-Module -ErrorAction Ignore)
-
-        "dot-sourcing script" | Write-DeferredLoadLog
     }
+
     . $GlobalState $Deferred
 
-    $Private = [System.Reflection.BindingFlags]'Instance, NonPublic'
-    $ECProperty = [System.Management.Automation.Runspaces.Runspace].GetProperty('GetExecutionContext', $Private)
-    $RealEC = $ECProperty.GetValue([runspace]::DefaultRunspace)
-
-    $ACProperty = $RealEC.GetType().GetProperty('CustomArgumentCompleters', $Private)
-    $ArgumentCompleters = $ACProperty.GetValue($RealEC)
-    # ...also NativeArgumentCompleters
-
-    . $GlobalState {$Callback = $Deferred}
+    # ArgumentCompleters are added to the ExecutionContext object (not $ExecutionContext), not the SessionState object
+    # Since this job has a different context, argument completers don't work
+    # Workaround; re-run the deferred load in the event handler, which uses the correct context
+    # This is still an improvement, because we've warmed up the script cache
+    # However... code will be run twice in the global state, which could be undesirable...
+    . $GlobalState {$Callback = $args[0]} $Deferred
 }
 
 # Invoke callback code and clean up
-$null = Register-ObjectEvent -InputObject $Job -EventName StateChanged -SourceIdentifier Job.Monitor -Action {
+$null = Register-ObjectEvent -InputObject $Job -MessageData $GlobalState -EventName StateChanged -SourceIdentifier Job.Monitor -Action {
     # JobState: NotStarted = 0, Running = 1, Completed = 2, etc.
     if ($Event.SourceEventArgs.JobStateInfo.State -ge 2)
     {
+        "receiving deferred load job: $($Event.SourceEventArgs.JobStateInfo.State)" | Write-DeferredLoadLog
+
         # propagate warnings and errors
         $Event.Sender | Receive-Job
 
         if ($Event.SourceEventArgs.JobStateInfo.State -eq 2)
         {
-            "receiving deferred load job" | Write-DeferredLoadLog
+            # if $Callback is defined, run it in the interactive ExecutionContext
             if ($Callback -is [scriptblock])
             {
-                & $Callback
+                "starting deferred callback" | Write-DeferredLoadLog
+                . $Callback
                 "completed deferred callback" | Write-DeferredLoadLog
             }
 
             $Event.Sender | Remove-Job
             Unregister-Event Job.Monitor
             Get-Job Job.Monitor | Remove-Job
+
+            "cleaned up deferred load job" | Write-DeferredLoadLog
         }
     }
 }
 
-# Remove-Variable GlobalState
-# Remove-Variable Job
+Remove-Variable GlobalState, Job, Callback -ErrorAction Ignore
 "synchronous load complete" | Write-DeferredLoadLog
