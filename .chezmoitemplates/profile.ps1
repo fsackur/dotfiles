@@ -1,6 +1,8 @@
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
 
+Set-Alias sort Sort-Object
+
 #region PWD
 function Test-VSCode
 {
@@ -63,7 +65,7 @@ function Write-DeferredLoadLog
     $Timestamp = $Now.ToString('o')
     (
         $Timestamp,
-        ($Now - $Start).ToString('ss\.ffffff'),
+        ($Now - $Start).ToString('ss\.fff'),
         [System.Environment]::CurrentManagedThreadId.ToString().PadLeft(3, ' '),
         $Message
     ) -join '  ' | Out-File -FilePath $LogPath -Append
@@ -178,6 +180,13 @@ $null = Register-ObjectEvent -MessageData $AsyncResult -InputObject $Powershell 
         catch
         {
             $_ | Out-String | Write-Host -ForegroundColor Red
+        }
+
+        $h1 = Get-History -Id 1 -ErrorAction Ignore
+        if ($h1.CommandLine -match '\bcode\b.*shellIntegration\.ps1')
+        {
+            $Msg = 'VS Code Shell Integration is enabled. This may cause issues with deferred load. To disable it, set "terminal.integrated.shellIntegration.enabled" to "false" in your settings.'
+            Write-Host $Msg -ForegroundColor Yellow
         }
 
         $PowerShell.Dispose()
