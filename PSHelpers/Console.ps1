@@ -118,6 +118,38 @@ else
     Remove-Variable CopyCmd, Copy, Cut -Scope Global
 }
 
+# https://gist.github.com/rkeithhill/3103994447fd307b68be
+Set-PSReadlineKeyHandler -Chord '(', '[', '{', "'", '"' -Description "Wrap selection in brackets or quotes" -ScriptBlock {
+    param ($Key, $Arg)
+
+    $L = $Key.KeyChar.ToString()
+    $R = @{
+        '(' = ')'
+        '[' = ']'
+        '{' = '}'
+        "'" = "'"
+        '"' = '"'
+    }[$L]
+
+    $SelStart = $null
+    $SelLength = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetSelectionState([ref]$SelStart, [ref]$SelLength)
+
+    if ($SelStart -eq -1 -and $SelLength -eq -1)
+    {
+        # Nothing selected
+        [Microsoft.PowerShell.PSConsoleReadLine]::Insert($L)
+        return
+    }
+
+    $Buffer = $null
+    $Cursor = $null
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$Buffer, [ref]$Cursor)
+
+    $Replacement = $L + $Buffer.SubString($SelStart, $SelLength) + $R
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace($SelStart, $SelLength, $Replacement)
+}
+
 # https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
 if ($IsLinux) {printf "\e[?2004l"}
 
