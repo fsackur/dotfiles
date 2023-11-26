@@ -1,12 +1,6 @@
 
-if (-not $PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
-foreach ($Kvp in ([ordered]@{
-    'Out-Default:OutVariable' = '+LastOutput'
-    'Get-ChildItem:Force'     = $true
-}).GetEnumerator())
-{
-    $Global:PSDefaultParameterValues[$Kvp.Key] = $Kvp.Value
-}
+$Global:PSDefaultParameterValues['Out-Default:OutVariable'] = '+LastOutput'
+$Global:PSDefaultParameterValues['Get-ChildItem:Force'] = $true
 
 $Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C:\Windows\System32\drivers\etc\hosts'}
 
@@ -29,6 +23,7 @@ $Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C
 [Collections.Generic.HashSet[string]]$CommonParameters = [Collections.Generic.HashSet[string]]::new($CommonParameters)
 
 
+Set-Alias sort Sort-Object
 Set-Alias clip Set-Clipboard
 Set-Alias os Out-String
 Set-Alias cm chezmoi
@@ -36,18 +31,22 @@ Set-Alias tf terraform
 Set-Alias k kubectl
 Set-Alias p podman
 Set-Alias pc podman-compose
-function pcu {param ($Path='.') Push-Location $Path; try {podman-compose up -d} finally {Pop-Location}}
-function pcd {param ($Path='.') Push-Location $Path; try {podman-compose down} finally {Pop-Location}}
 
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
 
 
-Set-PSReadLineOption -PredictionSource History
+# Warns that will only take effect on next start
+Enable-ExperimentalFeature PSCommandNotFoundSuggestion, PSSubsystemPluginModel -WarningAction Ignore
+
+
+# https://devblogs.microsoft.com/powershell/announcing-psreadline-2-1-with-predictive-intellisense/
+Set-PSReadLineOption -EditMode Windows
+Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+Set-PSReadLineOption -PredictionViewStyle InlineView
+
 Set-PSReadlineKeyHandler -Chord Tab -Function TabCompleteNext
 Set-PSReadlineKeyHandler -Chord Shift+Tab -Function TabCompletePrevious
-# Set-PSReadlineKeyHandler -Chord Ctrl+Spacebar -Function MenuComplete      # https://github.com/microsoft/terminal/issues/2865
-Set-PSReadlineKeyHandler -Chord Ctrl+p -Function MenuComplete
 Set-PSReadLineKeyHandler -Chord Escape -Function CancelLine
 Set-PSReadlineKeyHandler -Chord Ctrl+RightArrow -Function ForwardWord
 Set-PSReadlineKeyHandler -Chord Ctrl+LeftArrow -Function BackwardWord
@@ -61,6 +60,16 @@ Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut                      # http
 Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
+
+if ($IsWindows)
+{
+    Set-PSReadlineKeyHandler -Chord Ctrl+Spacebar -Function MenuComplete
+}
+else
+{
+    # Unix shells always intercept Ctrl-space - Fedora seems to map it to Ctrl-@
+    Set-PSReadlineKeyHandler -Chord Ctrl+@ -Function MenuComplete
+}
 
 # https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
 if ($IsLinux) {printf "\e[?2004l"}

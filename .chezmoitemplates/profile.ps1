@@ -1,20 +1,38 @@
 
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
+$Global:PSDefaultParameterValues['*:Encoding'] = $Global:PSDefaultParameterValues['*:InputEncoding'] = $Global:PSDefaultParameterValues['*:OutputEncoding'] = $OutputEncoding
 
-Set-Alias sort Sort-Object
+if ($PSVersionTable.PSEdition -ne 'Core')
+{
+    Set-Variable IsWindows -Value $true -Option Constant -Scope Global
+    Set-Variable IsLinux -Value $false -Option Constant -Scope Global
+    Set-Variable IsMacOS -Value $false -Option Constant -Scope Global
+    Set-Variable IsCoreCLR -Value $false -Option Constant -Scope Global
+}
 
 #region PWD
 function Test-VSCode
 {
     if ($null -eq $Global:IsVSCode)
     {
-        $Process = Get-Process -Id $PID
-        do
+        if ($env:TERM -ne 'xterm-256color')  # May not always be this value in Code, but it's definitely not in kitty
         {
-            $Global:IsVSCode = $Process.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
-            $Process = $Process.Parent
+            $Global:IsVSCode = $false
         }
-        while ($Process -and -not $Global:IsVSCode)
+        elseif ($env:TERM_PROGRAM)
+        {
+            $Global:IsVSCode = $env:TERM_PROGRAM -eq 'vscode'
+        }
+        else
+        {
+            $Process = Get-Process -Id $PID
+            do
+            {
+                $Global:IsVSCode = $Process.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
+                $Process = $Process.Parent
+            }
+            while ($Process -and -not $Global:IsVSCode)
+        }
     }
     return $Global:IsVSCode
 }
@@ -39,6 +57,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue)
 }
 
 
+$LogDeferredLoad = $false
 function Write-DeferredLoadLog
 {
     param
@@ -46,6 +65,8 @@ function Write-DeferredLoadLog
         [Parameter(Mandatory, ValueFromPipeline)]
         [string]$Message
     )
+
+    if (-not $LogDeferredLoad) {return}
 
     $LogPath = if ($env:XDG_CACHE_HOME)
     {
@@ -72,6 +93,7 @@ function Write-DeferredLoadLog
 }
 
 
+$LogDeferredLoad = $false
 "=== Starting deferred load ===" | Write-DeferredLoadLog
 
 $Deferred = {
