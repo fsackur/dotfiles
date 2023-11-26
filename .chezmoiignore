@@ -13,10 +13,19 @@ starship.toml
 Untitled-1.jsonc
 Work
 
-{{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") }}
+{{- if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") }}
 AppData
 Documents
-{{ end }}
-{{ if eq .chezmoi.os "windows" }}
+{{- else }}
 .config
-{{ end }}
+{{- end }}
+
+{{- if not (env "KITTY_PATH") }}
+.config/kitty/*
+{{- end }}
+
+{{- if not (or (env "I3_PATH") (env "SWAY_PATH")) }}
+.config/i3/*
+{{- else if not (env "SWAY_PATH") }}
+.config/sway/*
+{{- end }}
