@@ -55,20 +55,67 @@ Set-PSReadlineKeyHandler -Chord Ctrl+Shift+RightArrow -Function SelectForwardWor
 Set-PSReadlineKeyHandler -Chord Ctrl+Shift+End -Function SelectLine
 Set-PSReadlineKeyHandler -Chord Ctrl+Shift+Home -Function SelectBackwardsLine
 Set-PSReadLineKeyHandler -Chord Ctrl-a -Function SelectAll
-Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine         # https://github.com/PowerShell/PSReadLine/issues/1993
-Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut                      # https://github.com/PowerShell/PSReadLine/issues/1993
-Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 
 if ($IsWindows)
 {
     Set-PSReadlineKeyHandler -Chord Ctrl+Spacebar -Function MenuComplete
+    Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
+    Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
+    Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 }
 else
 {
     # Unix shells always intercept Ctrl-space - Fedora seems to map it to Ctrl-@
     Set-PSReadlineKeyHandler -Chord Ctrl+@ -Function MenuComplete
+
+    # https://github.com/PowerShell/PSReadLine/issues/1993
+    if ($env:XDG_SESSION_TYPE -eq 'wayland')
+    {
+        # NOT TESTED!
+        $CopyCmd = {printf "$input" | wl-copy}
+    }
+    else
+    {
+        # xclip has weird pipe handling and hangs in pwsh
+        $CopyCmd = {printf "$input" | xsel -i --clipboard}
+    }
+
+    # replacement for CopyOrCancelLine and Cut
+    $Copy = {
+        [string]$Buffer = ''
+        [int]$Cursor = 0
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$Buffer, [ref]$Cursor)
+
+        [int]$SelStart = 0
+        [int]$SelLength = 0
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetSelectionState([ref]$SelStart, [ref]$SelLength)
+
+        if ($SelStart -eq -1 -and $SelLength -eq -1)
+        {
+            # Nothing selected; clear the buffer, but add to history in case it was a mistake
+            [Microsoft.PowerShell.PSConsoleReadLine]::Delete(0, $Buffer.Length)
+            [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($Buffer)
+            return
+        }
+
+        $Buffer.SubString($SelStart, $SelLength) | & $CopyCmd
+
+        if ($Cut)
+        {
+            [Microsoft.PowerShell.PSConsoleReadLine]::Delete($SelStart, $SelLength)
+        }
+    }
+
+    $Cut = $false
+    Set-PSReadLineKeyHandler -Chord Ctrl+c -Description "Copy selection, or cancel line" -ScriptBlock $Copy.GetNewClosure()
+    $Cut = $true
+    Set-PSReadLineKeyHandler -Chord Ctrl+x -Description "Cut selection" -ScriptBlock $Copy.GetNewClosure()
+
+    Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
+
+    Remove-Variable CopyCmd, Copy, Cut -Scope Global
 }
 
 # https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
