@@ -153,6 +153,65 @@ Set-PSReadlineKeyHandler -Chord '(', '[', '{', "'", '"' -Description "Wrap selec
 # https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
 if ($IsLinux) {printf "\e[?2004l"}
 
+function Copy-Terminfo
+{
+    <#
+        .DESCRIPTION
+        When using kitty and SSHing to pwsh, the console can be garbled. This is caused by TERM
+        being set to 'xterm-kitty' on the remote host, but kitty not having a terminfo entry. This
+        can be worked around with `$env:TERM = 'xterm-256color'; ssh <host>`, but the actual fix
+        is to copy over the kitty declaration to the remote host.
+    #>
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Hostname,
+
+        [string]$Username,
+
+        [switch]$Force
+    )
+
+    begin
+    {
+        if ($env:TERM -ne 'xterm-kitty' -and -not $Force)
+        {
+            Write-Warning "TERM is not 'xterm-kitty'; use -Force to override"
+            return
+        }
+        $Src = Resolve-Path $HOME/.terminfo
+    }
+
+    process
+    {
+        $Hostname | ForEach-Object {
+            $User = if ($Username)
+            {
+                $Username
+            }
+            else
+            {
+                $UserConfig = ssh -G $Hostname | Select-String '^user (?<User>.*)'
+                if ($UserConfig)
+                {
+                    $UserConfig.Matches.Groups[-1].Value
+                }
+                else
+                {
+                    $env:USER
+                }
+            }
+
+            $UserHome = if ($User -eq 'root') {'/root'} else {"/home/$User"}
+            $Dest = "$User@$_`:$UserHome"
+
+            scp -r $Src $Dest
+        }
+    }
+}
+
 function Get-PSReadlineHistory
 {
     gc (Get-PSReadLineOption).HistorySavePath
