@@ -71,16 +71,32 @@ else
     Set-PSReadlineKeyHandler -Chord Ctrl+@ -Function MenuComplete
 
     # https://github.com/PowerShell/PSReadLine/issues/1993
-    if ($env:XDG_SESSION_TYPE -eq 'wayland')
+    if ($env:XDG_SESSION_TYPE -eq 'wayland' -and (Get-Command wl-copy -ErrorAction Ignore))
     {
-        # NOT TESTED!
-        $CopyCmd = {printf "$input" | wl-copy}
+        $CopyTool = 'wl-copy'
+        $CopyToolArgs = '-n'
     }
     else
     {
-        # xclip has weird pipe handling and hangs in pwsh
-        $CopyCmd = {printf "$input" | xsel -i --clipboard}
+        # xclip has weird pipe handling and hangs in pwsh, so use xsel instead
+        $CopyTool = 'xsel'
+        $CopyToolArgs = '-i --clipboard'
     }
+
+    $CopyCmd = {
+        $StartInfo = [Diagnostics.ProcessStartInfo]::new()
+        $StartInfo.UseShellExecute = $false
+        $StartInfo.RedirectStandardInput = $true
+        $StartInfo.RedirectStandardOutput = $true
+        $StartInfo.RedirectStandardError = $true
+        $StartInfo.FileName = $CopyTool
+        $StartInfo.Arguments = $CopyToolArgs
+        $Process = [Diagnostics.Process]::Start($StartInfo)
+        $Process.StandardInput.Write("$input")
+        $Process.StandardInput.Close()
+        $Process.StandardOutput.ReadToEnd() | Write-Debug
+        $Process.WaitForExit(250)
+    }.GetNewClosure()
 
     # replacement for CopyOrCancelLine and Cut
     $Copy = {
@@ -115,7 +131,7 @@ else
 
     Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 
-    Remove-Variable CopyCmd, Copy, Cut -Scope Global
+    Remove-Variable CopyCmd, CopyTool, CopyToolArgs, Copy, Cut -Scope Global
 }
 
 # https://gist.github.com/rkeithhill/3103994447fd307b68be
