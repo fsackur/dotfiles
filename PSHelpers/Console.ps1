@@ -169,6 +169,53 @@ Set-PSReadlineKeyHandler -Chord '(', '[', '{', "'", '"' -Description "Wrap selec
 # https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
 if ($IsLinux) {printf "\e[?2004l"}
 
+function Copy-SshKey
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [string[]]$Hostname,
+
+        [Parameter(Mandatory)]
+        [ArgumentCompleter({
+            (Get-ChildItem ~/.ssh -File -Filter '*.pub') -replace '\.pub$'
+        })]
+        [string[]]$KeyFile,
+
+        [string]$Username
+    )
+
+    process
+    {
+        $Hostname | ForEach-Object {
+            $User = if ($Username)
+            {
+                $Username
+            }
+            else
+            {
+                $UserConfig = ssh -G $Hostname | Select-String '^user (?<User>.*)'
+                if ($UserConfig)
+                {
+                    $UserConfig.Matches.Groups[-1].Value
+                }
+                else
+                {
+                    $env:USER
+                }
+            }
+
+            $UserHome = if ($User -eq 'root') {'/root'} else {"/home/$User"}
+            $Dest = "$User@$_`:$UserHome/.ssh"
+
+            $KeyFile = $KeyFile | ForEach-Object {$_; "$_.pub"} | Write-Output
+            scp -r $KeyFile $Dest
+        }
+    }
+}
+
 function Copy-Terminfo
 {
     <#
