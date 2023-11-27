@@ -1,0 +1,45 @@
+IdentitiesOnly yes
+AddKeysToAgent yes
+ForwardAgent no
+CanonicalizeHostname yes
+CanonicalDomains dvlp.casa leigh.delamere
+ForwardX11 no
+ForwardX11Trusted no
+
+Host github.com
+    User git
+    IdentityFile ~/.ssh/github_ed25519
+
+Host pony
+    HostName pony.euroburners.net
+    User nowhere
+    IdentityFile ~/.ssh/nowhere_geeks
+
+Host rutx rutx.dvlp.casa 10.1.1.2
+    HostName 10.1.1.2
+    User root
+    IdentityFile ~/.ssh/rutx_ssh_user_id_rsa
+
+Host opal 10.2.2.2
+    HostName 10.2.2.2
+    User root
+    IdentityFile ~/.ssh/opal
+
+# TODO:
+{{- if eq .chezmoi.os "windows" }}
+# Match exec "nslookup %h 2>&1 | findstr '10.1.1.[^5][^3]' > %%TEMP%%/n"
+{{- else }}
+# Match Host * exec "resolvectl query %h 2>&1 | grep 10.1.1."
+{{- end}}
+Host *.dvlp.casa 10.1.1.*
+    User freddie
+    IdentityFile ~/.ssh/freddie_home
+    ForwardAgent yes
+    ForwardX11 yes
+    ForwardX11Trusted yes
+
+Host 10.9.9.* harriet-desktop harriet-laptop proxbox stevedore backoops *.leigh.delamere
+    User freddie
+    IdentityFile ~/.ssh/freddie_leigh_delamere
+    ForwardX11 yes
+    ForwardX11Trusted yes
