@@ -1,4 +1,4 @@
-
+﻿
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
 $Global:PSDefaultParameterValues['*:Encoding'] = $Global:PSDefaultParameterValues['*:InputEncoding'] = $Global:PSDefaultParameterValues['*:OutputEncoding'] = $OutputEncoding
 
@@ -57,7 +57,25 @@ if (Get-Command starship -ErrorAction SilentlyContinue)
 }
 
 
+$env:PWSH_DEFERRED_LOAD = 1
 $LogDeferredLoad = $false
+
+$DeferredLoad = {
+    "dot-sourcing script" | Write-DeferredLoadLog
+
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/git_helpers.ps1"
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/pipe_operators.ps1"
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/ModuleLoad.ps1"
+
+    if (Test-Path "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1")
+    {
+        . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
+    }
+
+    "completed dot-sourcing script" | Write-DeferredLoadLog
+}
+
 function Write-DeferredLoadLog
 {
     param
@@ -93,24 +111,15 @@ function Write-DeferredLoadLog
 }
 
 
+if ($env:PWSH_DEFERRED_LOAD -imatch '^(0|false|no)$')
+{
+    . $DeferredLoad
+    return
+}
+
+
 $LogDeferredLoad = $false
 "=== Starting deferred load ===" | Write-DeferredLoadLog
-
-$Deferred = {
-    "dot-sourcing script" | Write-DeferredLoadLog
-
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/git_helpers.ps1"
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/pipe_operators.ps1"
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/ModuleLoad.ps1"
-
-    if (Test-Path "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1")
-    {
-        . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
-    }
-
-    "completed dot-sourcing script" | Write-DeferredLoadLog
-}
 
 
 # https://seeminglyscience.github.io/powershell/2017/09/30/invocation-operators-states-and-scopes
@@ -179,7 +188,7 @@ $Wrapper = {
     # 20ms seems to be enough on my machine, but let's be generous - this is non-blocking
     Start-Sleep -Milliseconds 200
 
-    . $GlobalState {. $Deferred; Remove-Variable Deferred}
+    . $GlobalState {. $DeferredLoad; Remove-Variable DeferredLoad}
 }
 
 $AsyncResult = $Powershell.AddScript($Wrapper.ToString()).BeginInvoke()
