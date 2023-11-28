@@ -23,14 +23,21 @@ $Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C
 [Collections.Generic.HashSet[string]]$CommonParameters = [Collections.Generic.HashSet[string]]::new($CommonParameters)
 
 
-Set-Alias sort Sort-Object
-Set-Alias clip Set-Clipboard
 Set-Alias os Out-String
 Set-Alias cm chezmoi
 Set-Alias tf terraform
 Set-Alias k kubectl
 Set-Alias p podman
 Set-Alias pc podman-compose
+
+if ($IsWindows)
+{
+    Set-Alias clip Set-Clipboard
+}
+else
+{
+    Set-Alias sort Sort-Object
+}
 
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
