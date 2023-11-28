@@ -37,15 +37,11 @@ function Test-VSCode
     return $Global:IsVSCode
 }
 
-if (Test-VSCode)
-{}
-elseif (Test-Path /gitroot)
+$env:GITROOT = if (Test-Path /gitroot) {"/gitroot"} elseif (Test-Path ~/gitroot) {"~/gitroot"}
+
+if ($env:GITROOT -and -not (Test-VSCode))
 {
-    Set-Location /gitroot
-}
-elseif (Test-Path ~/gitroot)
-{
-    Set-Location ~/gitroot
+    Set-Location $env:GITROOT
 }
 #endregion PWD
 
