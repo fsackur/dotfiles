@@ -311,6 +311,34 @@ if ($IsWindows)
     }
 }
 
+# argc-completions https://github.com/sigoden/argc-completions
+if ($env:GITROOT -and -not $IsWindows)
+{
+    if (-not (Test-Path $env:GITROOT/argc-completions))
+    {
+        Push-Location $env:GITROOT -ErrorAction Stop
+        try
+        {
+            git clone ssh://github.com/sigoden/argc-completions --origin upstream --filter=blob:none
+            . ./argc-completions/scripts/download-tools.sh
+        }
+        finally
+        {
+            Pop-Location
+        }
+    }
+
+    if (Test-Path "$env:GITROOT/argc-completions/bin/argc")
+    {
+        $env:ARGC_COMPLETIONS_ROOT = "$env:GITROOT/argc-completions"
+        $env:ARGC_COMPLETIONS_PATH = $env:ARGC_COMPLETIONS_ROOT + '/completions'
+        $env:PATH = $env:ARGC_COMPLETIONS_ROOT + '/bin' + [IO.Path]::PathSeparator + $env:PATH
+        # To add a subset of completions only, change next line e.g. $argc_scripts = @("cargo", "git")
+        $argc_scripts = ((Get-ChildItem -File ($env:ARGC_COMPLETIONS_ROOT + '/completions')) | ForEach-Object { $_.Name -replace '\.sh$' })
+        argc --argc-completions powershell $argc_scripts | Out-String | Invoke-Expression
+    }
+}
+
 $HistoryHandler = {
     <#
         USE WITH CAUTION
