@@ -15,7 +15,7 @@ function Test-VSCode
 {
     if ($null -eq $Global:IsVSCode)
     {
-        if ($env:TERM -ne 'xterm-256color')  # May not always be this value in Code, but it's definitely not in kitty
+        if ((-not $IsWindows) -and ($env:TERM -ne 'xterm-256color'))  # May not always be this value in Code, but it's definitely not in kitty
         {
             $Global:IsVSCode = $false
         }
