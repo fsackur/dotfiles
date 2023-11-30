@@ -312,7 +312,7 @@ if ($IsWindows)
 }
 
 # argc-completions https://github.com/sigoden/argc-completions
-if ($env:GITROOT -and -not $IsWindows)
+if ($false -and $env:GITROOT -and -not $IsWindows)
 {
     if (-not (Test-Path $env:GITROOT/argc-completions))
     {
