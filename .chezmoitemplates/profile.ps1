@@ -10,6 +10,17 @@ if ($PSVersionTable.PSEdition -ne 'Core')
     Set-Variable IsCoreCLR -Value $false -Option Constant -Scope Global
 }
 
+if ($IsLinux -or $IsMacOS)
+{
+    $NixProfiles = '/etc/profile', '~/.profile'
+    $NixPathLines = Get-Content $NixProfiles -ErrorAction Ignore | Select-String -Pattern '^\s*export\s+PATH\s*='
+    $Expressions = @($NixPathLines) -replace '^\s*export\s+PATH\s*=\s*' -replace ':', '`:'
+    $PATH = $env:PATH
+    $Expressions | ForEach-Object {$PATH = $ExecutionContext.InvokeCommand.ExpandString($_)}
+    $env:PATH = $PATH
+    Remove-Variable PATH, NixProfiles, NixPathLines, Expressions
+}
+
 #region PWD
 function Test-VSCode
 {
