@@ -2,8 +2,14 @@
 name = Freddie Sackur
 email = github@dustyfox.uk
 
-[includeif "hasconfig:remote.*.url:*//github.rackspace.com/**"]
-    path = .gitconfig-rackspace
+[includeif "hasconfig:remote.*.url:*//work.git.server/**"]
+path = .gitconfig-work
+
+[url "ssh://github.com/"]
+insteadOf = "https://github.com/"
+
+[clone]
+defaultRemoteName = upstream
 
 [core]
 autocrlf = 0
