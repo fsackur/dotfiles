@@ -531,3 +531,35 @@ if ((-not $IsWindows) -and (Get-Command ip -CommandType Application -ErrorAction
     }
     Set-Alias gnip Get-NetIpAddress
 }
+
+function Start-Emacs
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [string]$File,
+
+        [Parameter(ValueFromRemainingArguments)]
+        [string[]]$ArgumentList = '--create-frame'
+    )
+
+    begin
+    {
+        if (-not (Get-Process emacs -ErrorAction Ignore | where CommandLine -match --daemon))
+        {
+            setsid -fw emacs --daemon
+        }
+    }
+
+    process
+    {
+        if ($File)
+        {
+            $File = $File -replace '^~', $env:HOME
+            $ArgumentList = [System.IO.Path]::GetFullPath($File), $ArgumentList | Write-Output
+        }
+        setsid -f emacsclient $ArgumentList
+    }
+}
+Set-Alias emacs Start-Emacs
