@@ -563,3 +563,8 @@ function Start-Emacs
     }
 }
 Set-Alias emacs Start-Emacs
+
+if ($IsLinux -and (Get-Command dnf5 -CommandType Application -ErrorAction Ignore))
+{
+    Set-Alias dnf dnf5
+}
