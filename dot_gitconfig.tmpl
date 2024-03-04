@@ -1,35 +1,50 @@
 [user]
-name = Freddie Sackur
-email = github@dustyfox.uk
+    name = "Freddie Sackur"
+    email = "github@dustyfox.uk"
+    signingKey = "~/.ssh/github_ed25519"
+
+[gpg]
+    format = ssh
+
+[gpg "ssh"]
+    allowedSignersFile = "~/.ssh/allowed_signers"
+
 
 [includeif "hasconfig:remote.*.url:*//work.git.server/**"]
-path = .gitconfig-work
+    path = .gitconfig-work
 
 [url "ssh://github.com/"]
-insteadOf = "https://github.com/"
+    insteadOf = "https://github.com/"
 
 [clone]
-defaultRemoteName = upstream
+    defaultRemoteName = upstream
+    # no option for --filter=blob:none
 
 [core]
-autocrlf = 0
-editor = code --wait
-whitespace = cr-at-eol
-# ignoreCase = true
+    autocrlf = 0
+    editor = code --wait
+    whitespace = cr-at-eol
+    # ignoreCase = true
 
 [push]
-default = upstream
-autoSetupRemote = true
+    default = upstream
+    autoSetupRemote = true
 
 [credential]
 {{ if eq .chezmoi.os "windows" -}}
-helper = wincred
+    helper = wincred
 {{- else -}}
-helper = store
+    helper = store
 {{- end }}
 
 [merge]
-conflictstyle = diff3
+    conflictstyle = diff3
 
 [pull]
-rebase = true
+    rebase = true
+
+[commit]
+    gpgsign = true
+
+[tag]
+    gpgsign = true
