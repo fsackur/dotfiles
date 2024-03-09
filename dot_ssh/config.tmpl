@@ -1,16 +1,20 @@
 IdentitiesOnly yes
 AddKeysToAgent yes
-ForwardAgent no
+# ForwardAgent no
+# ForwardX11 no
+# ForwardX11Trusted no
 CanonicalizeHostname yes
 CanonicalizeMaxDots 0
 CanonicalDomains dvlp.casa leigh.delamere euroburners.net
 CanonicalizeFallbackLocal yes
-ForwardX11 no
-ForwardX11Trusted no
 
 Host github.com
     User git
     IdentityFile ~/.ssh/github_ed25519
+
+Host sparkle sparkle.euroburners.net
+    User freddie
+    IdentityFile ~/.ssh/freddie_nowhere
 
 Host *.euroburners.net
     User nowhere
