@@ -427,11 +427,18 @@ function Get-EnumValues
     }
 }
 
-if ($IsLinux -and -not ($env:SSH_AUTH_SOCK -and $env:SSH_AGENT_PID))
+if (-not $env:SSH_AUTH_SOCK)
 {
-    [string[]]$Agent = $(ssh-agent) -replace ';.*' | Select-Object -SkipLast 1
-    $env:SSH_AUTH_SOCK = $Agent -match 'SSH_AUTH_SOCK' -replace '.*='
-    $env:SSH_AGENT_PID = $Agent -match 'SSH_AGENT_PID' -replace '.*='
+    [string[]]$SshAgentOutput = @()
+    if ($IsLinux -and (Get-Command gnome-keyring-daemon -ErrorAction Ignore))
+    {
+        $SshAgentOutput = gnome-keyring-daemon --start
+    }
+    else
+    {
+        $SshAgentOutput = $(ssh-agent) -replace ';.*' | Select-Object -SkipLast 1
+    }
+    $env:SSH_AUTH_SOCK = $SshAgentOutput -match 'SSH_AUTH_SOCK' -replace '.*='
 }
 
 function Sync-Chezmoi
