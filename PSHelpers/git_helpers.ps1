@@ -295,7 +295,11 @@ function Get-GitLog
 
         [Parameter()]
         [ValidateSet('Relative', 'DateTime')]
-        [string]$DateFormat = 'Relative'
+        [string]$DateFormat = 'Relative',
+
+        [Parameter()]
+        [ValidateSet('ParentId', 'AuthorEmail', 'Committer', 'CommitterEmail', 'CommitterDate', 'Message', 'RefName')]
+        [string[]]$Property
     )
 
     $AsDatetime = $DateFormat -eq 'DateTime'
@@ -335,6 +339,16 @@ function Get-GitLog
         AuthorDate = if ($AsDatetime) {'%ai'} else {'%ar'}
         Summary    = '%s'
     }
+    $ExtraFormats = @{
+        ParentId       = '%p'
+        AuthorEmail    = '%ae'
+        Committer      = '%cn'
+        CommitterEmail = '%ce'
+        CommitterDate  = if ($AsDatetime) {'%ci'} else {'%cr'}
+        Message        = '%b'
+        RefName        = '%D'
+    }
+    $Property | Where-Object Length | ForEach-Object {$Format[$_] = $ExtraFormats[$_]}
     $OutputProperties = @($Format.Keys)
 
     $Delim        = [char]0x2007    # unusual space char that we don't expect to find in git output
@@ -368,6 +382,10 @@ function Get-GitLog
     if ($AsDatetime)
     {
         $Commits | ForEach-Object {$_.AuthorDate = [datetime]$_.AuthorDate}
+        if ('CommitterDate' -in $Property)
+        {
+            $Commits | ForEach-Object {$_.CommitterDate = [datetime]$_.CommitterDate}
+        }
     }
 
     $Commits
