@@ -20,6 +20,9 @@
     defaultRemoteName = upstream
     # no option for --filter=blob:none
 
+[init]
+    defaultBranch = main
+
 [core]
     autocrlf = 0
     editor = code --wait
@@ -48,3 +51,9 @@
 
 [tag]
     gpgsign = true
+
+[advice]
+    addIgnoredFile = false
+
+[rerere]
+    enabled = true
