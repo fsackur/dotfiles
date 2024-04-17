@@ -20,13 +20,26 @@ input * {
 set $mod Mod4
 
 include ../i3/conf.d/bindings.conf
+
+# overrides from i3
+unbindsym $mod+Shift+e
+bindsym $mod+Shift+e exec "swaynag -t warning -m 'Exit sway?' -B 'swaymsg exit' 'swaymsg exit' -Z 'cat /dev/null' 'cat /dev/null'"
+
+
 include theme.conf
 
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
 set $menu dmenu_path | dmenu | xargs swaymsg exec --
+bindsym $mod+Shift+d exec $menu
 
+unbindsym $mod+Ctrl+Shift+Left
+unbindsym $mod+Ctrl+Shift+Right
+bindsym $mod+Ctrl+Shift+Left move container to workspace prev
+bindsym $mod+Ctrl+Shift+Right move container to workspace next
+bindsym $mod+Ctrl+Alt+Left move container to workspace prev; workspace prev
+bindsym $mod+Ctrl+Alt+Right move container to workspace next; workspace next
 ### Idle configuration
 #
 # Example configuration:
