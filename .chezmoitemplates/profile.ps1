@@ -1,4 +1,6 @@
 ﻿
+if (-not $Global:PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
+
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
 $Global:PSDefaultParameterValues['*:Encoding'] = $Global:PSDefaultParameterValues['*:InputEncoding'] = $Global:PSDefaultParameterValues['*:OutputEncoding'] = $OutputEncoding
 

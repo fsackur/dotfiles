@@ -146,7 +146,7 @@ function Git-Add
     (
         [Parameter(Position = 0)]
         [ValidateNotNullOrEmpty()]
-        [string[]]$File = '*',
+        [string[]]$File = '.',
 
         [switch]$Patch
     )
@@ -270,7 +270,7 @@ Set-Alias rst Git-Reset
 
 function Get-GitLog
 {
-    [CmdletBinding(DefaultParameterSetName = 'SinceLastMerge')]
+    [CmdletBinding(DefaultParameterSetName = 'ByCount')]
     param
     (
         [Parameter(ParameterSetName = 'Path')]
@@ -284,7 +284,7 @@ function Get-GitLog
 
         [Parameter(ParameterSetName = 'ByCount', Position = 0)]
         [ValidateRange(1, 5000)]
-        [int]$Count = 30,
+        [int]$Count = 6,
 
         [Parameter(ParameterSetName = 'FromRef')]
         [Parameter(ParameterSetName = 'Path')]

@@ -1,7 +1,4 @@
 
-if (-not $Global:PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
-$Global:PSDefaultParameterValues['Get-GitLog:Commits'] = 6
-
 function Clear-VSCodeMonitorProcess
 {
     $MonitorProcesses = Get-WmiObject Win32_Process -Filter "Caption LIKE '%Code%' AND CommandLine LIKE '%shutdownMonitorProcess%'"
