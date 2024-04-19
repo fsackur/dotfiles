@@ -1,6 +1,10 @@
 
+#requires -modules @{ModuleName = 'PSReadLine'; ModuleVersion = '2.4'}
+# Install-Module PSReadLine -AllowPrerelease -Scope CurrentUser -Force
+
 $Global:PSDefaultParameterValues['Out-Default:OutVariable'] = '+LastOutput'
 $Global:PSDefaultParameterValues['Get-ChildItem:Force'] = $true
+$Global:PSDefaultParameterValues['del:Force'] = $true
 
 $Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C:\Windows\System32\drivers\etc\hosts'}
 
@@ -29,15 +33,9 @@ Set-Alias tf terraform
 Set-Alias k kubectl
 Set-Alias p podman
 Set-Alias pc podman-compose
+Set-Alias clip Set-Clipboard
+Set-Alias sort Sort-Object
 
-if ($IsWindows)
-{
-    Set-Alias clip Set-Clipboard
-}
-else
-{
-    Set-Alias sort Sort-Object
-}
 
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
@@ -61,112 +59,22 @@ Set-PSReadlineKeyHandler -Chord Ctrl+Shift+LeftArrow -Function SelectBackwardWor
 Set-PSReadlineKeyHandler -Chord Ctrl+Shift+RightArrow -Function SelectForwardWord
 Set-PSReadlineKeyHandler -Chord Ctrl+Shift+End -Function SelectLine
 Set-PSReadlineKeyHandler -Chord Ctrl+Shift+Home -Function SelectBackwardsLine
-Set-PSReadLineKeyHandler -Chord Ctrl-a -Function SelectAll
+Set-PSReadLineKeyHandler -Chord Ctrl+a -Function SelectAll
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
+Set-PSReadlineKeyHandler -Chord Shift+Enter -Function InsertLineBelow
+Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
+Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
+Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 
 if ($IsWindows)
 {
     Set-PSReadlineKeyHandler -Chord Ctrl+Spacebar -Function MenuComplete
-    Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
-    Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
-    Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 }
 else
 {
     # Unix shells always intercept Ctrl-space - Fedora seems to map it to Ctrl-@
     Set-PSReadlineKeyHandler -Chord Ctrl+@ -Function MenuComplete
-
-    # if (Get-Command copyq -ErrorAction Ignore)
-    # {
-    #     # $CopyTool = 'copyq'
-    #     # $CopyToolArgs = 'add'
-    #     $CopyCmd = {copyq add $input}
-    #     $PasteArgs = @{ScriptBlock = {[Microsoft.PowerShell.PSConsoleReadLine]::Insert((copyq read 0))}}
-    # }
-
-    $CopyTool = $null
-    # https://github.com/PowerShell/PSReadLine/issues/1993
-    if (Get-Command wl-copy -ErrorAction Ignore)
-    {
-        $CopyTool = 'wl-copy'
-        $CopyToolArgs = '-n'
-        $PasteTool = 'wl-paste'
-        $PasteToolArgs = '-n'
-    }
-    elseif (Get-Command xsel -ErrorAction Ignore)
-    {
-        # xclip has weird pipe handling and hangs in pwsh, so use xsel instead
-        $CopyTool = 'xsel'
-        $CopyToolArgs = '-i --clipboard'
-        $PasteTool = 'xsel'
-        $PasteToolArgs = '-o'
-    }
-
-    if ($CopyTool)
-    {
-        $CopyCmd = {
-            $StartInfo = [Diagnostics.ProcessStartInfo]::new()
-            $StartInfo.UseShellExecute = $false
-            $StartInfo.RedirectStandardInput = $true
-            $StartInfo.RedirectStandardOutput = $true
-            $StartInfo.RedirectStandardError = $true
-            $StartInfo.FileName = $CopyTool
-            $StartInfo.Arguments = $CopyToolArgs
-            $Process = [Diagnostics.Process]::Start($StartInfo)
-            $Process.StandardInput.Write("$input")
-            $Process.StandardInput.Close()
-            $Process.StandardOutput.ReadToEnd() | Write-Debug
-            $Process.WaitForExit(250)
-        }.GetNewClosure()
-
-        # replacement for CopyOrCancelLine and Cut
-        $Copy = {
-            [string]$Buffer = ''
-            [int]$Cursor = 0
-            [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$Buffer, [ref]$Cursor)
-
-            [int]$SelStart = 0
-            [int]$SelLength = 0
-            [Microsoft.PowerShell.PSConsoleReadLine]::GetSelectionState([ref]$SelStart, [ref]$SelLength)
-
-            if ($SelStart -eq -1 -and $SelLength -eq -1)
-            {
-                # Nothing selected; clear the buffer, but add to history in case it was a mistake
-                [Microsoft.PowerShell.PSConsoleReadLine]::Delete(0, $Buffer.Length)
-                [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($Buffer)
-                return
-            }
-
-            $Buffer.SubString($SelStart, $SelLength) | & $CopyCmd
-
-            if ($Cut)
-            {
-                [Microsoft.PowerShell.PSConsoleReadLine]::Delete($SelStart, $SelLength)
-            }
-        }
-
-        $Paste = {
-            $Text = if ($PasteToolArgs) {& $PasteTool $PasteToolArgs} else {& $PasteTool}
-            [Microsoft.PowerShell.PSConsoleReadLine]::Insert(($Text -join "`n"))
-        }
-
-        $Cut = $false
-        Set-PSReadLineKeyHandler -Chord Ctrl+c -Description "Copy selection, or cancel line" -ScriptBlock $Copy.GetNewClosure()
-        $Cut = $true
-        Set-PSReadLineKeyHandler -Chord Ctrl+x -Description "Cut selection" -ScriptBlock $Copy.GetNewClosure()
-
-        Set-PSReadlineKeyHandler -Chord Ctrl+v -Description "Paste text from the system clipboard" -ScriptBlock $Paste.GetNewClosure()
-    }
-    else
-    {
-        Write-Host -ForegroundColor Red "wl-clipboard and xsel not found; PSReadline will use internal clipboard."
-        Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
-        Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
-        Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
-    }
-
-    Remove-Variable CopyCmd, CopyTool, CopyToolArgs, Copy, Cut -Scope Global -ErrorAction Ignore
 }
 
 # https://gist.github.com/rkeithhill/3103994447fd307b68be
@@ -637,4 +545,34 @@ Set-Alias emacs Start-Emacs
 if ($IsLinux -and (Get-Command dnf5 -CommandType Application -ErrorAction Ignore))
 {
     Set-Alias dnf dnf5
+}
+
+function ConvertFrom-Base64
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [string]$Base64
+    )
+
+    process
+    {
+        [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($Base64))
+    }
+}
+
+function ConvertTo-Base64
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [string]$String
+    )
+
+    process
+    {
+        [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($String))
+    }
 }
