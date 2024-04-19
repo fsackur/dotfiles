@@ -12,20 +12,26 @@ Host github.com
 Host sparkle sparkle.euroburners.net
     User freddie
     IdentityFile ~/.ssh/freddie_nowhere
+    ForwardAgent yes
+    ForwardX11 yes
 
 Host *.euroburners.net
     User nowhere
     IdentityFile ~/.ssh/freddie_nowhere
+    ForwardX11 yes
 
-Host rutx rutx.dvlp.casa 10.1.1.2
-    HostName 10.1.1.2
+Host rutx rutx.dvlp.casa 10.1.1.2 10.0.0.2
     User root
     IdentityFile ~/.ssh/rutx_ssh_user_id_rsa
+    ForwardAgent yes
+    ForwardX11 yes
 
 Host opal 10.2.2.2
     HostName 10.2.2.2
     User root
     IdentityFile ~/.ssh/opal
+    ForwardAgent yes
+    ForwardX11 yes
 
 Host dell-x1026.dvlp.casa dell-x1026 10.0.0.5
     User admin
@@ -36,16 +42,14 @@ Host dell-x1026.dvlp.casa dell-x1026 10.0.0.5
     RSAMinSize 1024
 {{- end }}
 
-# TODO:
-{{- if eq .chezmoi.os "windows" }}
-# Match exec "nslookup %h 2>&1 | findstr '10.1.1.[^5][^3]' > %%TEMP%%/n"
-{{- else }}
-# Match Host * exec "resolvectl query %h 2>&1 | grep 10.1.1."
-{{- end}}
-Host *.dvlp.casa 10.1.1.*
+Host *.dvlp.casa 10.1.1.* 10.0.0.*
     User freddie
     IdentityFile ~/.ssh/freddie_home
+    ForwardAgent yes
+    ForwardX11 yes
 
 Host 10.9.9.* harriet-desktop harriet-laptop proxbox stevedore backoops *.leigh.delamere
     User freddie
     IdentityFile ~/.ssh/freddie_leigh_delamere
+    ForwardAgent yes
+    ForwardX11 yes
