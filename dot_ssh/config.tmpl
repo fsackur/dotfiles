@@ -27,6 +27,15 @@ Host opal 10.2.2.2
     User root
     IdentityFile ~/.ssh/opal
 
+Host dell-x1026.dvlp.casa dell-x1026 10.0.0.5
+    User admin
+    KexAlgorithms +diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha1
+    HostKeyAlgorithms +ssh-rsa,ssh-dss
+    PubKeyAcceptedKeyTypes +ssh-rsa,ssh-dss
+{{- if and (eq .chezmoi.osRelease.id "fedora") (ge (.chezmoi.osRelease.versionID | int) 39) }}
+    RSAMinSize 1024
+{{- end }}
+
 # TODO:
 {{- if eq .chezmoi.os "windows" }}
 # Match exec "nslookup %h 2>&1 | findstr '10.1.1.[^5][^3]' > %%TEMP%%/n"
