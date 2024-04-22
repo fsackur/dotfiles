@@ -155,6 +155,48 @@ function Copy-Terminfo
         }
     }
 }
+
+
+function Forget-KnownHost
+{
+    [CmdletBinding()]
+    param
+    (
+        [string]$Path = "~/.ssh/known_hosts",
+
+        [Parameter(Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Path = $fakeBoundParameters.Path
+            if (-not $Path) {$Path = '~/.ssh/known_hosts'}
+            $Hosts = @(Get-Content $Path) -replace '\s.*' -split ',' | sort -Unique
+            @($Hosts) -like "$wordToComplete*"
+        })]
+        [ValidateNotNullOrEmpty()]
+        [SupportsWildcards()]
+        [string]$Hostname,
+
+        [switch]$Check
+    )
+
+    $Content = gc $Path -ErrorAction Stop
+    $Content = $Content | ? {
+        $Hosts = $_ -replace '\s.*' -split ',' | sort -Unique
+        # $Hosts | Write-Host
+        $IsMatch = [bool]($Hosts -like $Hostname)
+        -not $IsMatch -xor $Check
+    }
+
+    if ($Check)
+    {
+        $Content
+    }
+    else
+    {
+        $Content > $Path
+    }
+}
+
 function Sync-Chezmoi
 {
     param
