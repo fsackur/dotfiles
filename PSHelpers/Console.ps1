@@ -1,7 +1,4 @@
 
-#requires -modules @{ModuleName = 'PSReadLine'; ModuleVersion = '2.4'}
-# Install-Module PSReadLine -AllowPrerelease -Scope CurrentUser -Force
-
 $Global:PSDefaultParameterValues['Out-Default:OutVariable'] = '+LastOutput'
 $Global:PSDefaultParameterValues['Get-ChildItem:Force'] = $true
 $Global:PSDefaultParameterValues['del:Force'] = $true
@@ -63,18 +60,33 @@ Set-PSReadLineKeyHandler -Chord Ctrl+a -Function SelectAll
 Set-PSReadlineKeyHandler -Chord Ctrl+z -Function Undo
 Set-PSReadlineKeyHandler -Chord Ctrl+y -Function Redo
 Set-PSReadlineKeyHandler -Chord Shift+Enter -Function InsertLineBelow
-Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
-Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
-Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
 
 if ($IsWindows)
 {
+    Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
+    Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
+    Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
     Set-PSReadlineKeyHandler -Chord Ctrl+Spacebar -Function MenuComplete
 }
 else
 {
-    # Unix shells always intercept Ctrl-space - Fedora seems to map it to Ctrl-@
-    Set-PSReadlineKeyHandler -Chord Ctrl+@ -Function MenuComplete
+    # v2.4 contains the fix for xclip hanging.
+    # if (-not (Get-Module -ErrorAction Ignore -FullyQualifiedName @{ModuleName = 'PSReadLine'; ModuleVersion = '2.4'}))
+    # {
+    #     try
+    #     {
+    #         Install-Module PSReadLine -MinimumVersion 2.4 -Scope CurrentUser -Force
+    #     }
+    #     catch
+    #     {
+    #         Install-Module PSReadLine -AllowPrerelease -Scope CurrentUser -Force
+    #     }
+    # }
+
+    Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
+    Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
+    Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
+    Set-PSReadlineKeyHandler -Chord Ctrl+@ -Function MenuComplete  # Unix shells always intercept Ctrl-space - Fedora seems to map it to Ctrl-@
 }
 
 # https://gist.github.com/rkeithhill/3103994447fd307b68be
