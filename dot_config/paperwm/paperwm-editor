@@ -1,0 +1,7 @@
+#! /usr/bin/bash
+
+set -euo pipefail
+
+path="/org/gnome/shell/extensions/paperwm/"
+GSETTINGS_SCHEMA_DIR="$HOME/.local/share/gnome-shell/extensions/paperwm@paperwm.github.com/schemas"
+dconf-editor $path

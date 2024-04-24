@@ -1,0 +1,109 @@
+#! /usr/bin/bash
+
+set -eo pipefail
+
+path="/org/gnome/shell/extensions/paperwm/"
+
+usage_msg="Usage: $(basename $0) [dump|load] file"
+# case $1 in
+#     dump)
+#         command="dump"
+#         ;;
+#     load)
+#         command="load"
+#         ;;
+#     --help|-h)
+#         echo $usage_msg
+#         exit 0
+#         ;;
+#     *)
+#         echo $usage_msg
+#         exit 1
+#         ;;
+# esac
+
+# if [[ -z $2 || $3 ]]; then
+#     echo $usage_msg
+#     exit 1
+# fi
+# file=$2
+
+
+file=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        dump|load)
+            command="$1"
+            shift
+            ;;
+        -k|--keybindings)
+            keybindings="$2"
+            shift
+            shift
+            ;;
+        -h|--help)
+            echo $usage_msg
+            shift
+            exit 0
+            ;;
+        -*|--*)
+            echo "Unknown parameter $1"
+            exit 1
+            ;;
+        *)
+            if [ -z $file ]; then
+                file="$1"
+            else
+                echo "Unknown argument $1"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+set -e
+
+get_keybinding_json() {
+    echo "$1" | \
+        grep ^restore-keybinds= | \
+        sed -E "s/^restore-keybinds='|'$//g" | \
+        sed "s/\\\\\\\\/\\\\/g"
+}
+
+convert_to_user_json() {
+    echo "$1" | \
+        jq --indent 2 '. | with_entries(.value = [.value.bind | fromjson | .[] | gsub("<"; "") | gsub(">"; "+")])'
+}
+
+convert_from_user_json() {
+    local user_json=$(echo "$2" | jq '. | with_entries(.value = (.value | map(gsub("(?<a>\\w+)\\+"; "<\(.a)>"))))')
+    local json=$(echo "$1" | jq -c --argjson bindings "$user_json" '. | with_entries(.value.bind = ($bindings[.key] | tojson))')
+    local json=$(echo "$json" | sed "s/\\\\/\\\\\\\\/g")
+    echo "$json"
+}
+
+if [ "$command" == "dump" ]; then
+    dump=$(dconf dump $path)
+    if [ -z $file ]; then
+        echo "$dump"
+    else
+        echo "$dump" > $file
+    fi
+
+    conf_json=$(get_keybinding_json "$dump")
+    kb_json=$(convert_to_user_json "$conf_json")
+
+    if [ -z $keybindings ]; then
+        echo "$kb_json"
+    else
+        echo "$kb_json" > $keybindings
+    fi
+else
+    dump=$(dconf dump $path)
+    conf_json=$(get_keybinding_json "$dump")
+    kb_json=$(cat $keybindings)
+    conf_json=$(convert_from_user_json "$conf_json" "$kb_json")
+    load=$(echo "$dump" | sed -E "s/^restore-keybinds='.*'/restore-keybinds='$conf_json'/" | sed "s/\\\\/\\\\\\\\/g")
+    echo "$load" | dconf load $path
+fi

@@ -1,0 +1,87 @@
+{
+  "toggle-tiled-right": [
+    "Super+Right"
+  ],
+  "toggle-tiled-left": [
+    "Super+Left"
+  ],
+  "cancel-input-capture": [
+    "Super+Shift+Escape"
+  ],
+  "restore-shortcuts": [
+    "Super+Escape"
+  ],
+  "switch-panels": [
+    "Control+Alt+Tab"
+  ],
+  "panel-run-dialog": [
+    "Super+r"
+  ],
+  "switch-group-backward": [
+    "Shift+Super+Above_Tab",
+    "Shift+Alt+Above_Tab"
+  ],
+  "move-to-monitor-down": [
+    "Super+Shift+Down"
+  ],
+  "switch-to-workspace-1": [
+    "Super+Home"
+  ],
+  "move-to-monitor-left": [
+    "Super+Shift+Left"
+  ],
+  "unmaximize": [
+    "Super+Down",
+    "Alt+F5"
+  ],
+  "switch-group": [
+    "Super+Above_Tab",
+    "Alt+Above_Tab"
+  ],
+  "switch-panels-backward": [
+    "Shift+Control+Alt+Tab"
+  ],
+  "switch-to-workspace-left": [
+    "Control+Super+Left"
+  ],
+  "move-to-workspace-up": [
+    "Control+Shift+Alt+Up"
+  ],
+  "move-to-workspace-down": [
+    "Control+Shift+Alt+Down"
+  ],
+  "switch-windows": [
+    "Alt+Tab"
+  ],
+  "switch-to-workspace-right": [
+    "Control+Super+Right"
+  ],
+  "maximize": [
+    "Super+Up"
+  ],
+  "switch-to-workspace-last": [
+    "Super+End"
+  ],
+  "move-to-monitor-right": [
+    "Super+Shift+Right"
+  ],
+  "switch-windows-backward": [
+    "Shift+Alt+Tab"
+  ],
+  "move-to-monitor-up": [
+    "Super+Shift+Up"
+  ],
+  "shift-overview-up": [
+    "Super+Alt+Up"
+  ],
+  "shift-overview-down": [
+    "Super+Alt+Down"
+  ],
+  "focus-active-notification": [
+    "Super+n"
+  ],
+  "rotate-video-lock-static": [
+    "Super+o",
+    "XF86RotationLockToggle"
+  ]
+}
