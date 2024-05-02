@@ -14,12 +14,12 @@ if ($PSVersionTable.PSEdition -ne 'Core')
 
 if ($IsLinux -or $IsMacOS)
 {
-    $NixProfiles = '/etc/profile', '~/.profile'
-    $NixPathLines = Get-Content $NixProfiles -ErrorAction Ignore | Select-String -Pattern '^\s*export\s+PATH\s*='
-    $Expressions = @($NixPathLines) -replace '^\s*export\s+PATH\s*=\s*' -replace ':', '`:'
+    $NixProfiles = '/etc/profile', '~/.profile', '~/.bash_profile', '~/.bashrc', '~/.bash_login', '~/.bash_logout', '~/.zshrc', '~/.zprofile', '~/.zlogin', '~/.zlogout', '~/.zshenv'
+    $NixPathLines = Get-Content $NixProfiles -ErrorAction Ignore | Select-String -Pattern '^\s+PATH='
+    $Expressions = @($NixPathLines) -replace '.*PATH\s*=\s*' -replace ':', '`:'
     $PATH = $env:PATH
-    $Expressions | ForEach-Object {$PATH = $ExecutionContext.InvokeCommand.ExpandString($_)}
-    $env:PATH = $PATH
+    $Expressions | ForEach-Object {$PATH = $ExecutionContext.InvokeCommand.ExpandString($_) -replace "^(?<quote>['`"])(.*)(\k<quote>)$", '$1'}
+    $env:PATH = $PATH -replace '::', ':'
     Remove-Variable PATH, NixProfiles, NixPathLines, Expressions
 }
 
