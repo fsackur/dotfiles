@@ -52,21 +52,43 @@ function ConvertTo-Base64
 
 function Copy-SshKey
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ByFilter')]
     param
     (
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [ValidateNotNullOrEmpty()]
         [string[]]$Hostname,
 
-        [Parameter(Mandatory)]
-        [ArgumentCompleter({
-            (Get-ChildItem ~/.ssh -File -Filter '*.pub') -replace '\.pub$'
-        })]
+        [Parameter(Mandatory, ParameterSetName = 'ByPath', Position = 1)]
+        [ArgumentCompleter({Get-ChildItem ~/.ssh -File -Filter '*.pub'})]
         [string[]]$KeyFile,
 
-        [string]$Username
+        [Parameter(ParameterSetName = 'ByFilter', Position = 1)]
+        [string]$Filter = $([regex]::Escape($env:USER)),
+
+        [string]$Username,
+
+        [switch]$IncludePrivateKey
     )
+
+    begin
+    {
+        if (-not $KeyFile)
+        {
+            $KeyFile = (Get-Content ~/.ssh/config) -imatch 'IdentityFile' -ireplace '.*IdentityFile ' -imatch $Filter
+        }
+
+        $KeyFile = $KeyFile -replace '\.pub$'
+
+        if ($IncludePrivateKey)
+        {
+            $KeyFile = $KeyFile | ForEach-Object {$_; "$_.pub"} | Write-Output
+        }
+        else
+        {
+            $KeyFile = $KeyFile -replace '$', '.pub'
+        }
+    }
 
     process
     {
@@ -91,11 +113,11 @@ function Copy-SshKey
             $UserHome = if ($User -eq 'root') {'/root'} else {"/home/$User"}
             $Dest = "$User@$_`:$UserHome/.ssh"
 
-            $KeyFile = $KeyFile | ForEach-Object {$_; "$_.pub"} | Write-Output
             scp -r $KeyFile $Dest
         }
     }
 }
+$PSDefaultParameterValues['Copy-SshKey:KeyFile'] = '~/.ssh/freddie_home', '~/.ssh/freddie_git'
 
 function Copy-Terminfo
 {
