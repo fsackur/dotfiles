@@ -265,3 +265,16 @@ function Start-Emacs
     }
 }
 Set-Alias emacs Start-Emacs
+
+function Kill-VSCodeRemote
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Hostname
+    )
+
+    $Command = "'for i in `$(ps x | grep ''\.vscode-server'' | awk ''{print `$1}''); do kill -9 `$i; done'"
+    ssh $Hostname bash -c $Command
+}
