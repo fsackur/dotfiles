@@ -300,3 +300,34 @@ function Kill-VSCodeRemote
     $Command = "'for i in `$(ps x | grep ''\.vscode-server'' | awk ''{print `$1}''); do kill -9 `$i; done'"
     ssh $Hostname bash -c $Command
 }
+
+function Activate-PyEnv
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Position = 0)]
+        [string]$Path = $(Resolve-Path .conda, .venv -ErrorAction Ignore | Select-Object -First 1)
+    )
+
+    if (-not $Path)
+    {
+        Write-Error "No env found to activate"
+        return
+    }
+
+    $Before = bash -c env
+    $After = bash -c "source ~/.local/bin/miniconda/bin/activate '$Path'; env"
+
+    $Update = Compare-Object $Before $After | ? SideIndicator -eq '=>' | % InputObject
+    $Update | % {
+        $k, $v = $_ -split '=', 2
+        Set-Content env:\$k $v
+    }
+}
+
+if ($IsVSCode)
+{
+    Activate-PyEnv -ErrorAction Ignore
+    Set-Alias activate Activate-PyEnv
+}
