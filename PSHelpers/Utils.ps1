@@ -307,22 +307,34 @@ function Activate-PyEnv
     param
     (
         [Parameter(Position = 0)]
-        [string]$Path = $(Resolve-Path .conda, .venv -ErrorAction Ignore | Select-Object -First 1)
+        [string]$Path = $(Resolve-Path .conda -ErrorAction Ignore | Select-Object -First 1)
     )
 
     if (-not $Path)
     {
-        Write-Error "No env found to activate"
-        return
+        $Path = gci -Directory | gci -Filter pyvenv.cfg | Select-Object -First 1 | % FullName | Split-Path
+        if (-not $Path)
+        {
+            Write-Error "No env found to activate"
+            return
+        }
     }
 
-    $Before = bash -c env
-    $After = bash -c "source ~/.local/bin/miniconda/bin/activate '$Path'; env"
+    $Mgr = if (gci $Path -Filter pyvenv.cfg) {"venv"} else {"conda"}
+    if ($Mgr -eq "conda")
+    {
+        $Before = bash -c env
+        $After = bash -c "source ~/.local/bin/miniconda/bin/activate '$Path'; env"
 
-    $Update = Compare-Object $Before $After | ? SideIndicator -eq '=>' | % InputObject
-    $Update | % {
-        $k, $v = $_ -split '=', 2
-        Set-Content env:\$k $v
+        $Update = Compare-Object $Before $After | ? SideIndicator -eq '=>' | % InputObject
+        $Update | % {
+            $k, $v = $_ -split '=', 2
+            Set-Content env:\$k $v
+        }
+    }
+    elseif ($Mgr -eq "venv")
+    {
+        . $Path/bin/activate.ps1
     }
 }
 
