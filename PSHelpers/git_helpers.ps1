@@ -60,14 +60,16 @@ function Git-Clone
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [uri]$Remote,
+        [Parameter(Mandatory, ParameterSetName = 'Origin', Position = 0, ValueFromPipeline)]
+        [Parameter(ParameterSetName = 'Upstream')]
+        [uri]$Origin,
 
         [switch]$Ssh,
 
         [switch]$Https,
 
-        [switch]$Upstream,
+        [Parameter(Mandatory, ParameterSetName = 'Upstream')]
+        [uri]$Upstream,
 
         # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
         [switch]$NoBlob,
@@ -80,13 +82,14 @@ function Git-Clone
     {
         throw [Management.Automation.ParameterBindingException]::new("Cannot use -Ssh and -Https together.")
     }
-
     $Scheme = if ($Ssh) {'ssh'} elseif ($Https) {'https'}
     if ($Scheme)
     {
-        $Uri = $Uri -replace '^\w+(?=://)', $Scheme
+        $Origin = $Origin -replace '^\w+(?=://)', $Scheme
+        $Upstream = $Upstream -replace '^\w+(?=://)', $Scheme
     }
 
+    $Uri = Get-Variable -ValueOnly -Scope Local $PSCmdlet.ParameterSetName
     $CloneArgs = @('clone', $Uri)
 
     if ($Upstream)
@@ -104,11 +107,32 @@ function Git-Clone
         $CloneArgs += '--filter=tree:0'
     }
 
-    $CloneArgs | Write-Warning
-
     git @CloneArgs
+    if ($LASTEXITCODE) {Write-Error "clone failed"}
+
+    if ($Upstream -and $Origin)
+    {
+        Push-Location $Upstream.Segments[2] -ErrorAction Stop
+        try
+        {
+            if (-not $Origin.IsAbsoluteUri)
+            {
+                $Origin = $Upstream.Scheme, "://", $Upstream.Host, $Upstream.Segments[0], $Origin, "/", $Upstream.Segments[2] -join ''
+            }
+
+            git remote add origin $Origin
+            if ($LASTEXITCODE) {Write-Error "adding origin failed"}
+
+            git fetch origin
+        }
+        finally
+        {
+            Pop-Location
+        }
+    }
 }
 Set-Alias clone Git-Clone
+$Global:PSDefaultParameterValues['Git-Clone:Origin'] = 'fsackur'
 
 function Git-AddRemote
 {
