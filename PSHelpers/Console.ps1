@@ -32,6 +32,8 @@ Set-Alias p podman
 Set-Alias pc podman-compose
 Set-Alias clip Set-Clipboard
 Set-Alias sort Sort-Object
+Set-Alias json ConvertTo-Json
+Set-Alias unjson ConvertFrom-Json
 
 
 # Save typing out [pscustomobject]
