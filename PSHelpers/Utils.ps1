@@ -334,7 +334,8 @@ function Activate-PyEnv
     }
     elseif ($Mgr -eq "venv")
     {
-        . $Path/bin/activate.ps1
+        $Script = gci ./.venv/bin/ -Filter Activate.ps1  # resolve case-sensitivity
+        . $Script
     }
 }
 
