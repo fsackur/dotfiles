@@ -101,19 +101,40 @@ function Get-RepoPackageFiles
     [CmdletBinding()]
     param
     (
-        [Parameter(ParameterSetName = 'PackageFile', Mandatory, ValueFromPipeline)]
-        [string]$Path
+        [Parameter(ParameterSetName = 'PackageFile', Mandatory, ValueFromPipeline, Position = 0)]
+        [string]$Path,
 
         ## rpm -q only works on installed packages
-        # [Parameter(ParameterSetName = 'PackageName', Mandatory, ValueFromPipeline)]
-        # [string]$Name
+        [Parameter(ParameterSetName = 'PackageName', Mandatory, ValueFromPipeline)]
+        [string]$Name
     )
 
     process
     {
-        if ($Path)
+        if ($PSCmdlet.ParameterSetName -eq 'PackageFile')
         {
-            rpm --query --list --package $Path
+            if ($Path -notmatch '/' -and -not (Test-Path $Path))
+            {
+                Write-Warning "'$Path' looks like a package name. Retrying as name."
+                return Get-RepoPackageFiles -Name $Path
+            }
+
+            if ($Path -match '\.rpm$')
+            {
+                rpm --query --list --package $Path
+            }
+            elseif ($Path -match '\.deb$')
+            {
+                dpkg --contents $Path
+            }
+            else
+            {
+                Write-Error -Exception [NotSupportedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
+            }
+        }
+        else
+        {
+            rpm --query --list
         }
     }
 }
