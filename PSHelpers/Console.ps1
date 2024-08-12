@@ -34,7 +34,10 @@ Set-Alias clip Set-Clipboard
 Set-Alias sort Sort-Object
 Set-Alias json ConvertTo-Json
 Set-Alias unjson ConvertFrom-Json
-
+if ($IsLinux)
+{
+    Set-Alias scl systemctl
+}
 
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
@@ -90,6 +93,111 @@ else
     Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
     Set-PSReadlineKeyHandler -Chord Ctrl+@ -Function MenuComplete  # Unix shells always intercept Ctrl-space - Fedora seems to map it to Ctrl-@
 }
+<#
+    # if (Get-Command copyq -ErrorAction Ignore)
+    # {
+    #     # $CopyTool = 'copyq'
+    #     # $CopyToolArgs = 'add'
+    #     $CopyCmd = {copyq add $input}
+    #     $PasteArgs = @{ScriptBlock = {[Microsoft.PowerShell.PSConsoleReadLine]::Insert((copyq read 0))}}
+    # }
+
+    $CopyTool = $CopyToolArgs = $PasteTool = $PasteToolArgs = $null
+    # https://github.com/PowerShell/PSReadLine/issues/1993
+    # if (Get-Command copyq -ErrorAction Ignore)
+    # {
+    #     if (-not (Get-Process copyq -ErrorAction Ignore))
+    #     {
+    #         copyq &
+    #     }
+
+    #     $CopyTool = 'copyq'
+    #     $CopyToolArgs = 'add'
+    #     $PasteTool = 'copyq'
+    #     $PasteToolArgs = 'read 0'
+    # }
+    if (Get-Command wl-copy -ErrorAction Ignore)
+    {
+        $CopyTool = 'wl-copy'
+        $CopyToolArgs = '-n'
+        $PasteTool = 'wl-paste'
+        $PasteToolArgs = '-n'
+    }
+    elseif (Get-Command xsel -ErrorAction Ignore)
+    {
+        # xclip has weird pipe handling and hangs in pwsh, so use xsel instead
+        $CopyTool = 'xsel'
+        $CopyToolArgs = '-i --clipboard'
+        $PasteTool = 'xsel'
+        $PasteToolArgs = '-o'
+    }
+
+    if ($CopyTool)
+    {
+        $CopyCmd = {
+            $StartInfo = [Diagnostics.ProcessStartInfo]::new()
+            $StartInfo.UseShellExecute = $false
+            $StartInfo.RedirectStandardInput = $true
+            $StartInfo.RedirectStandardOutput = $true
+            $StartInfo.RedirectStandardError = $true
+            $StartInfo.FileName = $CopyTool
+            $StartInfo.Arguments = $CopyToolArgs
+            $Process = [Diagnostics.Process]::Start($StartInfo)
+            $Process.StandardInput.Write("$input")
+            $Process.StandardInput.Close()
+            $Process.StandardOutput.ReadToEnd() | Write-Debug
+            [void]$Process.WaitForExit(250)
+        }.GetNewClosure()
+
+        # replacement for CopyOrCancelLine and Cut
+        $Copy = {
+            [string]$Buffer = ''
+            [int]$Cursor = 0
+            [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$Buffer, [ref]$Cursor)
+
+            [int]$SelStart = 0
+            [int]$SelLength = 0
+            [Microsoft.PowerShell.PSConsoleReadLine]::GetSelectionState([ref]$SelStart, [ref]$SelLength)
+
+            if ($SelStart -eq -1 -and $SelLength -eq -1)
+            {
+                # Nothing selected; clear the buffer, but add to history in case it was a mistake
+                [Microsoft.PowerShell.PSConsoleReadLine]::Delete(0, $Buffer.Length)
+                [Microsoft.PowerShell.PSConsoleReadLine]::AddToHistory($Buffer)
+                return
+            }
+
+            $Buffer.SubString($SelStart, $SelLength) | & $CopyCmd
+
+            if ($Cut)
+            {
+                [Microsoft.PowerShell.PSConsoleReadLine]::Delete($SelStart, $SelLength)
+            }
+        }
+
+        $Paste = {
+            $Text = if ($PasteToolArgs) {& $PasteTool $PasteToolArgs} else {& $PasteTool}
+            [Microsoft.PowerShell.PSConsoleReadLine]::Insert(($Text -join "`n"))
+        }
+
+        $Cut = $false
+        Set-PSReadLineKeyHandler -Chord Ctrl+c -Description "Copy selection, or cancel line" -ScriptBlock $Copy.GetNewClosure()
+        $Cut = $true
+        Set-PSReadLineKeyHandler -Chord Ctrl+x -Description "Cut selection" -ScriptBlock $Copy.GetNewClosure()
+
+        Set-PSReadlineKeyHandler -Chord Ctrl+v -Description "Paste text from the system clipboard" -ScriptBlock $Paste.GetNewClosure()
+    }
+    else
+    {
+        Write-Host -ForegroundColor Red "wl-clipboard and xsel not found; PSReadline will use internal clipboard."
+        Set-PSReadlineKeyHandler -Chord Ctrl+c -Function CopyOrCancelLine
+        Set-PSReadlineKeyHandler -Chord Ctrl+x -Function Cut
+        Set-PSReadlineKeyHandler -Chord Ctrl+v -Function Paste
+    }
+
+    Remove-Variable CopyCmd, CopyTool, CopyToolArgs, Copy, Cut -Scope Global -ErrorAction Ignore
+}
+#>
 
 # https://gist.github.com/rkeithhill/3103994447fd307b68be
 Set-PSReadlineKeyHandler -Chord '(', '[', '{', "'", '"' -Description "Wrap selection in brackets or quotes" -ScriptBlock {
