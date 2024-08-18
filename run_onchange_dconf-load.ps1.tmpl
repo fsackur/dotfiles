@@ -1,0 +1,12 @@
+#! /usr/bin/pwsh
+
+$ErrorActionPreference = 'Stop'
+
+# .ini hash: {{ include "dot_config/dconf-gnome-shortcuts.ini" | sha256sum }}
+. "{{ .chezmoi.sourceDir }}/PSHelpers/dconf.ps1"
+
+$BackupPath = Join-Path ([IO.Path]::GetTempPath()) "dconf.$([datetime]::UtcNow.Ticks).ini"
+Export-Dconf / > $BackupPath
+"Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
+
+Get-Content ~/.config/dconf-gnome-shortcuts.ini | Import-Dconf
