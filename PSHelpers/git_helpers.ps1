@@ -75,21 +75,33 @@ function Git-Clone
         [switch]$NoBlob,
 
         # https://github.blog/2020-12-21-get-up-to-speed-with-partial-clone-and-shallow-clone/
-        [switch]$NoTree
+        [switch]$NoTree,
+
+        [string]$Path
     )
+
 
     if ($Ssh -and $Https)
     {
         throw [Management.Automation.ParameterBindingException]::new("Cannot use -Ssh and -Https together.")
     }
-    $Scheme = if ($Ssh) {'ssh'} elseif ($Https) {'https'}
-    if ($Scheme)
+
+    [uri]$Uri = Get-Variable -ValueOnly -Scope Local $PSCmdlet.ParameterSetName
+    $Scheme = if ($Ssh) {'ssh'} elseif ($Https) {'https'} else {$Uri.Scheme}
+    if (-not $Scheme)
     {
-        $Origin = $Origin -replace '^\w+(?=://)', $Scheme
-        $Upstream = $Upstream -replace '^\w+(?=://)', $Scheme
+        throw [Management.Automation.ParameterBindingException]::new("Cannot infer uri scheme from parameters. Provide an absolute uri, or use the Ssh or Https switches.")
     }
 
-    $Uri = Get-Variable -ValueOnly -Scope Local $PSCmdlet.ParameterSetName
+    if ($PSCmdlet.ParameterSetName -eq 'Upstream' -and $PSBoundParameters.ContainsKey('Origin') -and -not $Origin.IsAbsoluteUri)
+    {
+        $Origin = $Scheme, "://", $Upstream.Host, $Upstream.Segments[0], $Origin, "/", $Upstream.Segments[2] -join ''
+    }
+
+    $Origin = $Origin -replace '^\w+(?=://)', $Scheme
+    $Upstream = $Upstream -replace '^\w+(?=://)', $Scheme
+    $Uri = $Uri -replace '^\w+(?=://)', $Scheme
+
     $CloneArgs = @('clone', $Uri)
 
     if ($Upstream)
@@ -107,23 +119,31 @@ function Git-Clone
         $CloneArgs += '--filter=tree:0'
     }
 
+    if ($Path)
+    {
+        $CloneArgs += $Path
+    }
+    else
+    {
+        $Path = $Uri.Segments[2]
+    }
+
     git @CloneArgs
     if ($LASTEXITCODE) {Write-Error "clone failed"}
 
     if ($Upstream -and $Origin)
     {
-        Push-Location $Upstream.Segments[2] -ErrorAction Stop
+        Push-Location $Path -ErrorAction Stop
         try
         {
-            if (-not $Origin.IsAbsoluteUri)
-            {
-                $Origin = $Upstream.Scheme, "://", $Upstream.Host, $Upstream.Segments[0], $Origin, "/", $Upstream.Segments[2] -join ''
-            }
-
             git remote add origin $Origin
             if ($LASTEXITCODE) {Write-Error "adding origin failed"}
 
-            git fetch origin
+            $null = git ls-remote $Origin *>&1
+            if (!$LASTEXITCODE)
+            {
+                git fetch origin
+            }
         }
         finally
         {
@@ -133,6 +153,7 @@ function Git-Clone
 }
 Set-Alias clone Git-Clone
 $Global:PSDefaultParameterValues['Git-Clone:Origin'] = 'fsackur'
+$Global:PSDefaultParameterValues['Git-Clone:Ssh'] = $true
 
 function Git-AddRemote
 {
