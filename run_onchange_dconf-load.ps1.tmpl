@@ -3,10 +3,13 @@
 $ErrorActionPreference = 'Stop'
 
 # .ini hash: {{ include "dot_config/dconf-gnome.ini" | sha256sum }}
-. "{{ .chezmoi.sourceDir }}/PSHelpers/dconf.ps1"
+if (Get-Command dconf -ErrorAction Ignore)
+{
+    . "{{ .chezmoi.sourceDir }}/PSHelpers/dconf.ps1"
 
-$BackupPath = Join-Path ([IO.Path]::GetTempPath()) "dconf.$([datetime]::UtcNow.Ticks).ini"
-Export-Dconf / > $BackupPath
-"Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
+    $BackupPath = Join-Path ([IO.Path]::GetTempPath()) "dconf.$([datetime]::UtcNow.Ticks).ini"
+    Export-Dconf / > $BackupPath
+    "Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
 
-Get-Content ~/.config/dconf-gnome.ini | Import-Dconf
+    Get-Content ~/.config/dconf-gnome.ini | Import-Dconf
+}
