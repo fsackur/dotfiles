@@ -74,6 +74,11 @@ $AsyncProfile = {
     {{ if eq .chezmoi.os "linux" }}. "{{ .chezmoi.sourceDir }}/PSHelpers/LinuxNetworking.ps1"
     {{ end }}. "{{ .chezmoi.sourceDir }}/PSHelpers/ModuleLoad.ps1"
 
+    if (Import-Module PSFzf -PassThru -ea Ignore)
+    {
+        Set-PsFzfOption -PSReadlineChordProvider Ctrl+f
+    }
+
     if (Test-Path "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1")
     {
         . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
@@ -82,7 +87,8 @@ $AsyncProfile = {
 
 if (Import-Module ProfileAsync -PassThru -ea Ignore)
 {
-    Import-ProfileAsync $AsyncProfile -Delay 200
+    $splat = if ((Get-Command Import-ProfileAsync).Parameters.LogPath) {@{LogPath = "/gitroot/ProfileAsync.log"}} else {@{}}
+    Import-ProfileAsync $AsyncProfile -Verbose @splat
 }
 else
 {

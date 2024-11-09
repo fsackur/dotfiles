@@ -20,7 +20,7 @@ Host *.euroburners.net
     IdentityFile ~/.ssh/freddie_nowhere
     ForwardX11 yes
 
-Host rutx rutx.dvlp.casa 10.1.1.2 10.0.0.2
+Host rutx rutx.dvlp.casa 10.1.1.4 10.0.0.4 10.4.4.4
     User root
     IdentityFile ~/.ssh/rutx_ssh_user_id_rsa
     ForwardAgent yes
@@ -33,16 +33,7 @@ Host opal 10.2.2.2
     ForwardAgent yes
     ForwardX11 yes
 
-Host dell-x1026.dvlp.casa dell-x1026 10.0.0.5
-    User admin
-    KexAlgorithms +diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha1
-    HostKeyAlgorithms +ssh-rsa,ssh-dss
-    PubKeyAcceptedKeyTypes +ssh-rsa,ssh-dss
-{{- if and (eq .chezmoi.osRelease.id "fedora") (ge (.chezmoi.osRelease.versionID | int) 39) }}
-    RSAMinSize 1024
-{{- end }}
-
-Host *.dvlp.casa 10.1.1.* 10.0.0.*
+Host *.dvlp.casa 10.1.1.* 10.0.0.* 10.4.4.*
     User freddie
     IdentityFile ~/.ssh/freddie_home
     ForwardAgent yes
@@ -53,3 +44,5 @@ Host 10.9.9.* harriet-desktop harriet-laptop proxbox stevedore backoops *.leigh.
     IdentityFile ~/.ssh/freddie_leigh_delamere
     ForwardAgent yes
     ForwardX11 yes
+
+Include dell.config

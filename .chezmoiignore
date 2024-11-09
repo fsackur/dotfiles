@@ -20,3 +20,6 @@ Documents
 {{ if eq .chezmoi.os "windows" }}
 .config
 {{ end }}
+{{ if not (eq .chezmoi.hostname "ghetto-blaster" "brick") }}
+.ssh/dell.config
+{{ end }}
