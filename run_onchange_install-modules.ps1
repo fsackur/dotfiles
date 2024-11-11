@@ -13,7 +13,9 @@ $ErrorActionPreference = 'Stop'
     @{ModuleName = "Pester"; ModuleVersion = "5.6.1"},
     @{ModuleName = "Microsoft.PowerShell.UnixTabCompletion"; ModuleVersion = "0.5.0"},
     @{ModuleName = "psyml"; ModuleVersion = "1.0.0"},
-    @{ModuleName = "PSFzf"; ModuleVersion = "2.6.1"}
+    @{ModuleName = "PSFzf"; ModuleVersion = "2.6.1"},
+    @{ModuleName = "Microsoft.PowerShell.SecretManagement"; ModuleVersion = "1.1.2"},
+    @{ModuleName = "SecretManagement.Warden"; ModuleVersion = "1.1.5"}
 )
 
 $ToInstall = $Required | ? {-not (gmo -ListAvailable -FullyQualifiedName $_)}
