@@ -15,11 +15,14 @@ if ($PSVersionTable.PSEdition -ne 'Core')
 if ($IsLinux -or $IsMacOS)
 {
     $NixProfiles = '/etc/profile', '~/.profile', '~/.bash_profile', '~/.bashrc', '~/.bash_login', '~/.bash_logout', '~/.zshrc', '~/.zprofile', '~/.zlogin', '~/.zlogout', '~/.zshenv'
+    [array]::Reverse($NixProfiles)  # user overrides system
     $NixPathLines = Get-Content $NixProfiles -ErrorAction Ignore | Select-String -Pattern '^\s+PATH='
-    $Expressions = @($NixPathLines) -replace '.*PATH\s*=\s*' -replace ':', '`:'
-    $PATH = $env:PATH
-    $Expressions | ForEach-Object {$PATH = $ExecutionContext.InvokeCommand.ExpandString($_) -replace "^(?<quote>['`"])(.*)(\k<quote>)$", '$1'}
-    $env:PATH = $PATH -replace '::', ':'
+    $Expressions = @($NixPathLines) -replace '.*PATH\s*=\s*' -replace "^(?<quote>['`"])(.*)(\k<quote>)$", '$1' -split ':' |
+        ? {$_ -ne '$PATH'} | Write-Output | Select-Object -Unique
+    $PATH = $Expressions | ForEach-Object {$ExecutionContext.InvokeCommand.ExpandString($_)}
+    $PATH += $env:PATH -split ':'
+    $PATH = $PATH | Select-Object -Unique
+    $env:PATH = @($PATH) -ne '' -join ':'
     Remove-Variable PATH, NixProfiles, NixPathLines, Expressions
 }
 
