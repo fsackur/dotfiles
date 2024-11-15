@@ -11,5 +11,8 @@ if (Get-Command dconf -ErrorAction Ignore)
     Export-Dconf / > $BackupPath
     "Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
 
-    Get-Content ~/.config/dconf-gnome.ini | Import-Dconf
+    if ($env:XDG_CURRENT_DESKTOP -eq "GNOME")
+    {
+        Get-Content ~/.config/dconf-gnome.ini | Import-Dconf
+    }
 }
