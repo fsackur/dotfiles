@@ -33,16 +33,18 @@ Host opal 10.2.2.2
     ForwardAgent yes
     ForwardX11 yes
 
+Host gerty gerty.dvlp.casa 10.0.0.34
+    User root
+
 Host *.dvlp.casa 10.1.1.* 10.0.0.* 10.4.4.*
     User freddie
     IdentityFile ~/.ssh/freddie_home
     ForwardAgent yes
     ForwardX11 yes
 
-Host 10.9.9.* harriet-desktop harriet-laptop proxbox stevedore backoops *.leigh.delamere
-    User freddie
-    IdentityFile ~/.ssh/freddie_leigh_delamere
-    ForwardAgent yes
-    ForwardX11 yes
+Host dell-x1026.dvlp.casa dell-x1026 10.0.0.5
+    IgnoreUnknown yes
+    Include dell.config
 
-Include dell.config
+Host *
+    Include leigh.delamere.config
