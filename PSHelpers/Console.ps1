@@ -5,6 +5,21 @@ $Global:PSDefaultParameterValues['del:Force'] = $true
 
 $Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C:\Windows\System32\drivers\etc\hosts'}
 
+if ($IsLinux)
+{
+    $XdgDefaults = @{
+        XDG_CONFIG_HOME = "$env:HOME/.config"
+        XDG_CACHE_HOME = "$env:HOME/.cache"
+        XDG_DATA_HOME = "$env:HOME/.local/share"
+        XDG_STATE_HOME = "$env:HOME/.local/state"
+        XDG_DATA_DIRS = "/usr/local/share:/usr/share"
+        XDG_CONFIG_DIRS = "/etc/xdg"
+    }
+    $XdgDefaults.GetEnumerator() |
+        ? {-not (Get-Item env:/$($_.Key) -ErrorAction Ignore)} |
+        % {Set-Content env:/$($_.Key) $_.Value}
+}
+
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
 [string[]]$CommonParameters = (
     'Verbose',
