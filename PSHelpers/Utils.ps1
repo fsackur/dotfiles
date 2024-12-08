@@ -430,3 +430,40 @@ function Debug-Thunderbird
 }
 
 Set-Alias thunderbird Debug-Thunderbird
+
+Register-ArgumentCompleter -CommandName Invoke-Build.ps1 -ParameterName Task -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+    if (-not $Script:__BuildTasks)
+    {
+        $Script:__BuildTasks = @{}
+    }
+
+    $Dir = $PWD.Path
+    while ($Dir -ne "/" -and -not (Get-Item -Force "$Dir/.git" -ErrorAction Ignore))
+    {
+        $Dir = Split-Path $Dir
+    }
+    if ($Dir -eq "/") {return}
+
+    $ProjectName = Split-Path $Dir -Leaf
+
+    $TaskNames = $Script:__BuildTasks[$ProjectName]
+    if (-not $TaskNames)
+    {
+        $BuildScript = Get-Item "$Dir/*.build.ps1"
+        $TaskNames = $BuildScript | ForEach-Object {
+            $Ast = [Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$null)
+            $TaskAsts = $Ast.FindAll({
+                param ($Ast)
+                $Ast -is [System.Management.Automation.Language.CommandAst] -and
+                $Ast.CommandElements[0].Value -eq "task"
+            }, $true)
+            $TaskAsts | ForEach-Object {$_.CommandElements[1].Value}
+        } | Write-Output | Select-Object -Unique
+
+        $Script:__BuildTasks[$ProjectName] = @($TaskNames)
+    }
+
+    ($TaskNames -like "$wordToComplete*"), ($TaskNames -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+}
