@@ -26,6 +26,8 @@ if ($IsLinux -or $IsMacOS)
     Remove-Variable PATH, NixProfiles, NixPathLines, Expressions
 }
 
+$env:PYTHONSTARTUP = Resolve-Path ~/.pyrc -ErrorAction Ignore
+
 #region PWD
 function Test-VSCode
 {
