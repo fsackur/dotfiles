@@ -1,3 +1,7 @@
+
+$Global:PSModulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
+$Global:PSModulePath = $PSModulePaths | Where-Object {$_.StartsWith($env:HOME)} | Select-Object -Last 1
+
 function Export-PrivateModuleMember
 {
     <#
