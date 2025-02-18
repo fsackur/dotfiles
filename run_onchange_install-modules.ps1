@@ -11,6 +11,8 @@ $ErrorActionPreference = 'Stop'
     @{ModuleName = "Configuration"; ModuleVersion = "1.6.0"},
     @{ModuleName = "poke"; ModuleVersion = "1.1.2"},
     @{ModuleName = "Pester"; ModuleVersion = "5.6.1"},
+    @{ModuleName = "PSScriptAnalyzer"; ModuleVersion = "1.23.0"},
+    @{ModuleName = "InvokeBuild"; ModuleVersion = "5.12.1"},
     @{ModuleName = "Microsoft.PowerShell.UnixTabCompletion"; ModuleVersion = "0.5.0"},
     @{ModuleName = "psyml"; ModuleVersion = "1.0.0"},
     @{ModuleName = "PSFzf"; ModuleVersion = "2.6.1"},
@@ -18,7 +20,7 @@ $ErrorActionPreference = 'Stop'
     @{ModuleName = "SecretManagement.Warden"; ModuleVersion = "1.1.5"}
 )
 
-$ToInstall = $Required | ? {-not (gmo -ListAvailable -FullyQualifiedName $_)}
+$ToInstall = $Required | ? {-not (Get-Module -ListAvailable -FullyQualifiedName $_)}
 if (-not $ToInstall)
 {
     return
