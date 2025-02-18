@@ -386,8 +386,3 @@ if (-not $env:SSH_AUTH_SOCK)
     }
     $env:SSH_AUTH_SOCK = $SshAgentOutput -match 'SSH_AUTH_SOCK' -replace '.*='
 }
-
-if ($IsLinux -and (Get-Command dnf5 -CommandType Application -ErrorAction Ignore))
-{
-    Set-Alias dnf dnf5
-}
