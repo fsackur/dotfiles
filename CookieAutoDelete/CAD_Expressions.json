@@ -1,4 +1,4 @@
-{
+﻿{
   "default": [
     {
       "expression": "*.aliexpress.com",
@@ -535,6 +535,62 @@
       "cleanSiteData": [],
       "cookieNames": [],
       "id": "EtN6pqcbW"
+    },
+    {
+      "expression": "*.accounts.google.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "1YaLeyR_L"
+    },
+    {
+      "expression": "*.backmarket.es",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "2WcSMELXN"
+    },
+    {
+      "expression": "*.ee.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Uoi1MVu8H"
+    },
+    {
+      "expression": "*.home-assistant.io",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "8IMAPGwBR"
+    },
+    {
+      "expression": "*.onestream.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "IMTqjJX3T"
+    },
+    {
+      "expression": "*.serverfault.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "xGvKiTsNV"
+    },
+    {
+      "expression": "*.zoho.eu",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "dINCXbwS6"
     }
   ]
 }
