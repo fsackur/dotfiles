@@ -134,7 +134,7 @@ function Get-RepoPackageFiles
         }
         else
         {
-            rpm --query --list
+            rpm --query --list $Name
         }
     }
 }
