@@ -467,3 +467,21 @@ Register-ArgumentCompleter -CommandName Invoke-Build.ps1 -ParameterName Task -Sc
 
     ($TaskNames -like "$wordToComplete*"), ($TaskNames -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
 }
+
+function logout
+{
+    if ($IsWindows)
+    {
+        logoff
+        return
+    }
+
+    $SessionId = loginctl |
+        select -Skip 1 |
+        match "$USER\b.*\btty" |
+        select -First 1 |
+        % Trim |
+        replace ' .*'
+
+    loginctl kill-session $SessionId
+}
