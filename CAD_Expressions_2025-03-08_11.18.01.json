@@ -1,0 +1,124 @@
+{
+  "default": [
+    {
+      "expression": "*.accounts.google.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "1YaLeyR_L"
+    },
+    {
+      "expression": "*.amazon.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Yrd32Jin0"
+    },
+    {
+      "expression": "*.backmarket.es",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "2WcSMELXN"
+    },
+    {
+      "expression": "*.dvlp.casa",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "7LvWfGaOx"
+    },
+    {
+      "expression": "*.ebay.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "cJnOVUUFo"
+    },
+    {
+      "expression": "*.ee.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "Uoi1MVu8H"
+    },
+    {
+      "expression": "*.github.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "rNw4KMRnK"
+    },
+    {
+      "expression": "*.google.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "9KpsoN0Va"
+    },
+    {
+      "expression": "*.home-assistant.io",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "8IMAPGwBR"
+    },
+    {
+      "expression": "*.leigh.delamere",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "siJ6qUrnU"
+    },
+    {
+      "expression": "*.onestream.co.uk",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "IMTqjJX3T"
+    },
+    {
+      "expression": "*.serverfault.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "xGvKiTsNV"
+    },
+    {
+      "expression": "*.stackexchange.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "jOigQLHvD"
+    },
+    {
+      "expression": "*.stackoverflow.com",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "9m7g5HO28"
+    },
+    {
+      "expression": "*.zoho.eu",
+      "listType": "WHITE",
+      "storeId": "default",
+      "cleanSiteData": [],
+      "cookieNames": [],
+      "id": "dINCXbwS6"
+    }
+  ]
+}
