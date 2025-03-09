@@ -485,3 +485,6 @@ function logout
 
     loginctl kill-session $SessionId
 }
+
+Set-Alias fromj ConvertFrom-Json
+Set-Alias toj ConvertTo-Json
