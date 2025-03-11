@@ -93,7 +93,7 @@ $AsyncProfile = {
 if (Import-Module ProfileAsync -PassThru -ea Ignore)
 {
     $splat = if ((Get-Command Import-ProfileAsync).Parameters.LogPath) {@{LogPath = "/gitroot/ProfileAsync.log"}} else {@{}}
-    Import-ProfileAsync $AsyncProfile -Verbose @splat
+    Import-ProfileAsync $AsyncProfile @splat
 }
 else
 {
