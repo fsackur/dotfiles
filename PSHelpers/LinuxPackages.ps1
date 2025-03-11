@@ -3,12 +3,23 @@ enum Distro
     Fedora
     Ubuntu
     Debian
+    Unknown
+}
+
+enum PackageManager
+{
+    Rpm
+    Deb
+    Unknown
 }
 
 function Get-Distro
 {
     [CmdletBinding()]
-    param ()
+    param
+    (
+        [switch]$NameOnly
+    )
 
     if (-not $PSBoundParameters.ContainsKey('ErrorAction'))
     {
@@ -20,7 +31,53 @@ function Get-Distro
         Write-Error -Exception [NotSupportedException]::new('This function is only supported on Linux') -ErrorAction Stop
     }
 
-    [Distro]((Get-Content /etc/os-release -ErrorAction Stop) -match '^ID=' -replace '.*=')
+    $DistroName = (Get-Content /etc/os-release -ErrorAction Stop) -match '^ID=' -replace '.*=' | Select-Object -First 1
+
+    if ($NameOnly)
+    {
+        return $DistroName
+    }
+
+    $Distro = try
+    {
+        [Distro]$DistroName
+    }
+    catch
+    {
+        [Distro]::Unknown
+    }
+
+    $PackageManager = switch ($Distro)
+    {
+        ([Distro]::Fedora) {[PackageManager]::Rpm}
+        ([Distro]::Debian) {[PackageManager]::Deb}
+        ([Distro]::Ubuntu) {[PackageManager]::Deb}
+        default
+        {
+            $Debs = if (Get-Command dpkg -ErrorAction Ignore) {dpkg -l}
+            $Rpms = if (Get-Command rpm -ErrorAction Ignore) {rpm -qa}
+
+            if ($Rpms.Count -gt 10 -and $Rpms.Count -gt $Debs.Count)
+            {
+                [PackageManager]::Rpm
+            }
+            elseif ($Debs.Count -gt 10 -and $Debs.Count -gt $Rpms.Count)
+            {
+                [PackageManager]::Deb
+            }
+            else
+            {
+                [PackageManager]::Unknown
+            }
+            [PackageManager]::Unknown
+        }
+    }
+
+    [pscustomobject]@{
+        Name = $DistroName
+        Distro = $Distro
+        PackageManager = $PackageManager
+    }
 }
 
 function Get-RepoPackage
@@ -42,51 +99,34 @@ function Get-RepoPackage
         [switch]$All
     )
 
+    begin
+    {
+        $PackageManager = (Get-Distro).PackageManager
+    }
+
     process
     {
-        if ($All)
+        $Path = $Path | Resolve-Path
+
+        $Packages = if ($PackageManager -eq "rpm")
         {
-            $Distro = Get-Distro
-
-            if ($Distro -eq "Fedora")
-            {
-                $Dnf = dnf provides $Path
-
-                # System.Management.Automation.WhereOperatorSelectionMode
-                $Dnf = $Dnf.Where({$_ -like "Repositories loaded."}, 'SkipUntil') | Select-Object -Skip 1 | Out-String
-
-                $Stanzas = $Dnf -split '\n\n' | ForEach-Object Trim
-                $Packages = @($Stanzas) -replace '(?s)\s*:.*' -match '\w'
-            }
-            elseif ($Distro -in "Ubuntu", "Debian")
-            {
-                $Packages = apt-file search $Path | Select-String -Pattern '^\S+'
-            }
+            rpm -qf $Path
+        }
+        elseif ($PackageManager -eq "deb")
+        {
+            apt-file search $Path | Select-String -Pattern '^\S+'
         }
         else
         {
-            $Path = $Path | Resolve-Path
-            $Packages = rpm -qf $Path
+            Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
         }
 
         $Packages | ForEach-Object {
             [pscustomobject]@{
-                Filename = $Path
                 Package = $_
+                Path = $Path
             }
         }
-
-        # $Name | ForEach-Object {
-        #     $Package = dnf info $_ | Select-String 'Name\s+:\s+(?<Name>.*)'
-        #     if ($Package)
-        #     {
-        #         $Package.Matches.Groups[-1].Value
-        #     }
-        #     else
-        #     {
-        #         Write-Warning "Package $_ not found"
-        #     }
-        # }
     }
 }
 
@@ -95,7 +135,10 @@ function Get-RepoPackageFiles
 {
     <#
         .PARAMETER Path
-        Path to a package
+        Path to a .deb or .rpm package
+
+        .PARAMETER Name
+        Name of an installed package
     #>
 
     [CmdletBinding()]
@@ -108,6 +151,11 @@ function Get-RepoPackageFiles
         [Parameter(ParameterSetName = 'PackageName', Mandatory, ValueFromPipeline)]
         [string]$Name
     )
+
+    begin
+    {
+        $PackageManager = $null
+    }
 
     process
     {
@@ -129,12 +177,32 @@ function Get-RepoPackageFiles
             }
             else
             {
-                Write-Error -Exception [NotSupportedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
+                Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
             }
         }
         else
         {
-            rpm --query --list
+            if (-not $PackageManager) {$PackageManager = (Get-Distro).PackageManager}
+
+            $Files = if ($PackageManager -eq "rpm")
+            {
+                rpm --query --list $Name
+            }
+            elseif ($PackageManager -eq "deb")
+            {
+                dpkg --listfiles $Name
+            }
+            else
+            {
+                Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
+            }
+
+            $Files | ForEach-Object {
+                [pscustomobject]@{
+                    Package = $Name
+                    Path = $_
+                }
+            }
         }
     }
 }
