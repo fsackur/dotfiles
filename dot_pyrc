@@ -2,4 +2,39 @@
 
 import os
 import sys
-from pprint import pprint
+import re
+from pprint import pprint, pformat
+from typing import *
+
+def pd(obj):
+    pprint(dir(obj))
+
+def gm(_obj, props: Optional[List[str]]=None, show_dunder=False):
+    obj: Sequence = _obj if isinstance(_obj, Sequence) else [_obj]
+    if len(obj) == 0:
+        return
+
+    attrs = dir(obj[0])
+    if not show_dunder:
+        attrs = [a for a in attrs if not a.startswith("_")]
+
+    if props is not None:
+        attrs = [a for a in attrs if any(
+            p for p in props if re.match(p, a, re.IGNORECASE)
+        )]
+
+    length = len(sorted(attrs, key=len)[-1])
+    pad_length = length + 2
+
+    for obj in obj:
+        for attr in attrs:
+            msg = f"{attr}:".ljust(pad_length, " ")
+            try:
+                value = getattr(obj, attr)
+            except Exception as ex:
+                value = ex
+            value_msg = repr(value)
+            print(f"{msg}{value_msg}")
+        print("")
+
+def gmf(obj): gm(obj, show_dunder=True)
