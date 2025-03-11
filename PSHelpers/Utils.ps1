@@ -488,3 +488,32 @@ function logout
 
 Set-Alias fromj ConvertFrom-Json
 Set-Alias toj ConvertTo-Json
+
+function Set-Proxy
+{
+    param
+    (
+        [Parameter(ParameterSetName = "mitmproxy")]
+        [ValidateScript({$_})]
+        [switch]$mitmproxy,
+
+        [Parameter(ParameterSetName = "off")]
+        [switch]$Off,
+
+        [Parameter(ParameterSetName = "uri", Mandatory, Position = 0, ValueFromPipeline)]
+        [uri]$Proxy
+    )
+
+    if ($off)
+    {
+        Remove-Item Env:/HTTP_PROXY, Env:/HTTPS_PROXY -ErrorAction Ignore
+        return
+    }
+
+    if ($mitmproxy)
+    {
+        $Proxy = "http://127.0.0.1:8080"
+    }
+
+    $env:HTTP_PROXY = $env:HTTPS_PROXY = $Proxy
+}
