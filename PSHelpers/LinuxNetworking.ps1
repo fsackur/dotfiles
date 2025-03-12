@@ -36,15 +36,23 @@ function Get-NetIpAddress
     [CmdletBinding()]
     param
     (
-        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
         [SupportsWildcards()]
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Names = Get-NetInterfaceName
             ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
-        [string[]]$Name
+        [string[]]$Name,
+
+        [ValidateSet("IPv4", "IPv6")]
+        [string]$AddressFamily
     )
+
+    if ($AddressFamily)
+    {
+        [Net.Sockets.AddressFamily]$AddressFamily = $AddressFamily -replace "IP(v4)?", "InterNetwork"
+    }
 
     if ($MyInvocation.ExpectingInput)
     {
@@ -63,12 +71,24 @@ function Get-NetIpAddress
             $Head1, $Head2, $Addrs = $_ -split '\n', 3
             $Index, $Name, $IfProperties = $Head1 -split ': ', 3
             $Hardware = $Head2 -replace '^\s+'
+            $Index = [int]$Index
+            $Name = $Name
+
+            if ($Addrs -match '(?s)^(\s*altname (?<AltName>\w+)\s*\n)?(?<Addrs>.*)')
+            {
+                $AltName = $Matches.AltName
+                $Addrs = $Matches.Addrs
+            }
+            else
+            {
+                Write-Error "Failed to parse '$Addrs'"
+            }
 
             $Addrs -split '\n(?=    inet)' | ForEach-Object Trim | Where-Object Length | ForEach-Object {
                 $Head, $IpAddressProperties = $_ -split '\n', 2 | ForEach-Object Trim
                 if ($Head -match $Pattern)
                 {
-                    $IpAddress = $Matches.IpAddress
+                    $IpAddress = [ipaddress]$Matches.IpAddress
                     $Prefix    = $Matches.Prefix
                     $Broadcast = $Matches.Broadcast
                     $Scope     = $Matches.Scope -split ' '
@@ -79,13 +99,19 @@ function Get-NetIpAddress
                     return
                 }
 
+                if ($AddressFamily -and $AddressFamily -ne $IpAddress.AddressFamily)
+                {
+                    return
+                }
+
                 [pscustomobject]@{
                     PSTypeName          = 'InetAddress'
                     Index               = $Index
-                    Name                = $Name
+                    Name                = $Name | Write-Output
+                    AltName             = $AltName
                     IfProperties        = $IfProperties
                     Hardware            = $Hardware
-                    IpAddress           = [ipaddress]$IpAddress
+                    IpAddress           = $IpAddress
                     Prefix              = $Prefix
                     Scope               = $Scope
                     IpAddressProperties = $IpAddressProperties.Trim()
