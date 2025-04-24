@@ -46,11 +46,14 @@ function tinue {
     # $PromptFormat = $StarshipConfig.character.format
     try
     {
-        $Changes = (git -c color.ui=always status -s) -replace '^\s+' -replace '\s+', " "
+        $RebaseOutput = git -c color.ui=always -c core.editor=true rebase --continue
 
         $IsConflict = Test-Path $MergeMsgPath
         if ($IsConflict) {
-            if ($PSCmdlet.ShouldProcess($changes, "merge conflicts")) {
+            $RebaseOutput
+
+            $Changes = (git -c color.ui=always status -s) -replace '^\s+' -replace '\s+', " "
+            if ($PSCmdlet.ShouldProcess($Changes, "merge conflicts")) {
                 $ChangedFiles = $Changes -replace '^\S+\s+' | Resolve-Path -ErrorAction Ignore
                 if ($ChangedFiles) {
                     $Markers = $ChangedFiles | gci | sls -Pattern "======="
@@ -62,7 +65,6 @@ function tinue {
                 }
 
                 git add $GitDir
-                git -c core.editor=true rebase --continue
                 return & $MyInvocation.MyCommand
             } else {
                 return
@@ -73,6 +75,7 @@ function tinue {
 
         $Changes = (git -c color.ui=always status -s) -replace '^\s+' -replace '\s+', " "
         if ($Changes) {
+            $Changes
             # $LastMessage = git show -s --format=%s HEAD
             $LastMessage = gc "$GitDir/.git/rebase-merge/message"
             if ($PSCmdlet.ShouldProcess($changes, "amend commit '$LastMessage'")) {
@@ -84,7 +87,7 @@ function tinue {
             }
         }
 
-        git rebase --continue
+        return & $MyInvocation.MyCommand
     }
     finally
     {
