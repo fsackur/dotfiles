@@ -1,7 +1,7 @@
 ﻿
 if (-not $Global:PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
 
-$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Encoding]::UTF8
+$OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Utf8Encoding]::new($false)  # no bom
 $Global:PSDefaultParameterValues['*:Encoding'] = $Global:PSDefaultParameterValues['*:InputEncoding'] = $Global:PSDefaultParameterValues['*:OutputEncoding'] = $OutputEncoding
 
 if ($PSVersionTable.PSEdition -ne 'Core')
