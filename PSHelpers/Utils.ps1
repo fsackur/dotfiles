@@ -591,3 +591,93 @@ function Read-Journal
         sudo journalctl @_args
     }
 }
+
+function Parse-IniConf {
+
+    [CmdletBinding(DefaultParameterSetName = "NoMapper")]
+    param
+    (
+        [Parameter(ValueFromPipeline)]
+        [string]$InputObject,
+
+        [switch]$AsHashtable,
+
+        [Parameter(ParameterSetName = "Mapper")]
+        [scriptblock]$ValueMapper,
+
+        [Parameter(ParameterSetName = "Unquote")]
+        [switch]$Unquote,
+
+        [Parameter(ParameterSetName = "Unjson")]
+        [switch]$UnJson,
+
+        [string]$DefaultHeader = "GLOBAL",
+
+        [string[]]$Comment = "#"
+    )
+
+    $Content = $(if ($MyInvocation.ExpectingInput) {$input} else {$InputObject}) | Out-String
+
+    if ($Unquote) {
+        $ValueMapper = {$_ -replace "^(['`"``])(.*)(\1)$", '$2'}
+    } elseif ($UnJson) {
+        $ValueMapper = {$_ | ConvertFrom-Json -AsHashtable:$AsHashtable}
+    }
+
+
+    if ($Comment) {
+        $CommentPatterns = $Comment | ForEach-Object {
+            if ($_ -match $_) {$_} else {[regex]::Escape($_)}
+        }
+
+        $CommentPattern = if ($CommentPatterns.Count -gt 1) {
+            "($($CommentPatterns -join '|')).*"
+        } else {
+            "$CommentPatterns.*"
+        }
+
+        $Content = $Content -replace $CommentPattern
+    }
+
+    $Content = $Content.TrimStart() -replace '\n\s+(?=\r?\n)'
+
+    $Output = [ordered]@{}
+
+    $Chunks = $Content -split '(?<=\n)(?=\[.*\])'
+    foreach ($Chunk in $Chunks) {
+        $Header, $Body = $Chunk -split '(?<=^\s*\[.*\])[\s\r\n$]', 2
+        if ($Header -match '^\[(?<Header>.*)\]$') {
+            $Header = $Matches.Header
+        } else {
+            $Body = $Header
+            $Header = $DefaultHeader
+            Write-Warning "Values outside a header have been placed in '$DefaultHeader'"
+        }
+
+        $Section = [ordered]@{}
+        $Kvps = $Body -split '(?<=\r?\n)(?=\s*\S+\s*=\s*)' | ForEach-Object Trim | Where-Object Length
+        foreach ($Kvp in $Kvps) {
+
+            $Key, $Value = $Kvp -split '\s*=\s*', 2
+
+            if ($null -eq $Value) {
+                Write-Warning "Key '$Header.$Key' is specified multiple times."
+            } else {
+                $Value = $Value.Trim()
+            }
+
+            if ($ValueMapper) {
+                $Value = $Value | ForEach-Object $ValueMapper
+            }
+
+            if ($Section.Contains($Key)) {
+                Write-Warning "Key '$Header.$Key' is specified multiple times."
+            }
+            $Section[$Key] = $Value
+        }
+
+        $Output[$Header] = if ($AsHashtable) {$Section} else {[pscustomobject]$Section}
+    }
+
+    if ($AsHashtable) {$Output} else {[pscustomobject]$Output}
+}
