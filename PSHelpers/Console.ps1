@@ -30,6 +30,7 @@ if ($IsLinux)
     'ErrorVariable',
     'WarningVariable',
     'InformationVariable',
+    'ProgressAction',
     'OutVariable',
     'OutBuffer',
     'PipelineVariable',
