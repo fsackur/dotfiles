@@ -9,15 +9,11 @@ Host github.com
     User git
     IdentityFile ~/.ssh/freddie_git
 
-Host sparkle sparkle.euroburners.net
+Host sparkle darkhorse *.euroburners.net
     User freddie
+    # User nowhere
     IdentityFile ~/.ssh/freddie_nowhere
     ForwardAgent yes
-    ForwardX11 yes
-
-Host *.euroburners.net
-    User nowhere
-    IdentityFile ~/.ssh/freddie_nowhere
     ForwardX11 yes
 
 Host rutx rutx.dvlp.casa 10.1.1.4 10.0.0.4 10.4.4.4
@@ -36,11 +32,15 @@ Host opal 10.2.2.2
 Host gerty gerty.dvlp.casa 10.0.0.34
     User root
 
+Host opnshut.dvlp.casa opnshut
+    User root
+    IdentityFile ~/.ssh/freddie_home
+
 Host *.dvlp.casa 10.1.1.* 10.0.0.* 10.4.4.*
     User freddie
     IdentityFile ~/.ssh/freddie_home
     ForwardAgent yes
     ForwardX11 yes
 
-Host *
+Host *.leigh.delamere
     Include leigh.delamere.config
