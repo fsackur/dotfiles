@@ -689,11 +689,19 @@ function Parse-IniConf {
 }
 
 function Find-UsbDevice {
+    [CmdletBinding(DefaultParameterSetName = "All")]
     param (
+        [Parameter(ParameterSetName = "ByFriendlyName", Position = 0)]
         [SupportsWildcards()]
         $Name,
 
-        [switch]$Raw
+        [Parameter(ParameterSetName = "ByDevice")]
+        [SupportsWildcards()]
+        $Device,
+
+        [switch]$Raw,
+
+        [switch]$IncludeBus
     )
 
     if ([Environment]::OSVersion.Platform -notin "Unix", "MaxOSX") {
@@ -704,39 +712,56 @@ function Find-UsbDevice {
         throw [Management.Automation.CommandNotFoundException]::new("udevadm not found.")
     }
 
-    $NameProperties = "ID_SERIAL", "ID_USB_SERIAL", "ID_MODEL_FROM_DATABASE", "ID_VENDOR_FROM_DATABASE"
+    $NameProperties = "ID_SERIAL", "ID_USB_SERIAL", "ID_MODEL_FROM_DATABASE", "ID_VENDOR_FROM_DATABASE", "NAME"
 
     $SysDevPaths = sh -c 'find /sys/bus/usb/devices/usb*/ -name dev'
-    $SysDevPaths | ForEach-Object {
-        $SysPath = Split-Path $_
+    foreach ($SysDevPath in $SysDevPaths) {
+        $SysPath = Split-Path $SysDevPath
         $DevName = udevadm info -q name -p $SysPath
-        if ($DevName.StartsWith("bus/")) {return}
 
-        $Properties = [ordered]@{}
-        $DevProps = sh -c "udevadm info -q property -p $SysPath"
-        foreach ($Kvp in $DevProps) {
-            $Key, $Value = $Kvp -split "=", 2
-            if (-not $Raw -and $Value.IndexOf('\') -gt 0) {
-                $Value = sh -c "printf '$Value'"
+        if ($Device -and "/dev/$DevName" -notlike $Device) {continue}
+        if (-not $IncludeBus -and $DevName.StartsWith("bus/")) {continue}
+
+        $DevProps = udevadm info -q all -p $SysPath
+
+        $Symlinks = @()
+        $Properties = [ordered]@{SYSPATH = $SysPath}
+        $DevProps | ForEach-Object {
+            $Section, $Value = $_ -split ': ', 2
+            switch ($Section) {
+                "N" {$Key = "NAME"; break}
+                "S" {$Symlinks += $Value; return}
+                "E" {
+                    if ($Symlinks) {
+                        $Properties.SYMLINK = [string[]]$Symlinks
+                        $Symlinks = $null
+                    }
+                    $Key, $Value = $Value -split "=", 2
+                    break
+                }
+                default {return}
             }
+
+            if ($Key -eq "DEVLINKS") {
+                $Value = $Value -split ' '
+            } elseif (-not $Raw -and $Value -match '\\') {
+                $Value = printf $Value
+            }
+
             $Properties[$Key] = $Value
         }
 
-        $FriendlyName = $NameProperties |
-            Where-Object {$Properties.Contains($_)} |
-            Select-Object -First 1 |
-            ForEach-Object {$Properties[$_]}
-
-        if ($Name -and -not ($FriendlyName -and $FriendlyName -like $Name)) {
-            return
+        if ($Name -or -not $Raw) {
+            $Names = $NameProperties | ForEach-Object {$Properties[$_]} | Where-Object Length
+            if ($Name -and -not ($Names -like $Name)) {continue}
         }
 
         if ($Raw) {
             [pscustomobject]$Properties
         } else {
             [pscustomobject]@{
-                Name = $FriendlyName
-                DevName = $Properties.DEVNAME
+                FriendlyName = $Names | Select-Object -First 1
+                Device = $Properties.DEVNAME
                 Properties = [pscustomobject]$Properties
             }
         }
