@@ -1,16 +1,21 @@
 
 function Get-EnumValues
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "ByType")]
     param
     (
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(ParameterSetName = "ByType", Mandatory, Position = 0, ValueFromPipeline)]
         [ValidateScript({$_.IsEnum})]
-        [type]$Enum
+        [type]$Enum,
+
+        [Parameter(ParameterSetName = "FromInstance", Mandatory, Position = 0, ValueFromPipeline)]
+        [enum]$InputObject
     )
 
     process
     {
+        if ($PSCmdlet.ParameterSetName -eq "FromInstance") {$Enum = $InputObject.GetType()}
+
         [Enum]::GetValues($Enum) | ForEach-Object {
             [pscustomobject]@{
                 Value = $_.value__
@@ -19,6 +24,7 @@ function Get-EnumValues
         }
     }
 }
+Set-Alias enumvals Get-EnumValues
 
 function ConvertFrom-Base64
 {
