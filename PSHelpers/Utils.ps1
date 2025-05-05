@@ -687,3 +687,58 @@ function Parse-IniConf {
 
     if ($AsHashtable) {$Output} else {[pscustomobject]$Output}
 }
+
+function Find-UsbDevice {
+    param (
+        [SupportsWildcards()]
+        $Name,
+
+        [switch]$Raw
+    )
+
+    if ([Environment]::OSVersion.Platform -notin "Unix", "MaxOSX") {
+        throw [NotImplementedException]::new("Not supported on $([Environment]::OSVersion.Platform)")
+    }
+
+    if (-not (Get-Command udevadm -ErrorAction Ignore)) {
+        throw [Management.Automation.CommandNotFoundException]::new("udevadm not found.")
+    }
+
+    $NameProperties = "ID_SERIAL", "ID_USB_SERIAL", "ID_MODEL_FROM_DATABASE", "ID_VENDOR_FROM_DATABASE"
+
+    $SysDevPaths = sh -c 'find /sys/bus/usb/devices/usb*/ -name dev'
+    $SysDevPaths | ForEach-Object {
+        $SysPath = Split-Path $_
+        $DevName = udevadm info -q name -p $SysPath
+        if ($DevName.StartsWith("bus/")) {return}
+
+        $Properties = [ordered]@{}
+        $DevProps = sh -c "udevadm info -q property -p $SysPath"
+        foreach ($Kvp in $DevProps) {
+            $Key, $Value = $Kvp -split "=", 2
+            if (-not $Raw -and $Value.IndexOf('\') -gt 0) {
+                $Value = sh -c "printf '$Value'"
+            }
+            $Properties[$Key] = $Value
+        }
+
+        $FriendlyName = $NameProperties |
+            Where-Object {$Properties.Contains($_)} |
+            Select-Object -First 1 |
+            ForEach-Object {$Properties[$_]}
+
+        if ($Name -and -not ($FriendlyName -and $FriendlyName -like $Name)) {
+            return
+        }
+
+        if ($Raw) {
+            [pscustomobject]$Properties
+        } else {
+            [pscustomobject]@{
+                Name = $FriendlyName
+                DevName = $Properties.DEVNAME
+                Properties = [pscustomobject]$Properties
+            }
+        }
+    }
+}
