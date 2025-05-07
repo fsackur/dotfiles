@@ -18,6 +18,7 @@ $ErrorActionPreference = 'Stop'
     @{ModuleName = "PSFzf"; ModuleVersion = "2.6.1"},
     @{ModuleName = "Microsoft.PowerShell.SecretManagement"; ModuleVersion = "1.1.2"},
     @{ModuleName = "SecretManagement.Warden"; ModuleVersion = "1.1.5"}
+    @{ModuleName = "dconf"; ModuleVersion = "0.2.0"}
 )
 
 $ToInstall = $Required | ? {-not (Get-Module -ListAvailable -FullyQualifiedName $_)}
