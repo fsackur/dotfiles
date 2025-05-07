@@ -113,6 +113,7 @@ function Get-NetIpAddress
                     Hardware            = $Hardware
                     IpAddress           = $IpAddress
                     Prefix              = $Prefix
+                    CidrAddress         = $IpAddress, $Prefix -join '/'
                     Scope               = $Scope
                     IpAddressProperties = $IpAddressProperties.Trim()
                 }
@@ -121,3 +122,96 @@ function Get-NetIpAddress
     }
 }
 Set-Alias gnip Get-NetIpAddress
+
+function Add-NetIPAddress {
+    [CmdletBinding(DefaultParameterSetName = "ByCidrAddress", SupportsShouldProcess, ConfirmImpact = "High")]
+    param
+    (
+        [Parameter(Mandatory, Position = 0)]
+        [SupportsWildcards()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Names = Get-NetInterfaceName
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Name,
+
+        [Parameter(ParameterSetName = "ByCidrAddress", Mandatory, Position = 1)]
+        [string]$CidrAddress,
+
+        [Parameter(ParameterSetName = "ByAddressAndMask", Mandatory, Position = 1)]
+        [ipaddress]$Address,
+
+        [Parameter(ParameterSetName = "ByAddressAndMask", Mandatory)]
+        [ValidateRange(1, 32)]
+        [int]$Mask,
+
+        [switch]$Force,
+
+        [ValidateRange(0, [int]::MaxValue)]
+        [int]$LifetimeSecs = 0,
+
+        [switch]$NoDuplicateAddressDetection,
+
+        [switch]$NoPrefixRoute
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq "ByCidrAddress") {
+        [void]$PSBoundParameters.Remove("CidrAddress")
+        $Address, $Mask = $CidrAddress -split "/", 2
+        return & $MyInvocation.MyCommand -Address $Address -Mask $Mask @PSBoundParameters
+    }
+
+    $CidrAddress = $Address, $Mask -join '/'
+
+    $Lifetime = if ($LifetimeSecs) {"preferred_lft", $LifetimeSecs} else {"preferred_lft", "forever"}
+
+    $IpArgs = @()
+
+    if ($NoDuplicateAddressDetection) {$IpArgs += "nodad"}
+    if ($NoPrefixRoute) {$IpArgs += "noprefixroute"}
+
+    if ($Force -or $PSCmdlet.ShouldProcess($Name, "add $CidrAddress")) {
+        sudo ip address add $CidrAddress dev $Name @Lifetime @IpArgs
+    }
+}
+Set-Alias anip Add-NetIpAddress
+
+function Remove-NetIPAddress {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param
+    (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [SupportsWildcards()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $CidrAddresses = Get-NetIpAddress | % CidrAddress
+            ($CidrAddresses -like "$wordToComplete*"), ($CidrAddresses -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$CidrAddress,
+
+        [Parameter()]
+        [SupportsWildcards()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Names = Get-NetInterfaceName
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Name,
+
+        [switch]$Force
+    )
+
+    $CidrAddresses = if ($MyInvocation.ExpectingInput) {$input} else {$CidrAddress}
+
+    [void]$PSBoundParameters.Remove("CidrAddress")
+    [void]$PSBoundParameters.Remove("Force")
+
+    foreach ($CidrAddress in $CidrAddresses) {
+        Get-NetIpAddress @PSBoundParameters |
+            ? CidrAddress -like $CidrAddress |
+            ? {$Force -or $PSCmdlet.ShouldProcess($_.Name, "del $($_.CidrAddress)")} |
+            % {sudo ip address del $_.CidrAddress dev $_.Name}
+    }
+}
+Set-Alias rnip Remove-NetIpAddress
