@@ -1,0 +1,10 @@
+dconfKeys:
+  - org/gnome/desktop/wm/keybindings
+  - org/gnome/desktop/background
+  - org/gnome/desktop/interface
+  - org/gnome/desktop/screensaver
+  - org/gnome/mutter
+  - org/gnome/settings-daemon/plugins/media-keys
+  - org/gnome/shell/keybindings
+  - org/gnome/terminal/legacy/keybindings
+  - org/gtk/gtk4/settings/file-chooser

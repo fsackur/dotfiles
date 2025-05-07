@@ -1,0 +1,7 @@
+﻿{{ output "pwsh" "-nop" "-noni" "-c" (print `$DconfKeys = "` .dconfKeys `" -replace "^\[|\]$" -split "\s"
+    Import-Module dconf -ErrorAction Stop
+
+	$Current = Export-Dconf $DconfKeys -ErrorAction Stop
+	$Declared = Get-Content ~/.config/dconf-gnome-declared.ini | Format-Dconf
+	Compare-Dconf $Current $Declared
+`) | trim }}

@@ -2,18 +2,21 @@
 
 $ErrorActionPreference = 'Stop'
 
-# .ini hash: {{ include "dot_config/dconf-gnome.ini" | sha256sum }}
+# .ini hash: {{ include (print .chezmoi.homeDir "/.config/dconf-gnome-diff.ini") | sha256sum }}
 if ($env:XDG_CURRENT_DESKTOP -ne "GNOME") {return}
 
+$DconfKeys = "{{ .dconfKeys }}" -replace "^\[|\]$" -split "\s"
+
+$DconfKeys | Write-Host -ForegroundColor Green
 
 
-if (Import-Module dconf2 -PassThru -ErrorAction Ignore) {
-    $BackupPath = Join-Path ([IO.Path]::GetTempPath()) "dconf.$([datetime]::UtcNow.Ticks).ini"
-    Export-Dconf / > $BackupPath
-    "Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
+# if (Import-Module dconf -PassThru -ErrorAction Ignore) {
+#     $BackupPath = Join-Path ([IO.Path]::GetTempPath()) "dconf.$([datetime]::UtcNow.Ticks).ini"
+#     Export-Dconf / > $BackupPath
+#     "Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
 
-    Import-Dconf -Path ~/.config/dconf-gnome.ini
+#     Import-Dconf -Path ~/.config/dconf-gnome.ini
 
-} else {
-    Write-Warning "Dconf module not found; skipping dconf settings."
-}
+# } else {
+#     Write-Warning "Dconf module not found; skipping dconf settings."
+# }
