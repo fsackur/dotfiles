@@ -3,16 +3,17 @@
 $ErrorActionPreference = 'Stop'
 
 # .ini hash: {{ include "dot_config/dconf-gnome.ini" | sha256sum }}
-if ($env:XDG_CURRENT_DESKTOP -eq "GNOME")
-{
-    if (Import-Module dconf2 -PassThru -ErrorAction Ignore) {
-        $BackupPath = Join-Path ([IO.Path]::GetTempPath()) "dconf.$([datetime]::UtcNow.Ticks).ini"
-        Export-Dconf / > $BackupPath
-        "Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
+if ($env:XDG_CURRENT_DESKTOP -ne "GNOME") {return}
 
-        Import-Dconf -Path ~/.config/dconf-gnome.ini
 
-    } else {
-        Write-Warning "Dconf module not found; skipping dconf settings."
-    }
+
+if (Import-Module dconf2 -PassThru -ErrorAction Ignore) {
+    $BackupPath = Join-Path ([IO.Path]::GetTempPath()) "dconf.$([datetime]::UtcNow.Ticks).ini"
+    Export-Dconf / > $BackupPath
+    "Backed up dconf settings to $BackupPath" | Write-Host -ForegroundColor DarkYellow
+
+    Import-Dconf -Path ~/.config/dconf-gnome.ini
+
+} else {
+    Write-Warning "Dconf module not found; skipping dconf settings."
 }
