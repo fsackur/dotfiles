@@ -39,6 +39,14 @@ if ($IsLinux)
 )
 [Collections.Generic.HashSet[string]]$CommonParameters = [Collections.Generic.HashSet[string]]::new($CommonParameters)
 
+$ArgumentCompleterSnippet = @'
+{
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    $Names = @()
+    ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+}
+'@
+
 
 Set-Alias os Out-String
 Set-Alias cm chezmoi
