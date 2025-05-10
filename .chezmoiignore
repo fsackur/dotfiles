@@ -24,3 +24,8 @@ Documents
 {{ if not (eq .chezmoi.hostname "ghetto-blaster" "brick") }}
 .ssh/dell.config
 {{ end }}
+
+{{ if (output "bash" "-c" "resolvectl status | grep 'DNS Domain: leigh.delamere'") }}
+.local/bin/unban-ip-from-dusty-euroburners.sh
+**/remmina/**
+{{ end }}
