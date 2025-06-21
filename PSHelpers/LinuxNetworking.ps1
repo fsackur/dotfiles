@@ -31,6 +31,21 @@ function Get-NetInterfaceName
     $Names
 }
 
+function Test-Loopback
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
+        [ipaddress]$Address
+    )
+
+    process
+    {
+        return $Address.IPAddressToString -eq "::1" -or $Address.IPAddressToString -match "^127\."
+    }
+}
+
 function Get-NetIpAddress
 {
     [CmdletBinding()]
@@ -46,7 +61,9 @@ function Get-NetIpAddress
         [string[]]$Name,
 
         [ValidateSet("IPv4", "IPv6")]
-        [string]$AddressFamily
+        [string]$AddressFamily,
+
+        [switch]$IncludeLoopback
     )
 
     if ($AddressFamily)
@@ -61,7 +78,6 @@ function Get-NetIpAddress
 
     $Name = $Name | Get-NetInterfaceName
 
-    Update-TypeData -Force -TypeName InetAddress -DefaultDisplayPropertySet Name, IpAddress, Prefix, Scope
     $Pattern = 'inet(6?) (?<IpAddress>\S+)/(?<Prefix>\d+) (brd (?<Broadcast>\S+) )?scope (?<Scope>.*)'
 
     $Name | ForEach-Object {
@@ -74,7 +90,7 @@ function Get-NetIpAddress
             $Index = [int]$Index
             $Name = $Name
 
-            if ($Addrs -match '(?s)^(\s*altname (?<AltName>\w+)\s*\n)?(?<Addrs>.*)')
+            if ($Addrs -match '(?s)^(\s*altname (?<AltName>\w+)\s*)?(?<Addrs>.*)')
             {
                 $AltName = $Matches.AltName
                 $Addrs = $Matches.Addrs
@@ -82,6 +98,7 @@ function Get-NetIpAddress
             else
             {
                 Write-Error "Failed to parse '$Addrs'"
+                $AltName = $null
             }
 
             $Addrs -split '\n(?=    inet)' | ForEach-Object Trim | Where-Object Length | ForEach-Object {
@@ -104,6 +121,12 @@ function Get-NetIpAddress
                     return
                 }
 
+                $IsLoopback = Test-Loopback $IpAddress
+                if ($IsLoopback -and -not $IncludeLoopback)
+                {
+                    return
+                }
+
                 [pscustomobject]@{
                     PSTypeName          = 'InetAddress'
                     Index               = $Index
@@ -114,6 +137,7 @@ function Get-NetIpAddress
                     IpAddress           = $IpAddress
                     Prefix              = $Prefix
                     CidrAddress         = $IpAddress, $Prefix -join '/'
+                    IsLoopback          = $IsLoopback
                     Scope               = $Scope
                     IpAddressProperties = $IpAddressProperties.Trim()
                 }
@@ -123,7 +147,7 @@ function Get-NetIpAddress
 }
 Set-Alias gnip Get-NetIpAddress
 
-function Add-NetIPAddress {
+function Add-NetIpAddress {
     [CmdletBinding(DefaultParameterSetName = "ByCidrAddress", SupportsShouldProcess, ConfirmImpact = "High")]
     param
     (
@@ -177,7 +201,7 @@ function Add-NetIPAddress {
 }
 Set-Alias anip Add-NetIpAddress
 
-function Remove-NetIPAddress {
+function Remove-NetIpAddress {
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
     param
     (
@@ -185,9 +209,15 @@ function Remove-NetIPAddress {
         [SupportsWildcards()]
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-            $CidrAddresses = Get-NetIpAddress | % CidrAddress
+
+            $NameSplat = if ($fakeBoundParameters.Name) {@{Name = $fakeBoundParameters.Name}} else {@{}}
+            $CidrAddresses = Get-NetIpAddress @NameSplat -IncludeLoopback |
+                Sort-Object IsLoopback, IpAddress |
+                % CidrAddress
+
             ($CidrAddresses -like "$wordToComplete*"), ($CidrAddresses -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
+        [Alias('Address', 'IpAddress')]
         [string]$CidrAddress,
 
         [Parameter()]
@@ -209,9 +239,11 @@ function Remove-NetIPAddress {
 
     foreach ($CidrAddress in $CidrAddresses) {
         Get-NetIpAddress @PSBoundParameters |
-            ? CidrAddress -like $CidrAddress |
+            ? {$_.CidrAddress -like $CidrAddress -or $_.IpAddress.IPAddressToString -like $CidrAddress} |
             ? {$Force -or $PSCmdlet.ShouldProcess($_.Name, "del $($_.CidrAddress)")} |
             % {sudo ip address del $_.CidrAddress dev $_.Name}
     }
 }
 Set-Alias rnip Remove-NetIpAddress
+
+Update-TypeData -Force -TypeName InetAddress -DefaultDisplayPropertySet Name, IpAddress, Prefix, Scope
