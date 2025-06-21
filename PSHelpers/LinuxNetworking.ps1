@@ -246,4 +246,126 @@ function Remove-NetIpAddress {
 }
 Set-Alias rnip Remove-NetIpAddress
 
+function Get-NetIpRoute
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Position = 0)]
+        [SupportsWildcards()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            $Dests = Get-NetIpRoute | % dst
+            ($Dests -like "$wordToComplete*"), ($Dests -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [Alias('Prefix', 'CidrAddress')]
+        [string[]]$Destination,
+
+        [switch]$All
+    )
+
+    $AllSplat = if ($All) {@('table', 'all')} else {@()}
+    $Routes = ip -j -d route show @AllSplat | ConvertFrom-Json
+
+    if ($Destination)
+    {
+        $Routes = $Routes | ? {$dst = $_.dst; $Destination | ? {$dst -like $_}}
+    }
+
+    $Routes | % {$_.PSTypeNames.Insert(0, 'InetRoute')}
+    $Routes
+}
+Set-Alias gnr Get-NetIPRoute
+
+function Add-NetIpRoute {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param
+    (
+        [Parameter(Mandatory, Position = 0)]
+        [Alias('Prefix', 'CidrAddress')]
+        [string]$Destination,
+
+        [Parameter(Mandatory, Position = 1)]
+        [string]$Gateway,
+
+        [Parameter(Position = 2)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Device,
+
+        [switch]$Force
+    )
+
+    $AddArgs = "$Destination via $Gateway"
+
+    if ($Device)
+    {
+        $AddArgs = "$AddArgs dev $Device"
+    }
+
+    if ($Force -or $PSCmdlet.ShouldProcess($AddArgs, "add"))
+    {
+        $AddArgs = $AddArgs -split ' '
+        sudo ip route add @AddArgs
+    }
+}
+Set-Alias anr Add-NetIpRoute
+
+function Remove-NetIpRoute {
+    [CmdletBinding(DefaultParameterSetName = 'ByGateway', SupportsShouldProcess, ConfirmImpact = "High")]
+    param
+    (
+        [Parameter(ParameterSetName = 'ByDest', Mandatory, Position = 0, ValueFromPipeline)]
+        [SupportsWildcards()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            $Dests = Get-NetIpRoute | % dst
+            ($Dests -like "$wordToComplete*"), ($Dests -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [Alias('Prefix', 'CidrAddress')]
+        [string]$Destination,
+
+        [Parameter(ParameterSetName = 'ByDest')]
+        [Parameter(ParameterSetName = 'ByGateway', Mandatory)]
+        [SupportsWildcards()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            [string[]]$Names = Get-NetIpRoute -All | % gateway | ? Length
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Gateway,
+
+        [switch]$Force
+    )
+
+    if ($Destination)
+    {
+        [string[]]$Dests = if ($MyInvocation.ExpectingInput) {$input} else {$Destination}
+        $Routes = Get-NetIPRoute -All -Destination $Dests
+    }
+    else
+    {
+        $Routes = Get-NetIPRoute
+    }
+
+    if ($Gateway)
+    {
+        $Routes = $Routes | ? gateway -like $Gateway
+    }
+
+    $Routes | % {
+        if ($Force -or $PSCmdlet.ShouldProcess("$($_.dst) via $($_.gateway) dev $($_.dev)", "del"))
+        {
+            sudo ip route del $_.dst via $_.gateway dev $_.dev
+        }
+    }
+}
+Set-Alias rnr Remove-NetIpRoute
+
 Update-TypeData -Force -TypeName InetAddress -DefaultDisplayPropertySet Name, IpAddress, Prefix, Scope
+Update-TypeData -Force -TypeName InetRoute -DefaultDisplayPropertySet dst, gateway, dev, metric
