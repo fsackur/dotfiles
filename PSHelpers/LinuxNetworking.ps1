@@ -34,6 +34,7 @@ function Get-NetInterfaceName
 function Test-Loopback
 {
     [CmdletBinding()]
+    [OutputType([Bool])]
     param
     (
         [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
@@ -46,9 +47,13 @@ function Test-Loopback
     }
 }
 
+#region ip addresses
+Update-TypeData -Force -TypeName InetAddress -DefaultDisplayPropertySet Name, IpAddress, Prefix, Scope
+
 function Get-NetIpAddress
 {
     [CmdletBinding()]
+    [OutputType("InetAddress")]
     param
     (
         [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Position = 0)]
@@ -245,10 +250,15 @@ function Remove-NetIpAddress {
     }
 }
 Set-Alias rnip Remove-NetIpAddress
+#endregion ip addresses
+
+#region routes
+Update-TypeData -Force -TypeName InetRoute -DefaultDisplayPropertySet dst, gateway, dev, metric
 
 function Get-NetIpRoute
 {
     [CmdletBinding()]
+    [OutputType("InetRoute")]
     param
     (
         [Parameter(Position = 0)]
@@ -366,6 +376,95 @@ function Remove-NetIpRoute {
     }
 }
 Set-Alias rnr Remove-NetIpRoute
+#region routes
 
-Update-TypeData -Force -TypeName InetAddress -DefaultDisplayPropertySet Name, IpAddress, Prefix, Scope
-Update-TypeData -Force -TypeName InetRoute -DefaultDisplayPropertySet dst, gateway, dev, metric
+#region wlan
+Update-TypeData -Force -TypeName Wlan -DefaultDisplayPropertySet Ssid, Band, Bars, Active
+Update-TypeData -Force -TypeName Wlan -MemberType ScriptProperty -MemberName Band -Value {
+    [int]$Freq = $this.Freq -replace "\s.*"
+    [Math]::Truncate($Freq / 1000).ToString() + "GHz"
+}
+Update-TypeData -Force -TypeName Wlan -MemberType ScriptProperty -MemberName Hidden -Value {
+    $this.Ssid -eq "--" -and $this.SsidHex -eq "--"
+}
+
+
+function Get-Wlan {
+    [CmdletBinding()]
+    [OutputType("Wlan")]
+    param (
+        [switch]$Name,
+        [switch]$Refresh
+    )
+
+    $rescanArgs = if ($Refresh) {"--rescan", "yes"} else {@()}
+
+    $culture = Get-Culture
+    function new-acc {
+        [ordered]@{PSTypeName = "Wlan"}
+    }
+    $NmWlans = nmcli --mode multiline --fields all dev wifi list @rescanArgs
+    $Wlans = [Collections.Generic.List[psobject]]::new()
+    $acc = new-acc
+    foreach ($line in $NmWlans) {
+        if ($line -match "^(?<key>\S+):\s+(?<value>.*)") {
+            $lowerKey = $Matches.key.ToLower()
+            $key = $culture.TextInfo.ToTitleCase($lowerKey) -replace '-'
+
+            if ($acc.Contains($key)) {
+                $Wlans.Add([pscustomobject]$Acc)
+                $acc = new-acc
+            }
+
+            $value = $Matches.value
+            if ($value -eq "yes") {
+                $value = $true
+            } elseif ($value -eq "no") {
+                $value = $false
+            }
+            $acc[$key] = $value
+
+        } else {
+            write-error "did not match $line"
+        }
+    }
+
+    if ($acc.Keys.Count) {
+        $Wlans.Add([pscustomobject]$acc)
+    }
+
+    $Wlans
+}
+
+function Connect-Wlan {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Ssids = (Find-Wlan).Ssid | Sort-Object -Unique
+            $Ssids = $Ssids -replace ".*\s.*", "'`$0'"
+            ($Ssids -like "$wordToComplete*"), ($Ssids -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [Alias("Name", "Wlan")]
+        [string]$Ssid,
+
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [string]$Password,
+
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [string]$Bssid,
+
+        [Parameter(ValueFromPipelineByPropertyName)]
+        [switch]$Hidden
+    )
+
+    $PasswordArgs = if ($Password) {"password", $Password} else {@()}
+    $BssidArgs = if ($Bssid) {"bssid", $Bssid} else {@()}
+    $HiddenArgs = if ($Hidden) {"hidden", "yes"} else {@()}
+
+    nmcli dev wifi connect $Ssid @PasswordArgs @BssidArgs @HiddenArgs
+}
+#endregion wlan
