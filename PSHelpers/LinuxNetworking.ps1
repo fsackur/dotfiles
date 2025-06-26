@@ -390,14 +390,19 @@ Update-TypeData -Force -TypeName Wlan -MemberType ScriptProperty -MemberName Hid
 
 
 function Get-Wlan {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType("Wlan")]
     param (
         [switch]$Name,
-        [switch]$Refresh
+
+        [Parameter(ParameterSetName = "Default")]
+        [switch]$Refresh,
+
+        [Parameter(ParameterSetName = "Default")]
+        [switch]$Active
     )
 
-    $rescanArgs = if ($Refresh) {"--rescan", "yes"} else {@()}
+    $rescanArgs = if ($Refresh) {"--rescan", "yes"} else {"--rescan", "no"}
 
     $culture = Get-Culture
     function new-acc {
@@ -433,7 +438,7 @@ function Get-Wlan {
         $Wlans.Add([pscustomobject]$acc)
     }
 
-    $Wlans
+    $Wlans | ? {$_.Active -or -not $Active}
 }
 
 function Connect-Wlan {
@@ -444,7 +449,7 @@ function Connect-Wlan {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
-            [string[]]$Ssids = (Find-Wlan).Ssid | Sort-Object -Unique
+            [string[]]$Ssids = (Get-Wlan).Ssid | Sort-Object -Unique
             $Ssids = $Ssids -replace ".*\s.*", "'`$0'"
             ($Ssids -like "$wordToComplete*"), ($Ssids -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
@@ -466,5 +471,29 @@ function Connect-Wlan {
     $HiddenArgs = if ($Hidden) {"hidden", "yes"} else {@()}
 
     nmcli dev wifi connect $Ssid @PasswordArgs @BssidArgs @HiddenArgs
+}
+
+function Disconnect-Wlan {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Position = 0, ValueFromPipelineByPropertyName)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Ssids = (Get-Wlan -Active).Ssid | Sort-Object -Unique
+            $Ssids = $Ssids -replace ".*\s.*", "'`$0'"
+            ($Ssids -like "$wordToComplete*"), ($Ssids -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [Alias("Name", "Wlan")]
+        [string[]]$Ssid
+    )
+
+    [string[]]$Ssids = if ($Ssid) {$Ssid} else {(Get-Wlan -Active).Ssid | Sort-Object -Unique}
+    $Wlans = Get-Wlan | ? Ssid -in $Ssids
+    $Devices = $Wlans.Device | Sort-Object -Unique
+    $Devices | % {
+        nmcli dev disconnect $_
+    }
 }
 #endregion wlan
