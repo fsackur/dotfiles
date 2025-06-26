@@ -497,3 +497,26 @@ function Disconnect-Wlan {
     }
 }
 #endregion wlan
+
+#region DNS
+function Clear-DnsCache
+{
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param
+    (
+        [switch]$ResetServerFeatures,
+
+        [switch]$Force
+    )
+
+    if ($Force -or $PSCmdlet.ShouldProcess("stubg resolver", "flush-caches"))
+    {
+        sudo resolvectl flush-caches
+
+        if ($ResetServerFeatures)
+        {
+            sudo resolvectl reset-server-features
+        }
+    }
+}
+#endregion DNS
