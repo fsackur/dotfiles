@@ -520,3 +520,49 @@ function Clear-DnsCache
     }
 }
 #endregion DNS
+
+#region arp
+function Get-MacAddress
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Position = 0)]
+        [Alias("Host", "Address")]
+        [string]$Name
+    )
+
+    [string[]]$Output = if ($Name)
+    {
+        arp -en $Name
+    }
+    else
+    {
+        arp -en
+    }
+    $Output = $Output -notmatch "-- no entry$" -notmatch "^Address\s+HWtype\s+HWaddress" -notmatch "\(incomplete\)"
+
+    if ($Name -and -not $Output)
+    {
+        #TODO: switch to arping
+        ping -c 1 -W 1 $Name | Out-Null
+        $Output = arp -en $Name
+        $Output = $Output -notmatch "-- no entry$" -notmatch "^Address\s+HWtype\s+HWaddress" -notmatch "\(incomplete\)"
+    }
+
+    $Output | % {
+        if ($_ -match "^(?<Address>\S+)\s+(?<HWtype>\S+)\s+(?<HWaddress>\S+)\s+")
+        {
+            [pscustomobject]@{
+                PSTypeName = 'MacAddress'
+                Address    = $Matches.Address
+                MacAddress = $Matches.HWaddress
+            }
+        }
+        else
+        {
+            Write-Error "Failed to parse '$_'"
+        }
+    }
+}
+#endregion arp
