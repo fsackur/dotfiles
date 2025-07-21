@@ -1,5 +1,8 @@
 using namespace System.Collections.Generic
 
+# GitLens plays up when symlinking across filesystems
+$env:GIT_DISCOVERY_ACROSS_FILESYSTEM = 1
+
 function Get-ChangedFile
 {
     [CmdletBinding()]
