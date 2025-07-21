@@ -767,3 +767,27 @@ function Find-UsbDevice {
         }
     }
 }
+
+function ConvertTo-UrlEncoding {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string]$InputObject
+    )
+
+    process {
+        [System.Web.HttpUtility]::UrlEncode($InputObject)
+    }
+}
+
+function ConvertFrom-UrlEncoding {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string]$InputObject
+    )
+
+    process {
+        [System.Web.HttpUtility]::UrlDecode($InputObject)
+    }
+}
