@@ -14,18 +14,14 @@ starship.toml
 Untitled-1.jsonc
 Work
 
-{{ if or (eq .chezmoi.os "linux") (eq .chezmoi.os "darwin") }}
+{{ if eq .chezmoi.os "windows" }}
+.config
+{{ else }}
 AppData
 Documents
 {{ end }}
-{{ if eq .chezmoi.os "windows" }}
-.config
-{{ end }}
-{{ if not (eq .chezmoi.hostname "ghetto-blaster" "brick") }}
-.ssh/dell.config
-{{ end }}
 
-{{ if (output "bash" "-c" "resolvectl status | grep 'DNS Domain: leigh.delamere'") }}
+{{ if not (eq .chezmoi.hostname "ghetto-blaster" "brick" "lethe" "albatross" "monolith") }}
 .local/bin/unban-ip-from-dusty-euroburners.sh
-**/remmina/**
+.local/share/remmina/**
 {{ end }}
