@@ -27,16 +27,23 @@ if (-not $ToInstall)
 }
 
 $Commands = @()
-# delete when 2.4.0 finally hits GA
+
 if ($ToInstall | ? Name -eq 'PSReadLine')
 {
-    $Commands += "Install-Module PSReadLine -AllowPrerelease -Force"
+    if (Find-Module PSReadLine -MinimumVersion 2.4.0 -ErrorAction Ignore)
+    {
+        throw "PSReadLine 2.4.0 is available; update chezmoi to migrate off beta."
+    }
+
+    $Commands += "Install-Module PSReadLine -AllowPrerelease"
     $ToInstall = $ToInstall | ? Name -ne 'PSReadLine'
 }
 
 $Commands += $ToInstall |
     ForEach-Object {
-        "Install-Module $($_.Name) -MinimumVersion $($_.Version) -Scope AllUsers -Force -AcceptLicense"
+        "Install-Module $($_.Name) -MinimumVersion $($_.Version)"
     }
+
+$Commands = $Commands | ForEach-Object {"$_ -Scope AllUsers -Force -AcceptLicense"}
 
 sudo pwsh -NoProfile -c ($Commands -join '; ')
