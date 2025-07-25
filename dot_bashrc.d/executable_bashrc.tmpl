@@ -1,0 +1,8 @@
+alias sudo='sudo '  # https://askubuntu.com/a/22043
+alias ls='ls -Ahl'
+{{- if and (eq .chezmoi.osRelease.id "fedora") (isExecutable "/usr/bin/dnf5") }}
+alias dnf=dnf5
+{{- end }}
+
+# Disable bracketed paste; https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
+printf "\e[?2004l"
