@@ -1,5 +1,6 @@
 IdentitiesOnly yes
 AddKeysToAgent yes
+PreferredAuthentications publickey
 CanonicalizeHostname yes
 CanonicalizeMaxDots 0
 CanonicalDomains dvlp.casa leigh.delamere euroburners.net
@@ -7,12 +8,12 @@ CanonicalizeFallbackLocal yes
 
 Host github.com
     User git
-    IdentityFile ~/.ssh/freddie_git
+    IdentityFile ~/.ssh/freddie_git.pub
+    ForwardAgent no
 
-Host sparkle darkhorse *.euroburners.net
+Host sparkle darkhorse pony *.euroburners.net
     User freddie
-    # User nowhere
-    IdentityFile ~/.ssh/freddie_nowhere
+    IdentityFile ~/.ssh/freddie_nowhere.pub
     ForwardAgent yes
     ForwardX11 yes
 
@@ -36,7 +37,7 @@ Host opnshut.dvlp.casa opnshut
     User root
     IdentityFile ~/.ssh/freddie_home
 
-Host *.dvlp.casa 10.1.1.* 10.0.0.* 10.4.4.*
+Host 10.0.0.* 10.1.1.* 10.4.4.* *.dvlp.casa
     User freddie
     IdentityFile ~/.ssh/freddie_home
     ForwardAgent yes
