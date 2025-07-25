@@ -24,4 +24,17 @@ Documents
 {{ if not (eq .chezmoi.hostname "ghetto-blaster" "brick" "lethe" "albatross" "monolith") }}
 .local/bin/unban-ip-from-dusty-euroburners.sh
 .local/share/remmina/**
+
+{{ if not (eq .chezmoi.hostname "harriet-desktop" "harriet-laptop") }}
+.config/aerc
+.config/doom
+.config/i3
+.config/kitty
+.config/nushell
+.config/paperwm
+.config/sway
+.config/dconf-gnome.ini
+run_onchange_dconf-load.ps1.tmpl
+{{ end }}
+
 {{ end }}
