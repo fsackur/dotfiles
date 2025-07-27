@@ -43,7 +43,7 @@ $ArgumentCompleterSnippet = @'
 {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     $Names = @()
-    ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+    (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
 }
 '@
 
