@@ -1,0 +1,9 @@
+#! /usr/bin/pwsh
+
+sudo mkdir -p /root/.config/powershell
+
+$ProfileContent = @'
+{{ template "root_profile.ps1" }}
+'@
+
+$ProfileContent | sudo tee /root/.config/powershell/profile.ps1 | Out-Null
