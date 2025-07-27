@@ -25,7 +25,16 @@ Documents
 .local/bin/unban-ip-from-dusty-euroburners.sh
 .local/share/remmina/**
 
+.ssh/freddie_home.pub
+
+{{ if not (eq .chezmoi.hostname "darkhorse" "sparkle" "pony" "dusty") }}
+
+.ssh/freddie_nowhere.pub
+
+{{ end }}
+
 {{ if not (eq .chezmoi.hostname "harriet-desktop" "harriet-laptop") }}
+
 .config/aerc
 .config/doom
 .config/i3
@@ -33,8 +42,16 @@ Documents
 .config/nushell
 .config/paperwm
 .config/sway
+
 .config/dconf-gnome.ini
-run_onchange_dconf-load.ps1.tmpl
+dconf-load.ps1
+
+.ssh/leigh.delamere.config
+.ssh/vscode.config
+.ssh/ansible.pub
+.ssh/freddie_leigh_delamere_rsa.pub
+.ssh/freddie_leigh_delamere.pub
+
 {{ end }}
 
 {{ end }}
