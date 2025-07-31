@@ -494,6 +494,10 @@ function logout
 
 Set-Alias fromj ConvertFrom-Json
 Set-Alias toj ConvertTo-Json
+Set-Alias fromy ConvertFrom-Yaml
+Set-Alias toy ConvertTo-Yaml
+Set-Alias fromb64 ConvertFrom-Base64
+Set-Alias tob64 ConvertTo-Base64
 
 function Set-Proxy
 {
