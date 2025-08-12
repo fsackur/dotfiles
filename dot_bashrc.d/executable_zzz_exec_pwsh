@@ -1,7 +1,21 @@
 # If not running interactively, don't do anything
 case $- in
-    *i*) ;;
-      *) return;;
+    *i*)
+        ;;
+    *)
+        return
+        ;;
 esac
 
-exec pwsh
+ppid=$(ps --noheaders j $$ | cut -d' ' -f 1)
+parent=$(ps -o command= $ppid)
+
+# if called from pwsh, don't do anything
+case "$parent" in
+    */pwsh)
+        return
+        ;;
+    *)
+        exec pwsh
+        ;;
+esac
