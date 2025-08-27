@@ -1,4 +1,6 @@
 
+$Global:PSDefaultParameterValues['ConvertTo-*:Depth'] = 8
+
 function Get-EnumValues
 {
     [CmdletBinding(DefaultParameterSetName = "ByType")]
