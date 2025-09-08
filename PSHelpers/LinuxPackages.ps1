@@ -80,7 +80,7 @@ function Get-Distro
     }
 }
 
-function Get-RepoPackage
+function Find-RepoPackageProvidingFile
 {
     <#
         .PARAMETER Path
@@ -91,12 +91,8 @@ function Get-RepoPackage
     param
     (
         [Parameter(Mandatory, ValueFromPipeline)]
-        [string]$Path,
-
-        # [Parameter(Mandatory, ValueFromPipeline)]
-        # [string]$Name
-
-        [switch]$All
+        [SupportsWildcards()]
+        [string]$Path
     )
 
     begin
@@ -106,11 +102,39 @@ function Get-RepoPackage
 
     process
     {
-        $Path = $Path | Resolve-Path
-
-        $Packages = if ($PackageManager -eq "rpm")
+        if ($PackageManager -eq "rpm")
         {
-            rpm -qf $Path
+            # search installed packages
+            rpm -qf $Path | % {
+                [pscustomobject]@{
+                    Package = $_
+                    Path = $Path
+                }
+            }
+
+            if (!$?) {
+                $packageFile = @{}
+                $matchers = @($null, $null)
+                $expectPkgName = {
+                    if ($_ -match '^(\S+\.\S+)\s+:') {
+                        $packageFile.Package = $Matches[1]
+                        [array]::Reverse($matchers)
+                    }
+                }
+                $expectFileName = {
+                    if ($_ -match "^Filename\s+:\s+(.*)") {
+                        $packageFile.Path = $Matches[1]
+                        [array]::Reverse($matchers)
+                        [pscustomobject]$packageFile | Write-Output
+                    }
+                }
+                $matchers[0] = $expectPkgName
+                $matchers[1] = $expectFileName
+                $reader = {$_ | & $matchers[0]}
+
+                # search repos
+                dnf provides $Path | % $reader
+            }
         }
         elseif ($PackageManager -eq "deb")
         {
@@ -119,13 +143,6 @@ function Get-RepoPackage
         else
         {
             Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
-        }
-
-        $Packages | ForEach-Object {
-            [pscustomobject]@{
-                Package = $_
-                Path = $Path
-            }
         }
     }
 }
@@ -184,9 +201,13 @@ function Get-RepoPackageFiles
         {
             if (-not $PackageManager) {$PackageManager = (Get-Distro).PackageManager}
 
-            $Files = if ($PackageManager -eq "rpm")
+            if ($PackageManager -eq "rpm")
             {
                 rpm --query --list $Name
+
+                if (!$?) {
+                    dnf repoquery --files $Name
+                }
             }
             elseif ($PackageManager -eq "deb")
             {
@@ -195,13 +216,6 @@ function Get-RepoPackageFiles
             else
             {
                 Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
-            }
-
-            $Files | ForEach-Object {
-                [pscustomobject]@{
-                    Package = $Name
-                    Path = $_
-                }
             }
         }
     }
