@@ -813,3 +813,22 @@ function ConvertTo-TitleCase {
         $Culture.TextInfo.ToTitleCase($InputObject)
     }
 }
+
+function Remove-Quote {
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string]$Quoted,
+
+        [char[]]$QuoteMarks = "`"'``"
+    )
+
+    begin {
+        $QuotePattern = $QuoteMarks -join '|'
+        $Pattern = "^(?<quote>$QuotePattern)(.*)(\k<quote>)"
+    }
+
+    process {
+        $Quoted -replace $Pattern, '$1'
+    }
+}
+Set-Alias unquote Remove-Quote
