@@ -3,6 +3,58 @@ $env:STEAM_PATH = "~/.local/share/Steam/steamapps" | Resolve-Path
 
 $Script:SteamAppIds = @{}
 
+function Initialize-SteamAppId {
+    [CmdletBinding()]
+    param ()
+
+    if ($Script:SteamAppIds.Keys.Count) {
+        return
+    }
+
+    $Files = gci $env:STEAM_PATH -Filter "appmanifest_*.acf"
+    $Pattern = "^\s*`"(?<field>appid|name)`"\s+`"(?<value>.*)`"$"
+
+    foreach ($File in $Files) {
+        Get-Content $File -First 10 | % {
+            if ($_ -match $Pattern) {
+                Set-Variable -Name $Matches.field -Value $Matches.value
+            }
+        }
+
+        if ($Name -and $AppId) {
+            $Script:SteamAppIds[$Name] = $AppId
+        } else {
+            Write-Error "Failed to parse appid and name from $File"
+        }
+    }
+}
+
+function Get-SteamAppId {
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [SupportsWildcards()]
+        [Alias('Name')]
+        [Alias('AppId')]
+        [string]$App
+    )
+
+    begin {
+        Initialize-SteamAppId
+    }
+
+    process {
+        $Ids = @($Script:SteamAppIds.Values -like $App)
+        if ($Ids) {
+            $Ids
+        } else {
+            $Names = @($Script:SteamAppIds.Keys -like $App)
+            if ($Names) {
+                $Names | % {$Script:SteamAppIds[$_]}
+            }
+        }
+    }
+}
+
 function Get-SteamApp {
     [CmdletBinding()]
     param (
@@ -12,32 +64,27 @@ function Get-SteamApp {
     )
 
     [int]$AppId = 0
-    if ([int]::TryParse($App, [ref]$AppId)) {
-        $Files = gci $env:STEAM_PATH -Filter "appmanifest_$AppId.acf"
-        $Manifests = $Files | Read-AppManifest
-    } elseif ($Script:SteamAppIds.Keys.Count) {
-        $Names = $Script:SteamAppIds.Keys -like $App
-        $Ids = $Script:SteamAppIds.Values -like $App
-        if ($Names) {
-            $Ids += @($Names | % {$Script:SteamAppIds[$_]})
-        }
 
-        $Ids
+    $Files = if ([int]::TryParse($App, [ref]$AppId)) {
+        gci $env:STEAM_PATH -Filter "appmanifest_$AppId.acf"
 
-        $Files = if ($Ids) {
-            $Ids
-                | % {$Script:SteamAppIds[$_]}
-                | % {gci $env:STEAM_PATH -Filter "appmanifest_$_.acf"}
-        }
-    }
-
-    if ($Files) {
-        $Manifests = $Files | Read-AppManifest
     } else {
-        $Files = gci $env:STEAM_PATH -Filter "appmanifest_*.acf"
-        $Manifests = $Files | Read-AppManifest
-        $Manifests | % {$Script:SteamAppIds[$_.name] = $_.appid}
+        Initialize-SteamAppId
+
+        Get-SteamAppId $App | % {gci $env:STEAM_PATH -Filter "appmanifest_$_.acf"} | Sort-Object -Unique
     }
+
+    Write-Debug "Found $($Files.Count) app manifests"
+
+    if (-not $Files) {
+        $Files = gci $env:STEAM_PATH -Filter "appmanifest_*.acf"
+    }
+
+    Write-Debug "Found $($Files.Count) app manifests"
+
+    $Manifests = $Files | Read-SteamAppManifest
+    Write-Debug "Parsed $($Manifests.Count) app manifests"
+    $Manifests | % {$Script:SteamAppIds[$_.name] = $_.appid}
 
     if ($App) {
         $Manifests | ? {$_.appid -like $App -or $_.name -like $App}
@@ -58,7 +105,7 @@ Register-ArgumentCompleter -CommandName Get-SteamApp -ParameterName App -ScriptB
 
 function Read-SteamAppManifest {
     param (
-        [Parameter(Mandatory, Position=0, ValueFromPipeline)]
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
         [string]$Path
     )
 
@@ -76,6 +123,8 @@ function Read-SteamAppManifest {
             while ($e.MoveNext()) {
                 $Line = $e.Current
 
+                Write-Debug "Parsing: $Line"
+
                 $Line = $Line.TrimStart()
 
                 if ($Line -eq "{") {
@@ -92,8 +141,6 @@ function Read-SteamAppManifest {
 
                 } else {
                     $Head, $Tail = $Line -split "(\t|\n)+" | % Trim | ? Length
-                    # "head: '$Head', tail: '$Tail'"
-
 
                     if ($Tail -is [array]) {
                         throw "Unexpected multiple values: $Line"
@@ -145,5 +192,73 @@ function Read-SteamAppManifest {
             throw "$($Manifest.Keys)"
         }
         $Manifest.AppState
+    }
+}
+
+function Get-SteamAppLocation {
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
+        [SupportsWildcards()]
+        [Alias('Name')]
+        [Alias('AppId')]
+        [string]$App,
+
+        [ValidateSet("AppPath", "WineUserProfile")]
+        [string]$Location = "AppPath"
+    )
+
+    process {
+        $AppId = Get-SteamAppId $App
+        if (@($AppId).Count -gt 2) {
+            throw "Ambiguous match for '$app': $($AppId -join ", ")"
+        } elseif (-not $AppId) {
+            throw "No match found for '$App'"
+        }
+
+        if ($Location -eq "WineUserProfile") {
+            $Id = $SteamApp.appid
+            [IO.Path]::Join($env:STEAM_PATH, "compatdata", $Id, "pfx/drive_c/users/steamuser")
+        } elseif ($Location -eq "AppPath") {
+            $SteamApp = Get-SteamApp $AppId
+            $Dir = $SteamApp.installdir
+            [IO.Path]::Join($env:STEAM_PATH, "common", $Dir)
+        }
+    }
+}
+
+function Push-SteamAppLocation {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
+        [SupportsWildcards()]
+        [Alias('Name')]
+        [Alias('AppId')]
+        [string]$App,
+
+        [ValidateSet("AppPath", "WineUserProfile")]
+        [string]$Location = "AppPath"
+    )
+
+    begin {
+        $Flags = [Reflection.BindingFlags]"Instance,NonPublic"
+
+        $ContextField = [Management.Automation.EngineIntrinsics].GetField("_context", $Flags)
+        $ec = $ContextField.GetValue($ExecutionContext)
+        $TlssProperty = $ec.GetType().GetProperty("TopLevelSessionState", $Flags)
+        $Ssi = $TlssProperty.GetValue($ec)
+
+        $SsiType = $Ssi.GetType()
+        $PushMethod = $SsiType.GetMethod("PushCurrentLocation", $Flags)
+        $SetMethod = $SsiType.GetMethod("SetLocation", $Flags, ([type[]]@([string])))
+
+        $StackField = $SsiType.GetField("_defaultStackName", $Flags)
+        $StackName = $StackField.GetValue($Ssi)
+    }
+
+    process {
+        $Path = Get-SteamAppLocation @PSBoundParameters
+
+        $PushMethod.Invoke($Ssi, @($StackName))
+        $null = $SetMethod.Invoke($Ssi, @($Path))
     }
 }
