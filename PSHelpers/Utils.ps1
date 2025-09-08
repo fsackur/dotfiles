@@ -604,7 +604,7 @@ function Read-Journal
     }
 }
 
-function Parse-IniConf {
+function Read-IniConf {
 
     [CmdletBinding(DefaultParameterSetName = "NoMapper")]
     param
