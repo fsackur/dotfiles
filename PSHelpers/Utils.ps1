@@ -797,3 +797,19 @@ function ConvertFrom-UrlEncoding {
         [System.Web.HttpUtility]::UrlDecode($InputObject)
     }
 }
+
+function ConvertTo-TitleCase {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string]$InputObject
+    )
+
+    begin {
+        $Culture = Get-Culture
+    }
+
+    process {
+        $Culture.TextInfo.ToTitleCase($InputObject)
+    }
+}
