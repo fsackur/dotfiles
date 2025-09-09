@@ -105,6 +105,8 @@ function Git-Clone
     $Upstream = $Upstream -replace '^\w+(?=://)', $Scheme
     $Uri = $Uri -replace '^\w+(?=://)', $Scheme
 
+    $RepoName = $Uri.Segments[2]
+
     $CloneArgs = @('clone', $Uri)
 
     if ($Upstream)
@@ -122,14 +124,22 @@ function Git-Clone
         $CloneArgs += '--filter=tree:0'
     }
 
-    if ($Path)
+    if (-not $Path)
     {
-        $CloneArgs += $Path
+        $Path = $RepoName
     }
-    else
-    {
-        $Path = $Uri.Segments[2]
+
+    if (-not [IO.Path]::IsPathRooted($Path)) {
+        $Path = Join-Path $PWD $Path
     }
+
+    if (Test-Path $Path) {
+        if ($RepoName -ne (Split-Path $Path -Leaf)) {
+            $Path = Join-Path $Path $RepoName
+        }
+    }
+
+    $CloneArgs += $Path
 
     git @CloneArgs
     if ($LASTEXITCODE) {Write-Error "clone failed"}
