@@ -197,27 +197,37 @@ function Read-SteamAppManifest {
 
 function Get-SteamAppLocation {
     param (
-        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName, ValueFromPipeline)]
         [SupportsWildcards()]
         [Alias('Name')]
         [Alias('AppId')]
-        [string]$App,
+        [object]$App,
 
-        [ValidateSet("AppPath", "WineUserProfile")]
+        [ValidateSet("AppPath", "WinePrefix", "WineUserProfile")]
         [string]$Location = "AppPath"
     )
 
     process {
-        $AppId = Get-SteamAppId $App
+        $AppId = if ($App.appid) {
+            $App.appid
+        } else {
+            Get-SteamAppId $App
+        }
+
         if (@($AppId).Count -gt 2) {
             throw "Ambiguous match for '$app': $($AppId -join ", ")"
         } elseif (-not $AppId) {
             throw "No match found for '$App'"
         }
 
+        $WinePrefix = [IO.Path]::Join($env:STEAM_PATH, "compatdata", $AppId, "pfx")
+
         if ($Location -eq "WineUserProfile") {
-            $Id = $SteamApp.appid
-            [IO.Path]::Join($env:STEAM_PATH, "compatdata", $Id, "pfx/drive_c/users/steamuser")
+            [IO.Path]::Join($WinePrefix, "/drive_c/users/steamuser")
+
+        } elseif ($Location -eq "WinePrefix") {
+            $WinePrefix
+
         } elseif ($Location -eq "AppPath") {
             $SteamApp = Get-SteamApp $AppId
             $Dir = $SteamApp.installdir
@@ -229,13 +239,13 @@ function Get-SteamAppLocation {
 function Push-SteamAppLocation {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName)]
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName, ValueFromPipeline)]
         [SupportsWildcards()]
         [Alias('Name')]
         [Alias('AppId')]
-        [string]$App,
+        [object]$App,
 
-        [ValidateSet("AppPath", "WineUserProfile")]
+        [ValidateSet("AppPath", "WinePrefix", "WineUserProfile")]
         [string]$Location = "AppPath"
     )
 
@@ -261,4 +271,17 @@ function Push-SteamAppLocation {
         $PushMethod.Invoke($Ssi, @($StackName))
         $null = $SetMethod.Invoke($Ssi, @($Path))
     }
+}
+
+function Set-SteamAppWinePrefix {
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName, ValueFromPipeline)]
+        [SupportsWildcards()]
+        [Alias('Name')]
+        [Alias('AppId')]
+        [object]$App
+    )
+
+    $WinePrefix = $App | Get-SteamAppLocation -Location WinePrefix -ea Stop
+    $env:WINEPREFIX = $WinePrefix
 }
