@@ -307,19 +307,26 @@ function Add-NetIpRoute {
         })]
         [string]$Device,
 
+        [ValidateSet("host", "link", "global")]
+        [string]$Scope,
+
+        [ValidateRange(1, 65535)]
+        [int]$Metric,
+
         [switch]$Force
     )
 
-    $AddArgs = "$Destination via $Gateway"
+    [string[]]$NodeSpec = @($Destination)
+    if ($Scope) {$NodeSpec += "scope", $Scope.ToLower()}
+    if ($Metric) {$NodeSpec += "metric", $Metric}
 
-    if ($Device)
-    {
-        $AddArgs = "$AddArgs dev $Device"
-    }
+    [string[]]$InfoSpec = "via", $Gateway
+    if ($Device) {$InfoSpec += "dev", $Device}
 
-    if ($Force -or $PSCmdlet.ShouldProcess($AddArgs, "add"))
+    [string[]]$AddArgs = $NodeSpec + $InfoSpec
+
+    if ($Force -or $PSCmdlet.ShouldProcess(($AddArgs -join " "), "add"))
     {
-        $AddArgs = $AddArgs -split ' '
         sudo ip route add @AddArgs
     }
 }
