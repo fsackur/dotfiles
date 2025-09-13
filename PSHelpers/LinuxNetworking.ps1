@@ -232,6 +232,7 @@ function Remove-NetIpAddress {
             $Names = Get-NetInterfaceName
             ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
+        [Alias('Device')]
         [string]$Name,
 
         [switch]$Force
@@ -529,19 +530,63 @@ function Clear-DnsCache
 #endregion DNS
 
 #region arp
+function Format-MacAddress {
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string]$MacAddress,
+
+        [ValidateSet("colon", "dash", "bare", "cisco")]
+        [string]$Format = "colon"
+    )
+
+    begin {
+        $seps = @{
+            "colon" = ":"
+            "dash" = "-"
+            "bare" = ""
+            "cisco" = "."
+        }
+        $sep = $seps[$Format]
+        $sepPattern = ($seps.Values -match "." | % {[regex]::Escape($_)}) -join "|"
+
+        $wordSize = if ($Format -eq "cisco") {4} else {2}
+        $splitPattern = "(?<=^(.{$wordSize})+)(?=(.{$wordSize}))"
+    }
+
+    process {
+        # test:
+        # [ValidatePattern("^([0-9a-fA-F]{2}(?<delim>:|-|))([0-9a-fA-F]{2}\k<delim>){4}([0-9a-fA-F]{2})$")]
+        $bare = $MacAddress.ToLower() -replace $sepPattern
+        $bare -split $splitPattern, 0, "RegexMatch, ExplicitCapture" -join $sep
+    }
+}
+
 function Get-MacAddress
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "Layer3")]
     param
     (
-        [Parameter(Position = 0)]
+        [Parameter(ParameterSetName = "Layer3", Position = 0)]
         [Alias("Host", "Address")]
-        [string]$Name
+        [string]$Name,
+
+        [Parameter(ParameterSetName = "Layer2", Mandatory)]
+        [SupportsWildcards()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Names = Get-MacAddress | % MacAddress | Sort-Object
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$MacAddress
     )
 
     [string[]]$Output = if ($Name)
     {
-        arp -en $Name
+        if ([ipaddress]::TryParse($Name, [ref]$null)) {
+            arp -en $Name
+        } else {
+            arp -e $Name
+        }
     }
     else
     {
@@ -557,13 +602,22 @@ function Get-MacAddress
         $Output = $Output -notmatch "-- no entry$" -notmatch "^Address\s+HWtype\s+HWaddress" -notmatch "\(incomplete\)"
     }
 
+    if ($MacAddress)
+    {
+        $Output[0..3]
+        $Output = $Output -like "* $MacAddress *"
+    }
+
     $Output | % {
         if ($_ -match "^(?<Address>\S+)\s+(?<HWtype>\S+)\s+(?<HWaddress>\S+)\s+")
         {
-            [pscustomobject]@{
-                PSTypeName = 'MacAddress'
-                Address    = $Matches.Address
-                MacAddress = $Matches.HWaddress
+            $HWaddress = $Matches.HWaddress
+            if ((-not $MacAddress) -or ($HWaddress -like $MacAddress)) {
+                [pscustomobject]@{
+                    PSTypeName = 'MacAddress'
+                    Address    = $Matches.Address
+                    MacAddress = $HWaddress
+                }
             }
         }
         else
@@ -572,4 +626,96 @@ function Get-MacAddress
         }
     }
 }
+
+function Set-MacAddress
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(ParameterSetName = "Layer3", Position = 0)]
+        [Alias("Host", "Address")]
+        [ipaddress]$IpAddress,
+
+        [Parameter(ParameterSetName = "Layer3", Position = 0)]
+        [ValidatePattern("^([0-9a-fA-F]{2}(?<delim>:|-|))([0-9a-fA-F]{2}\k<delim>){4}([0-9a-fA-F]{2})$")]
+        [string]$MacAddress,
+
+        [Parameter()]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Names = Get-NetInterfaceName
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Device,
+
+        [switch]$Permanent
+    )
+
+    $MacAddress = $MacAddress -replace ":|-" -split "(?<=^(..)+)(?=..)", 0, "RegexMatch, ExplicitCapture" -join ":"
+
+    [string[]]$ArpArgs = "-H", "ether"
+    if ($Device)
+    {
+        $ArpArgs += "-i", $Device
+    }
+
+    $ArpArgs += "-s", $IpAddress.ToString(), $MacAddress
+
+    if (-not $Permanent)
+    {
+        $ArpArgs += "temp"
+    }
+    sudo arp @ArpArgs
+}
 #endregion arp
+
+function Reset-DhcpLease {
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Device
+    )
+
+    $WildcardPath = "/var/lib/NetworkManager/internal*$Device.lease"
+
+    $Addresses = sudo bash -c "cat $WildcardPath" *>&1
+    if ($?) {
+        $null = sudo bash -c "rm $WildcardPath" *>&1
+        $Addresses = @($Addresses) -match "ADDRESS=" -replace ".*="
+        $Addresses | Remove-NetIpAddress -Name $Device -Force
+    }
+
+    $null = sudo nmcli device reapply $Device
+}
+
+function Reset-DhcpLease2 {
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Device
+    )
+
+    sudo dhclient -v -r $Device
+}
+
+function Request-DhcpLease2 {
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
+            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Device
+    )
+
+    sudo dhclient -v -1 $Device
+}
