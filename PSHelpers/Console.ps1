@@ -224,7 +224,7 @@ else
 #>
 
 # https://gist.github.com/rkeithhill/3103994447fd307b68be
-Set-PSReadlineKeyHandler -Chord '(', '[', '{', "'", '"' -Description "Wrap selection in brackets or quotes" -ScriptBlock {
+Set-PSReadlineKeyHandler -Chord '(', '[', '{', '<', "'", '"', '`' -Description "Wrap selection in brackets or quotes" -ScriptBlock {
     param ($Key, $Arg)
 
     $L = $Key.KeyChar.ToString()
@@ -232,8 +232,10 @@ Set-PSReadlineKeyHandler -Chord '(', '[', '{', "'", '"' -Description "Wrap selec
         '(' = ')'
         '[' = ']'
         '{' = '}'
+        '<' = '>'
         "'" = "'"
         '"' = '"'
+        '`' = '`'
     }[$L]
 
     $SelStart = $null
