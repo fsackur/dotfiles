@@ -63,13 +63,21 @@ if ($env:GITROOT -and -not (Test-VSCode))
 }
 #endregion PWD
 
-if (Get-Command starship -ErrorAction SilentlyContinue)
+if (Get-Command starship -ErrorAction Ignore)
 {
     # brew install starship / choco install starship / winget install Starship.Starship
     $env:STARSHIP_CONFIG = $PSScriptRoot | Split-Path | Join-Path -ChildPath starship.toml
     starship init powershell --print-full-init | Out-String | Invoke-Expression
 }
 
+if (Get-Command carapace -ErrorAction Ignore) {
+    $env:CARAPACE_NOSPACE = "*"
+    $env:CARAPACE_MATCH = 1
+    $env:CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
+    carapace _carapace | Out-String | Invoke-Expression
+}
+
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 
 $AsyncProfile = {
     . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
