@@ -856,3 +856,39 @@ function Remove-Quote {
     }
 }
 Set-Alias unquote Remove-Quote
+
+function Repair-Initramfs {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param (
+        [switch]$All
+    )
+
+    $AddVersion = {
+        $_ | Add-Member -PassThru -NotePropertyMembers @{
+            Version = $_.Name -replace "^.*?-"
+        }
+    }
+
+    $kernels = gci /boot/vmlinuz-* | % $AddVersion | sort Version
+    $inits = gci /boot/initramfs-* | % $AddVersion | sort Version
+
+    $Versions = Compare-Object $kernels $inits -Property Version | ? SideIndicator -eq "<=" | % Version
+    if (-not $Versions) {
+        Write-Verbose -Verbose "All kernels have a matching initramfs."
+        return
+    }
+
+    if (-not $All) {
+        $Versions = $Versions | Sort-Object | Select-Object -Last 1
+    }
+
+    $Versions | % {
+        $Version = $_
+        if ($PSCmdlet.ShouldProcess($_, "Regenerate initramfs")) {
+            sudo dracut --verbose --kver=$Version
+            if (!$?) {
+                throw
+            }
+        }
+    }
+}
