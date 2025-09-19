@@ -592,7 +592,6 @@ function Read-Journal
     if ($Pattern) {$_args += "--grep=$Pattern"}
     if ($Follow) {$_args += "--follow"}
 
-    sudo journalctl -o short-precise -k -b -1 | tail -80
     foreach ($Key in "Since", "Until")
     {
         $Value = $PSBoundParameters[$Key]
