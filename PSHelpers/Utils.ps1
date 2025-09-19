@@ -186,8 +186,7 @@ function Copy-Terminfo
     }
 }
 
-
-function Forget-KnownHost
+function Clear-KnownHost
 {
     [CmdletBinding()]
     param
@@ -296,7 +295,7 @@ function Start-Emacs
 }
 Set-Alias emacs Start-Emacs
 
-function Kill-VSCodeRemote
+function Stop-VSCodeRemote
 {
     [CmdletBinding()]
     param
@@ -308,8 +307,9 @@ function Kill-VSCodeRemote
     $Command = "'for i in `$(ps x | grep ''\.vscode-server'' | awk ''{print `$1}''); do kill -9 `$i; done'"
     ssh $Hostname bash -c $Command
 }
+Set-Alias Kill-VSCodeRemote Stop-VSCodeRemote
 
-function Activate-PyEnv
+function Use-PyEnv
 {
     [CmdletBinding()]
     param
@@ -346,6 +346,7 @@ function Activate-PyEnv
         . $Script
     }
 }
+Set-Alias Activate-PyEnv Use-PyEnv
 
 if ($IsVSCode)
 {
