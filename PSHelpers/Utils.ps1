@@ -557,10 +557,12 @@ function Read-Journal
         $Until,
 
         [Parameter(ParameterSetName = "boot")]
-        [ValidateRange(0, -65535)]
+        [ValidateRange(-65535, 0)]
         [int]$Boot,
 
-        [string]$Pattern
+        [string]$Pattern,
+
+        [switch]$Follow
     )
 
     if ($Boot) {
@@ -588,6 +590,7 @@ function Read-Journal
     if ($Fields) {$_args += "--output-fields=$($Fields -join ',')"}
     if ($Boot) {$_args += "--boot=$Boot"}
     if ($Pattern) {$_args += "--grep=$Pattern"}
+    if ($Follow) {$_args += "--follow"}
 
     sudo journalctl -o short-precise -k -b -1 | tail -80
     foreach ($Key in "Since", "Until")
