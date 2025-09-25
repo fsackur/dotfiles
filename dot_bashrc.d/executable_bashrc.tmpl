@@ -4,5 +4,13 @@ alias ls='ls -Ahl'
 alias dnf=dnf5
 {{- end }}
 
-# Disable bracketed paste; https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
-printf "\e[?2004l"
+# If not running interactively, don't do anything
+case $- in
+    *i*)
+        # Disable bracketed paste; https://unix.stackexchange.com/questions/196098/copy-paste-in-xfce4-terminal-adds-0-and-1/196574#196574
+        printf "\e[?2004l"
+        ;;
+    *)
+        return
+        ;;
+esac
