@@ -43,5 +43,5 @@ Host 10.0.0.* 10.1.1.* 10.4.4.* *.dvlp.casa
     ForwardAgent yes
     ForwardX11 yes
 
-Host *.leigh.delamere
+Host 10.5.5.* 10.6.6.* 10.7.7.* 10.8.8.* 10.9.9.* *.leigh.delamere cisco-* *.tail466a26.ts.net
     Include leigh.delamere.config
