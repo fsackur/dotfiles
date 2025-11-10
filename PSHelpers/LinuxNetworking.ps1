@@ -3,6 +3,8 @@ if (-not (Get-Command ip -CommandType Application -ErrorAction Ignore))
     return
 }
 
+Update-TypeData -PrependPath /home/freddie/.local/share/chezmoi/PSHelpers/LinuxNetworking.ps1xml
+
 function Get-NetInterfaceName
 {
     [CmdletBinding()]
@@ -48,8 +50,6 @@ function Test-Loopback
 }
 
 #region ip addresses
-Update-TypeData -Force -TypeName InetAddress -DefaultDisplayPropertySet Name, IpAddress, Prefix, Scope
-
 function Get-NetIpAddress
 {
     [CmdletBinding()]
@@ -254,8 +254,6 @@ Set-Alias rnip Remove-NetIpAddress
 #endregion ip addresses
 
 #region routes
-Update-TypeData -Force -TypeName InetRoute -DefaultDisplayPropertySet dst, gateway, dev, metric
-
 function Get-NetIpRoute
 {
     [CmdletBinding()]
@@ -387,16 +385,6 @@ Set-Alias rnr Remove-NetIpRoute
 #region routes
 
 #region wlan
-Update-TypeData -Force -TypeName Wlan -DefaultDisplayPropertySet Ssid, Band, Bars, Active
-Update-TypeData -Force -TypeName Wlan -MemberType ScriptProperty -MemberName Band -Value {
-    [int]$Freq = $this.Freq -replace "\s.*"
-    [Math]::Truncate($Freq / 1000).ToString() + "GHz"
-}
-Update-TypeData -Force -TypeName Wlan -MemberType ScriptProperty -MemberName Hidden -Value {
-    $this.Ssid -eq "--" -and $this.SsidHex -eq "--"
-}
-
-
 function Get-Wlan {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType("Wlan")]
