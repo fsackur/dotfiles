@@ -169,37 +169,3 @@ if (-not $env:SSH_AUTH_SOCK)
     }
     $env:SSH_AUTH_SOCK = $SshAgentOutput -match 'SSH_AUTH_SOCK' -replace '.*='
 }
-
-function Import-Script {
-    <#
-        .SYNOPSIS
-        Imports script as global module. Equivalent to dot-sourcing.
-    #>
-    param (
-        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
-        [ArgumentCompleter({
-            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-
-            $Files = Get-ChildItem $PSScriptRoot -Filter *.ps1 | % BaseName
-            ($Files -like "$wordToComplete*"), ($Files -like "*$wordToComplete*") | Write-Output
-        })]
-        [string[]]$Name
-    )
-
-    if ($MyInvocation.ExpectingInput) {
-        $Name = $input
-    }
-
-    foreach ($_Name in $Name) {
-        [string]$Path = [IO.Path]::ChangeExtension($_Name, "ps1")  # no-op when already ps1
-        if (-not (Test-Path $Path)) {$Path = Join-Path $PSScriptRoot $Path}
-        $Path = Resolve-Path $Path -ErrorAction Stop
-
-        $Importer = ". $Path; Export-ModuleMember -Function * -Variable * -Cmdlet * -Alias *"
-        $ScriptBlock = [scriptblock]::Create($Importer)
-        $Module = New-Module -Name $_Name -ScriptBlock $ScriptBlock
-
-        Import-Module $Module -Global -Force
-    }
-}
-Set-Alias ips Import-Script

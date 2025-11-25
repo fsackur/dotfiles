@@ -1,4 +1,96 @@
 
+$RealHelperPath = realpath $PSCommandPath | Split-Path
+$PSModulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
+$PSModulePath = $PSModulePaths | Where-Object {$_.StartsWith($env:HOME)} | Select-Object -Last 1
+
+function Update-HelperModule {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0, ValueFromPipeline)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Files = Get-ChildItem $RealHelperPath -Filter *.ps1 | % BaseName
+            ($Files -like "$wordToComplete*"), ($Files -like "*$wordToComplete*") | Write-Output
+        })]
+        [string[]]$Name
+    )
+
+    if ($MyInvocation.ExpectingInput) {
+        $Name = $input
+    }
+
+    if (-not $Name) {
+        $Name = Get-ChildItem $RealHelperPath -Filter *.ps1 | % BaseName
+    }
+
+    foreach ($_Name in $Name) {
+        $_Name = $_Name -replace "\.ps1$"
+
+        $FileName = [IO.Path]::ChangeExtension($_Name, "ps1")  # no-op when already ps1
+        $Dir = Join-Path $PSModulePath $_Name
+
+        $Link = Join-Path $Dir $FileName
+        $Target = Join-Path $RealHelperPath $FileName
+        if (-not (Test-Path $Link)) {
+            $Target = realpath $Target
+            mkdir -p $Dir
+            ln -sf $Target $Link
+        }
+
+        $TypeFileName = [IO.Path]::ChangeExtension($_Name, "Types.ps1xml")
+        $TypeTarget = Join-Path $RealHelperPath $TypeFileName
+        $Link = Join-Path $Dir $TypeFileName
+        if (Test-Path $TypeTarget) {
+            if (-not (Test-Path $Link)) {
+                $TypeTarget = realpath $TypeTarget
+                mkdir -p $Dir
+                ln -sf $TypeTarget $Link
+            }
+        } else {
+            $TypeFileName = $null
+        }
+
+        $Ast = [Management.Automation.Language.Parser]::ParseFile($Target, [ref]$null, [ref]$null)
+        $FunctionAsts = $Ast.FindAll({
+            param ($Ast)
+            $Ast -is [System.Management.Automation.Language.FunctionDefinitionAst]
+        }, $false)
+        $Functions = $FunctionAsts.Name
+
+        $AliasAsts = $Ast.FindAll({
+            param ($Ast)
+            $Ast -is [System.Management.Automation.Language.CommandAst] -and
+            $Ast.CommandElements[0].Value -eq "Set-Alias"
+        }, $false)
+        $Aliases = $AliasAsts | % {$_.CommandElements[1].Value}
+
+        $AssignmentAsts = $Ast.FindAll({
+            param ($Ast)
+            $Ast -is [System.Management.Automation.Language.AssignmentStatementAst]
+        }, $false)
+        $VariableAsts = $AssignmentAsts.Left.Target
+        $Variables = $VariableAsts.VariablePath | ? IsGlobal | % UserPath
+        $Variables = $Variables -replace '^Global:'
+
+
+        $ManifestPath = Join-Path $Dir "$_Name.psd1"
+        $Psm1Name = "$_Name.psm1"
+        '. ([IO.Path]::ChangeExtension($PSCommandPath, "ps1"))' > (Join-Path $Dir $Psm1Name)
+
+        $Splat = @{
+            RootModule        = $Psm1Name
+            TypesToProcess    = $TypeFileName
+            FunctionsToExport = $Functions
+            AliasesToExport   = $Aliases
+            VariablesToExport = $Variables
+        }
+        New-ModuleManifest $ManifestPath @Splat
+
+        # Remove-Module $_Name -Force -ErrorAction Ignore
+    }
+}
+
 $Global:PSDefaultParameterValues['ConvertTo-*:Depth'] = 8
 
 function Get-EnumValues

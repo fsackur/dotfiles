@@ -3,8 +3,6 @@ if (-not (Get-Command ip -CommandType Application -ErrorAction Ignore))
     return
 }
 
-Update-TypeData -PrependPath /home/freddie/.local/share/chezmoi/PSHelpers/LinuxNetworking.ps1xml
-
 function Get-NetInterfaceName
 {
     [CmdletBinding()]
