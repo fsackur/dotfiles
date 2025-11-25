@@ -147,7 +147,6 @@ function Find-RepoPackageProvidingFile
     }
 }
 
-
 function Get-RepoPackageFiles
 {
     <#
