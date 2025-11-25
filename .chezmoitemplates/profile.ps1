@@ -79,31 +79,4 @@ if (Get-Command carapace -ErrorAction Ignore) {
 
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 
-$AsyncProfile = {
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/git_helpers.ps1"
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/pipe_operators.ps1"
-    . "{{ .chezmoi.sourceDir }}/PSHelpers/Utils.ps1"
-    {{ if eq .chezmoi.os "linux" }}. "{{ .chezmoi.sourceDir }}/PSHelpers/LinuxNetworking.ps1"
-    {{ end }}
-
-    if (Import-Module PSFzf -PassThru -ea Ignore)
-    {
-        Set-PsFzfOption -PSReadlineChordProvider Ctrl+f
-    }
-
-    if (Test-Path "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1")
-    {
-        . "{{ .chezmoi.sourceDir }}/Work/work_profile.ps1"
-    }
-}
-
-if (Import-Module ProfileAsync -PassThru -ea Ignore)
-{
-    $splat = if ((Get-Command Import-ProfileAsync).Parameters.LogPath) {@{LogPath = "/gitroot/ProfileAsync.log"}} else {@{}}
-    Import-ProfileAsync $AsyncProfile @splat
-}
-else
-{
-    . $AsyncProfile
-}
+. "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
