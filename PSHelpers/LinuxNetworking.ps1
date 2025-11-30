@@ -382,15 +382,241 @@ function Remove-NetIpRoute {
     }
 }
 Set-Alias rnr Remove-NetIpRoute
-#region routes
+#endregion routes
+
+#region nmcli
+$TitleCaseFormatter = {(Get-Culture).TextInfo.ToTitleCase($args[0].ToLower()) -replace '-'}
+$NmcliValueParser = {
+    $value = $args[0] -replace '\s+\(\w+\)$'
+    [int]$ref = 0
+    if ($value -ieq "yes") {
+        $value = $true
+    } elseif ($value -ieq "no") {
+        $value = $false
+    } elseif ($value -match '^0x(?<hexDigits>[0-9a-fA-F]+)$') {
+        $value = [Convert]::ToInt32($Matches.hexDigits, 16)
+    } elseif ([int]::TryParse($value, [ref]$ref)) {
+        $value = $ref
+    }
+    $value
+}
+
+function Get-NmcliSettings {
+    if (-not $Script:NmcliSettings) {
+        $Script:NmcliSettings = (man nm-settings-nmcli) -match '^       (?=[a-z0-9][a-z0-9._\-]+$)' -replace '^\s+'
+    }
+    $Script:NmcliSettings
+}
+
+function Format-NmcliMultilineOutput {
+    [CmdletBinding(DefaultParameterSetName = "FormatKey")]
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string[]]$NmcliLines,
+
+        [string]$PSTypeName = "PSObject",
+
+        [Parameter(ParameterSetName = "FormatKey")]
+        [Func[string, string]]$KeyFormatter = {$args[0]},
+
+        [Parameter()]
+        [Func[string, object]]$ValueParser = $NmcliValueParser,
+
+        [Parameter(ParameterSetName = "TitleCaseKey")]
+        [switch]$TitleCaseKeys,
+
+        [switch]$AsHashtable
+    )
+
+    if ($MyInvocation.ExpectingInput) {
+        $NmcliLines = $input
+    }
+
+    if ($TitleCaseKeys) {
+        $KeyFormatter = $TitleCaseFormatter
+    }
+
+    $rawKeys = [Collections.Generic.HashSet[string]]::new()
+    $Intermediate = [Collections.Generic.List[ordered]]::new()
+
+    $acc = [ordered]@{}
+    foreach ($line in $NmcliLines) {
+        if ($line -notmatch "^(?<key>\S+):\s*(?<value>.*)") {
+            Write-Error "Match failed: $line"
+        } else {
+            $key = $Matches.key
+            $value = $Matches.value
+
+            if ($rawKeys.Add($key)) {
+                $acc[$key] = $value
+            } else {
+                $Intermediate.Add($acc)
+                $rawKeys.Clear()
+                [void]$rawKeys.Add($key)
+                $acc = [ordered]@{}
+                $acc[$key] = $value
+            }
+        }
+    }
+    if ($acc.Keys.Count) {
+        $Intermediate.Add($acc)
+    }
+
+    $Intermediate | % {
+        $acc = [ordered]@{}
+        $_.GetEnumerator() | % {
+            $key = $KeyFormatter.Invoke($_.Key)
+            $value = $ValueParser.Invoke($_.Value)
+
+            if ($key -match '(?<key>.*)\[\d+\]$') {
+                $acc[$Matches.key] += @($value)
+            } else {
+                $acc[$key] = $value
+            }
+        }
+
+        if ($AsHashtable) {
+            $acc
+        } else {
+            $acc.PSTypeName = $PSTypeName
+            [pscustomobject]$acc
+        }
+    }
+}
+
+function Get-Connection {
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    param (
+        [Parameter(ParameterSetName = "ByName", Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Connections = Get-Connection -AsName
+            $Connections = $Connections -replace ".*\s.*", "'`$0'"
+            ($Connections -like "$wordToComplete*"), ($Connections -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Connection,
+
+        [switch]$AsName,
+
+        [Parameter(ParameterSetName = "Default")]
+        [switch]$Active
+    )
+
+    [string[]]$activeArgs = if ($Active) {"--active"} else {@()}
+
+    if ($AsName -or $PSCmdlet.ParameterSetName -ne "ByName") {
+        $Names = nmcli --terse --fields Name connection show @activeArgs
+
+        if ($AsName) {
+            return $Names
+        }
+    } else {
+        $Names = $Connection
+    }
+
+    $ByUuid = nmcli --mode multiline connection show |
+        Format-NmcliMultilineOutput -TitleCaseKeys -PSTypeName Connection |
+        Group-Object Uuid -AsHashTable
+
+    $Names | % {
+        $Lines = nmcli --mode multiline connection show $_
+        $Uuid = $Lines -match '^connection.uuid' -replace '.*:\s*' | Select-Object -First 1
+        $Con = $ByUuid[$Uuid]
+
+        $Lines = $Lines -creplace '^(?=[a-z0-9])', 'Settings.'
+        $Groups = $Lines | Group-Object {$_ -replace '\..*'} -AsHashTable
+
+        if ($Groups.GENERAL) {  # only active connections
+            $Extra = $Groups.GENERAL -replace '^GENERAL\.' | Format-NmcliMultilineOutput -TitleCaseKeys -AsHashtable
+            $Groups.Remove("GENERAL")
+            "Name", "Uuid", "Type", "Device", "Devices" | % {
+                $Extra.Remove($_)
+            }
+            $Con | Add-Member -NotePropertyMembers $Extra
+        }
+
+        $Settings = $Groups.Settings -replace '^Settings\.' | Format-NmcliMultilineOutput -PSTypeName ConnectionSettings
+        $Con | Add-Member -NotePropertyName Settings -NotePropertyValue $Settings
+        $Groups.Remove("Settings")
+
+        $Groups.GetEnumerator() | Sort-Object Key | % {
+            $Prop = $TitleCaseFormatter.Invoke($_.Key)
+            $Value = $_.Value -replace "^$($_.Key)\." | Format-NmcliMultilineOutput -TitleCaseKeys -PSTypeName "Connection$Prop"
+            $Con | Add-Member -NotePropertyName $Prop -NotePropertyValue $Value
+        }
+        $Con
+    }
+}
+
+function Get-ConnectionSetting {
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    param (
+        [Parameter(ParameterSetName = "ByName", Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Connections = Get-Connection -AsName
+            $Connections = $Connections -replace ".*\s.*", "'`$0'"
+            ($Connections -like "$wordToComplete*"), ($Connections -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Connection,
+
+        [Parameter(Mandatory, Position = 1)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Settings = Get-NmcliSettings
+            $Settings = $Settings -replace ".*\s.*", "'`$0'"
+            ($Settings -like "$wordToComplete*"), ($Settings -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Setting
+    )
+
+    $line = nmcli --fields $Setting connection show $Connection
+    if (!$?) {
+        Write-Error $line -ErrorAction Stop
+    }
+    $value = $line -replace '^.*:\s*'
+    $NmcliValueParser.Invoke($value)
+}
+
+function Set-ConnectionSetting {
+    [CmdletBinding(DefaultParameterSetName = "Default")]
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Connections = Get-Connection -AsName
+            $Connections = $Connections -replace ".*\s.*", "'`$0'"
+            ($Connections -like "$wordToComplete*"), ($Connections -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Connection,
+
+        [Parameter(Mandatory, Position = 1)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Settings = Get-NmcliSettings
+            $Settings = $Settings -replace ".*\s.*", "'`$0'"
+            ($Settings -like "$wordToComplete*"), ($Settings -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
+        [string]$Setting,
+
+        [Parameter(Mandatory, Position = 2)]
+        [string]$Value
+    )
+
+    nmcli connection modify $Connection $Setting $Value
+}
+#endregion nmcli
 
 #region wlan
 function Get-Wlan {
     [CmdletBinding(DefaultParameterSetName = "Default")]
     [OutputType("Wlan")]
     param (
-        [switch]$Name,
-
         [Parameter(ParameterSetName = "Default")]
         [switch]$Refresh,
 
@@ -400,39 +626,9 @@ function Get-Wlan {
 
     $rescanArgs = if ($Refresh) {"--rescan", "yes"} else {"--rescan", "no"}
 
-    $culture = Get-Culture
-    function new-acc {
-        [ordered]@{PSTypeName = "Wlan"}
-    }
     $NmWlans = nmcli --mode multiline --fields all dev wifi list @rescanArgs
-    $Wlans = [Collections.Generic.List[psobject]]::new()
-    $acc = new-acc
-    foreach ($line in $NmWlans) {
-        if ($line -match "^(?<key>\S+):\s+(?<value>.*)") {
-            $lowerKey = $Matches.key.ToLower()
-            $key = $culture.TextInfo.ToTitleCase($lowerKey) -replace '-'
 
-            if ($acc.Contains($key)) {
-                $Wlans.Add([pscustomobject]$Acc)
-                $acc = new-acc
-            }
-
-            $value = $Matches.value
-            if ($value -eq "yes") {
-                $value = $true
-            } elseif ($value -eq "no") {
-                $value = $false
-            }
-            $acc[$key] = $value
-
-        } else {
-            write-error "did not match $line"
-        }
-    }
-
-    if ($acc.Keys.Count) {
-        $Wlans.Add([pscustomobject]$acc)
-    }
+    $Wlans = $NmWlans | Format-NmcliMultilineOutput -TitleCaseKeys -PSTypeName Wlan
 
     $Wlans | ? {$_.Active -or -not $Active}
 }
@@ -456,6 +652,13 @@ function Connect-Wlan {
         [string]$Password,
 
         [Parameter(ValueFromPipelineByPropertyName)]
+        [ArgumentCompleter({
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+
+            [string[]]$Bssids = (Get-Wlan).Bssid | Sort-Object -Unique
+            $Bssids = $Bssids -replace ".*\s.*", "'`$0'"
+            ($Bssids -like "$wordToComplete*"), ($Bssids -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+        })]
         [string]$Bssid,
 
         [Parameter(ValueFromPipelineByPropertyName)]
