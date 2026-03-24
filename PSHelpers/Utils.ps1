@@ -903,3 +903,87 @@ function Repair-Initramfs {
         }
     }
 }
+
+function Write-Iso {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param (
+        [Parameter(Mandatory)]
+        [string]$Iso,
+
+        [Parameter(Mandatory)]
+        [string]$Disk,
+
+        [ValidateRange(1, 1024)]
+        [int]$DataPartitionSizeGb = 4,
+
+        [string]$Mountpoint,
+
+        [switch]$Force
+    )
+
+    $Iso = Resolve-Path $Iso -ErrorAction Stop
+
+    & {
+        $ErrorActionPreference = "Stop"
+
+        $Mounted = @(mount) -like "$Disk*"
+        if ($Mounted -and ($Force -or $PSCmdlet.ShouldProcess($Mounted, "unmount"))) {
+            sudo umount $Mounted
+        }
+
+        # region dd
+        if ($Force -or $PSCmdlet.ShouldProcess("$Iso => $Disk", "write ISO")) {
+            Write-Verbose "burning $Iso"
+            sudo dd if=$Iso of=$Disk bs=4M status=progress
+        }
+        #endregion dd
+
+        $fdisk = "p" | sudo fdisk $Disk *>&1
+        if (!$?) {throw "$fdisk"}
+
+        $DataPart = ""
+        $LastPart = $fdisk[-3]
+        if ($LastPart -match "Linux filesystem$") {
+            $DataPart = $LastPart -replace " .*"
+        }
+
+        if ((-not $DataPart) -and ($Force -or $PSCmdlet.ShouldProcess($Disk, "add data partition"))) {
+            Write-Verbose "adding partition"
+
+            # Command (m for help): n
+            # Partition number (5-176, default 5):
+            # First sector (5343868-61439954, default 5345280):
+            # Last sector, +/-sectors or +/-size{K,M,G,T,P} (5345280-61439954, default 61437951): +4G
+            $NewPartition = "n"
+            $Primary = "p"
+            $PartitionNum = ""
+            $FirstSector = ""
+            $LastSector = "+$($DataPartitionSizeGb)G"
+            $WriteTable = "w"
+
+            $NewPartition, $Primary, $PartitionNum, $FirstSector, $LastSector, $WriteTable |
+                sudo fdisk --wipe=never $Disk
+
+            $fdisk = "p" | sudo fdisk $Disk *>&1
+            if (!$?) {throw "$fdisk"}
+
+            $DataPart = ""
+            $LastPart = $fdisk[-3]
+            $DataPart = $LastPart -replace " .*"
+
+            sudo mkfs -V --type ext3 -O sparse_super,large_file -m 0 -T largefile4 $DataPart
+        }
+
+        if (-not $Mountpoint) {
+            $Name = Split-Path -Leaf $DataPart
+            $Mountpoint = Join-Path /run/media $env:USER $Name
+        }
+
+        [bool]$IsMounted = (mount) -like "$DataPart *"
+        if (-not $IsMounted) {
+            # sudo mkdir -p $Mountpoint
+            $msg = sudo mount --mkdir $DataPart $Mountpoint *>&1
+            if (!$?) {throw $msg}
+        }
+    }
+}
