@@ -66,11 +66,6 @@ if ($IsLinux)
 # Save typing out [pscustomobject]
 Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
 
-
-# Warns that will only take effect on next start
-Enable-ExperimentalFeature PSCommandNotFoundSuggestion, PSSubsystemPluginModel -WarningAction Ignore
-
-
 # https://devblogs.microsoft.com/powershell/announcing-psreadline-2-1-with-predictive-intellisense/
 Set-PSReadLineOption -EditMode Windows
 Set-PSReadLineOption -PredictionSource HistoryAndPlugin
