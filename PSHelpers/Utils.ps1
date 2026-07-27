@@ -54,7 +54,9 @@ function Update-HelperModule {
         $Ast = [Management.Automation.Language.Parser]::ParseFile($Target, [ref]$null, [ref]$null)
         $FunctionAsts = $Ast.FindAll({
             param ($Ast)
-            $Ast -is [System.Management.Automation.Language.FunctionDefinitionAst]
+            $Ast -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+            $Ast.Name -inotlike "private:*" -and
+            $Ast.Parent.Parent -isnot [System.Management.Automation.Language.TypeDefinitionAst]  # ignore class methods; apparently, a type definition isn't a nested scriptblock
         }, $false)
         $Functions = $FunctionAsts.Name
 
