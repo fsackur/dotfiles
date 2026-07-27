@@ -482,7 +482,7 @@ Register-ArgumentCompleter -CommandName Invoke-Build.ps1 -ParameterName Task -Sc
         $Script:__BuildTasks[$ProjectName] = @($TaskNames)
     }
 
-    ($TaskNames -like "$wordToComplete*"), ($TaskNames -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+    (@($TaskNames) -like "$wordToComplete*"), (@($TaskNames) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
 }
 
 function logout

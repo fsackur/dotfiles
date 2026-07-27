@@ -529,7 +529,7 @@ function Show-GithubCode
 
             $Branches = Get-GitBranch
             $Completions = $Branches.Name, $Branches.Tracking | ForEach-Object {$_}
-            $Completions -like "*$wordToComplete*"
+            @($Completions) -like "*$wordToComplete*"
         })]
         [string]$Branch,
 

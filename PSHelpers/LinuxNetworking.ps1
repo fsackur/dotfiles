@@ -13,7 +13,7 @@ function Get-NetInterfaceName
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Names = Get-NetInterfaceName
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string[]]$Name
     )
@@ -59,7 +59,7 @@ function Get-NetIpAddress
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Names = Get-NetInterfaceName
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string[]]$Name,
 
@@ -159,7 +159,7 @@ function Add-NetIpAddress {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Names = Get-NetInterfaceName
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Name,
 
@@ -218,7 +218,7 @@ function Remove-NetIpAddress {
                 Sort-Object IsLoopback, IpAddress |
                 % CidrAddress
 
-            ($CidrAddresses -like "$wordToComplete*"), ($CidrAddresses -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($CidrAddresses) -like "$wordToComplete*"), (@($CidrAddresses) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [Alias('Address', 'IpAddress')]
         [string]$CidrAddress,
@@ -228,7 +228,7 @@ function Remove-NetIpAddress {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Names = Get-NetInterfaceName
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [Alias('Device')]
         [string]$Name,
@@ -264,7 +264,7 @@ function Get-NetIpRoute
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
             $Dests = Get-NetIpRoute | % dst
-            ($Dests -like "$wordToComplete*"), ($Dests -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Dests) -like "$wordToComplete*"), (@($Dests) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [Alias('Prefix', 'CidrAddress')]
         [string[]]$Destination,
@@ -300,7 +300,7 @@ function Add-NetIpRoute {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Device,
 
@@ -339,7 +339,7 @@ function Remove-NetIpRoute {
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
             $Dests = Get-NetIpRoute | % dst
-            ($Dests -like "$wordToComplete*"), ($Dests -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Dests) -like "$wordToComplete*"), (@($Dests) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [Alias('Prefix', 'CidrAddress')]
         [string]$Destination,
@@ -350,7 +350,7 @@ function Remove-NetIpRoute {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             [string[]]$Names = Get-NetIpRoute -All | % gateway | ? Length
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Gateway,
 
@@ -491,7 +491,7 @@ function Get-Connection {
 
             [string[]]$Connections = Get-Connection -AsName
             $Connections = $Connections -replace ".*\s.*", "'`$0'"
-            ($Connections -like "$wordToComplete*"), ($Connections -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Connections) -like "$wordToComplete*"), (@($Connections) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Connection,
 
@@ -556,7 +556,7 @@ function Get-ConnectionSetting {
 
             [string[]]$Connections = Get-Connection -AsName
             $Connections = $Connections -replace ".*\s.*", "'`$0'"
-            ($Connections -like "$wordToComplete*"), ($Connections -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Connections) -like "$wordToComplete*"), (@($Connections) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Connection,
 
@@ -566,7 +566,7 @@ function Get-ConnectionSetting {
 
             [string[]]$Settings = Get-NmcliSettings
             $Settings = $Settings -replace ".*\s.*", "'`$0'"
-            ($Settings -like "$wordToComplete*"), ($Settings -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Settings) -like "$wordToComplete*"), (@($Settings) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Setting
     )
@@ -588,7 +588,7 @@ function Set-ConnectionSetting {
 
             [string[]]$Connections = Get-Connection -AsName
             $Connections = $Connections -replace ".*\s.*", "'`$0'"
-            ($Connections -like "$wordToComplete*"), ($Connections -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Connections) -like "$wordToComplete*"), (@($Connections) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Connection,
 
@@ -598,7 +598,7 @@ function Set-ConnectionSetting {
 
             [string[]]$Settings = Get-NmcliSettings
             $Settings = $Settings -replace ".*\s.*", "'`$0'"
-            ($Settings -like "$wordToComplete*"), ($Settings -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Settings) -like "$wordToComplete*"), (@($Settings) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Setting,
 
@@ -641,7 +641,7 @@ function Connect-Wlan {
 
             [string[]]$Ssids = (Get-Wlan).Ssid | Sort-Object -Unique
             $Ssids = $Ssids -replace ".*\s.*", "'`$0'"
-            ($Ssids -like "$wordToComplete*"), ($Ssids -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Ssids) -like "$wordToComplete*"), (@($Ssids) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [Alias("Name", "Wlan")]
         [string]$Ssid,
@@ -655,7 +655,7 @@ function Connect-Wlan {
 
             [string[]]$Bssids = (Get-Wlan).Bssid | Sort-Object -Unique
             $Bssids = $Bssids -replace ".*\s.*", "'`$0'"
-            ($Bssids -like "$wordToComplete*"), ($Bssids -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Bssids) -like "$wordToComplete*"), (@($Bssids) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Bssid,
 
@@ -680,7 +680,7 @@ function Disconnect-Wlan {
 
             [string[]]$Ssids = (Get-Wlan -Active).Ssid | Sort-Object -Unique
             $Ssids = $Ssids -replace ".*\s.*", "'`$0'"
-            ($Ssids -like "$wordToComplete*"), ($Ssids -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Ssids) -like "$wordToComplete*"), (@($Ssids) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [Alias("Name", "Wlan")]
         [string[]]$Ssid
@@ -764,7 +764,7 @@ function Get-MacAddress
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Names = Get-MacAddress | % MacAddress | Sort-Object
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$MacAddress
     )
@@ -833,7 +833,7 @@ function Set-MacAddress
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Names = Get-NetInterfaceName
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Device,
 
@@ -864,7 +864,7 @@ function Reset-DhcpLease {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Device
     )
@@ -887,7 +887,7 @@ function Reset-DhcpLease2 {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Device
     )
@@ -901,7 +901,7 @@ function Request-DhcpLease2 {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             [string[]]$Names = Get-NetIpRoute -All | % dev | ? Length
-            ($Names -like "$wordToComplete*"), ($Names -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+            (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
         })]
         [string]$Device
     )
