@@ -1,5 +1,5 @@
 
-$RealHelperPath = realpath $PSCommandPath | Split-Path
+$RealScriptRoot = realpath $PSCommandPath | Split-Path
 $PSModulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
 $PSModulePath = $PSModulePaths | Where-Object {$_.StartsWith($env:HOME)} | Select-Object -Last 1
 
@@ -10,7 +10,7 @@ function Update-HelperModule {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
-            $Files = Get-ChildItem $RealHelperPath -Filter *.ps1 | % BaseName
+            $Files = Get-ChildItem $RealScriptRoot -Filter *.ps1 | % BaseName
             (@($Files) -like "$wordToComplete*"), (@($Files) -like "*$wordToComplete*") | Write-Output
         })]
         [string[]]$Name
@@ -21,7 +21,7 @@ function Update-HelperModule {
     }
 
     if (-not $Name) {
-        $Name = Get-ChildItem $RealHelperPath -Filter *.ps1 | % BaseName
+        $Name = Get-ChildItem $RealScriptRoot -Filter *.ps1 | % BaseName
     }
 
     foreach ($_Name in $Name) {
@@ -31,7 +31,7 @@ function Update-HelperModule {
         $Dir = Join-Path $PSModulePath $_Name
 
         $Link = Join-Path $Dir $FileName
-        $Target = Join-Path $RealHelperPath $FileName
+        $Target = Join-Path $RealScriptRoot $FileName
         if (-not (Test-Path $Link)) {
             $Target = realpath $Target
             mkdir -p $Dir
@@ -39,7 +39,7 @@ function Update-HelperModule {
         }
 
         $TypeFileName = [IO.Path]::ChangeExtension($_Name, "Types.ps1xml")
-        $TypeTarget = Join-Path $RealHelperPath $TypeFileName
+        $TypeTarget = Join-Path $RealScriptRoot $TypeFileName
         $Link = Join-Path $Dir $TypeFileName
         if (Test-Path $TypeTarget) {
             if (-not (Test-Path $Link)) {
