@@ -65,81 +65,95 @@ function Set-ArduinoCliConfig {
 
 #region boards
 $InstalledBoards = $null
+$Ports = $null
+$DefaultPort = $null
 $DefaultBoard = $null
 # $DefaultBoard = "arduino:renesas_uno:nanor4"
 
 class Board {
-    [string]$Port
-    [string]$Protocol
-    [string]$Type
-    [string]$BoardName
+    [string]$Name
     [string]$Fqbn
-    [string]$Core
     [string] ToString() {return $this.Fqbn}
 }
-[string[]]$BoardFields = [Board].GetProperties() | % Name
-[string[]]$BoardCliFields = $BoardFields -replace "BoardName", "Board Name" -replace "Fqbn", "FQBN"
 
-function local:ConvertTo-ArduinoBoard {
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
-        [AllowEmptyString()]
-        [string[]]$CliOutput
-    )
-
-    if ($MyInvocation.ExpectingInput) {
-        $CliOutput = $input
-    }
-
-    $Output = $CliOutput | match .
-    $Header = $Output[0]
-
-    [string[]]$_BoardFields = $Script:BoardFields
-    [int[]]$Indices = $Script:BoardCliFields | % {$Header.IndexOf($_)}
-
-    # strip fields not present in header row
-    $Tuples = [System.Linq.Enumerable]::Zip($_BoardFields, $Indices) | ? Item2 -ge 0
-    [string[]]$_BoardFields = $Tuples | % Item1
-    $Indices = $Tuples | % Item2
-    $Offsets = [System.Linq.Enumerable]::Skip($Indices, 1)
-
-    foreach ($Line in ($Output | select -Skip 1)) {
-        $Values = @{}
-        [System.Linq.Enumerable]::Zip($_BoardFields, $Indices, $Offsets) | % { # last field is missing
-            $Field = $_.Item1
-            $Index = $_.Item2
-            $Length = $_.Item3 - $Index
-            if ($Index -ge 0) {
-                $Values[$Field] = $Line.Substring($Index, $Length).TrimEnd()
-            }
-        }
-        # add back missing last field
-        $Values[$_BoardFields[-1]] = $Line.Substring($Indices[-1]).TrimEnd()
-        [Board]$Values
-    }
+class Port {
+    [string]$Port
+    [string]$Protocol
+    [string]$Id
+    [Board[]]$Board
+    [string] ToString() {return $this.Port}
 }
-
 
 function Get-ArduinoBoard {
     [CmdletBinding()]
     param (
-        [switch]$Installed,
-
         [switch]$Flush
     )
 
-    if ($Installed) {
-        if ($Flush -or -not $Script:InstalledBoards) {
-            $Script:InstalledBoards = arduino-cli board listall
-                | ConvertTo-ArduinoBoard
-                | Sort-Object Fqbn, BoardName
+    if ($Flush -or -not $Script:InstalledBoards) {
+        $Script:InstalledBoards =
+            arduino-cli board listall --json
+            | ConvertFrom-Json -AsHashtable
+            | % boards
+            | % {[Board]@{Fqbn = $_.fqbn; Name = $_.name}}
+            | Sort-Object Fqbn, Name
+    }
+    $Script:InstalledBoards
+}
 
+function Get-ArduinoPort {
+    [CmdletBinding()]
+    param (
+        [switch]$Flush
+    )
+
+    if ($Flush -or -not $Script:Ports) {
+        $Script:Ports =
+            arduino-cli board list --json
+                | ConvertFrom-Json
+                | % detected_ports
+                | % {[Port]@{
+                    Port = $_.port.address
+                    Protocol = $_.port.protocol
+                    Id = $_.port.hardware_id
+                    Board = $_.matching_boards
+                }}
+    }
+    $Script:Ports
+}
+
+function Get-ArduinoDefaultPort {
+    [CmdletBinding()]
+    param (
+        [switch]$Flush
+    )
+
+    if ($Flush -or -not $Script:DefaultPort) {
+        $Ports = Get-ArduinoPort -Flush:$Flush
+
+        if (-not $Ports) {
+            throw "No boards connected. Set default port with Set-ArduinoDefaultPort."
         }
-        $Script:InstalledBoards
+        if ($Ports.Count -ge 2) {
+            throw "Multiple boards connected. Set default port with Set-ArduinoDefaultPort."
+        }
+        $Script:DefaultPort = $Ports[0]
+    }
+    $Script:DefaultPort
+}
 
-    } else {
-        arduino-cli board list | ConvertTo-ArduinoBoard
+function Set-ArduinoDefaultPort {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Port
+    )
+    $_Port = Get-ArduinoPort | ? Port -ieq $Port
+    if (-not $_Port) {throw "Port not connected: $Port"}
+    $Script:DefaultPort = $_Port
+
+    if ($Script:DefaultBoard -and $Script:DefaultBoard -notin $_Port.Board) {
+        $Script:DefaultBoard = $null
     }
 }
 
@@ -150,15 +164,17 @@ function Get-ArduinoDefaultBoard {
     )
 
     if ($Flush -or -not $Script:DefaultBoard) {
-        $_Boards = Get-ArduinoBoard
+        $Port = Get-ArduinoDefaultPort
 
-        if (-not $_Boards) {
+        $Boards = $Port.Board
+
+        if (-not $Boards) {
             throw "No boards connected. Set default board with Set-ArduinoDefaultBoard."
         }
-        if ($_Boards.Count -ge 2) {
+        if ($Boards.Count -ge 2) {
             throw "Multiple boards connected. Set default board with Set-ArduinoDefaultBoard."
         }
-        $Script:DefaultBoard = $_Boards[0]
+        $Script:DefaultBoard = $Boards[0]
     }
     $Script:DefaultBoard
 }
@@ -169,7 +185,9 @@ function Set-ArduinoDefaultBoard {
         [Parameter(Mandatory, Position = 0)]
         [string]$Board
     )
-    $Script:DefaultBoard = $Board
+    $_Board = Get-ArduinoBoard | ? Fqbn -ieq $Board
+    if (-not $_Board) {throw "Board not installed: $Board"}
+    $Script:DefaultBoard = $_Board
 }
 #endregion boards
 
@@ -199,7 +217,7 @@ function Build-ArduinoSketch {
         [Parameter(Mandatory, Position = 0)]
         [string]$Sketch,
 
-        [string]$Board
+        [string]$Board = (Get-ArduinoDefaultBoard)
     )
 
     Push-Location $ProjectRoot -ErrorAction Stop
@@ -218,13 +236,15 @@ function Push-ArduinoSketch {
         [Parameter(Mandatory, Position = 0)]
         [string]$Sketch,
 
-        [string]$Board
+        [string]$Board = (Get-ArduinoDefaultBoard),
+
+        [string]$Port = (Get-ArduinoDefaultPort)
     )
 
     Push-Location $ProjectRoot -ErrorAction Stop
     try {
 
-        arduino-cli upload -b $Board $Sketch
+        arduino-cli upload -p $Port -b $Board $Sketch
 
     } finally {
         Pop-Location
@@ -237,7 +257,9 @@ function Deploy-ArduinoSketch {
         [Parameter(Mandatory, Position = 0)]
         [string]$Sketch,
 
-        [string]$Board,
+        [string]$Board = (Get-ArduinoDefaultBoard),
+
+        [string]$Port = (Get-ArduinoDefaultPort),
 
         [switch]$Watch
     )
@@ -249,21 +271,27 @@ function Deploy-ArduinoSketch {
 #region convenience
 Set-Alias deploy Deploy-ArduinoSketch
 
-Register-ArgumentCompleter -CommandName Get-ArduinoCliConfig, set-ArduinoCliConfig -ParameterName Key -ScriptBlock {
+Register-ArgumentCompleter -ParameterName Key -CommandName Get-ArduinoCliConfig, set-ArduinoCliConfig -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     (@($ConfigKeys) -like "$wordToComplete*"), (@($ConfigKeys) -like "*$wordToComplete*") | Write-Output
 }
 
-Register-ArgumentCompleter -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ParameterName Sketch -ScriptBlock {
+Register-ArgumentCompleter -ParameterName Sketch -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     $Sketches = Find-ArduinoSketch
     (@($Sketches) -like "$wordToComplete*"), (@($Sketches) -like "*$wordToComplete*") | Write-Output
 }
 
-Register-ArgumentCompleter -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ParameterName Board -ScriptBlock {
+Register-ArgumentCompleter -ParameterName Board -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    $Boards = Get-ArduinoBoard -Installed
+    $Boards = Get-ArduinoBoard
     (@($Boards) -like "$wordToComplete*"), (@($Boards) -like "*$wordToComplete*") | Write-Output
+}
+
+Register-ArgumentCompleter -ParameterName Port -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    $Ports = Get-ArduinoPort
+    (@($Ports) -like "$wordToComplete*"), (@($Ports) -like "*$wordToComplete*") | Write-Output
 }
 
 if ($null -eq $Global:PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
