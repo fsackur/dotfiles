@@ -10,8 +10,8 @@ function Update-HelperModule {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
-            [string[]]$Files = Get-ChildItem $RealHelperPath -Filter *.ps1 | % BaseName
-            ($Files -like "$wordToComplete*"), ($Files -like "*$wordToComplete*") | Write-Output
+            $Files = Get-ChildItem $RealHelperPath -Filter *.ps1 | % BaseName
+            (@($Files) -like "$wordToComplete*"), (@($Files) -like "*$wordToComplete*") | Write-Output
         })]
         [string[]]$Name
     )
@@ -76,7 +76,9 @@ function Update-HelperModule {
 
         $ManifestPath = Join-Path $Dir "$_Name.psd1"
         $Psm1Name = "$_Name.psm1"
-        '. ([IO.Path]::ChangeExtension($PSCommandPath, "ps1"))' > (Join-Path $Dir $Psm1Name)
+        $Psm1Path = Join-Path $Dir $Psm1Name
+        $DotSourceIncantation = '. ([IO.Path]::ChangeExtension($PSCommandPath, "ps1"))'
+        $DotSourceIncantation > $Psm1Path
 
         $Splat = @{
             RootModule        = $Psm1Name
