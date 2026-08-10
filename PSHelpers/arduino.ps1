@@ -2,6 +2,8 @@
 
 if (-not (gcm arduino-cli -ErrorAction Ignore)) {throw "arduino-cli not found."}
 
+$ErrorActionPreference = "Stop"
+
 #region config
 $ConfigKeys = (
     "board_manager.additional_urls",
@@ -192,9 +194,50 @@ function Set-ArduinoDefaultBoard {
 #endregion boards
 
 #region serial
+function Connect-Arduino {
+    param (
+        [string]$Port = (Get-ArduinoDefaultPort),
 
-# arduino-cli monitor -p /dev/ttyACM0 --config 115200
+        [int]$Baud = 115200,
 
+        [switch]$Reconnect
+    )
+
+    $Connect = {arduino-cli monitor --quiet --port $Port --config $Baud}
+
+    if (-not $Reconnect) {
+        & $Connect
+        if ($?) {
+            return
+        } else {
+            throw "arduino-cli monitor exited with code $LASTEXITCODE."
+        }
+    }
+
+    $Dir = Split-Path $Port
+    $Device = Split-Path $Port -Leaf
+
+    $Watcher = [IO.FileSystemWatcher]::new($Dir, $Device)
+
+    try {
+        while ($true) {
+            if (-not (Test-Path $Port)) {
+                Write-Host -ForegroundColor Cyan "Waiting for $Port..." -NoNewline
+
+                [void]$Watcher.WaitForChanged("Created")
+
+                Write-Host -ForegroundColor Cyan " detected."
+            }
+
+            & $Connect
+
+            Start-Sleep -Milliseconds 20
+        }
+
+    } finally {
+        $Watcher.Dispose()
+    }
+}
 #endregion serial
 
 #region sketches
@@ -264,7 +307,52 @@ function Deploy-ArduinoSketch {
         [switch]$Watch
     )
 
-    $Board
+    Write-Host "Building..."
+    Build-ArduinoSketch $Sketch -Board $Board
+    Push-ArduinoSketch $Sketch -Board $Board -Port $Port
+
+    if (-not $Watch) {return}
+
+    $Path = Join-Path $Script:ProjectRoot $Sketch
+    $Watcher = [IO.FileSystemWatcher]::new($Path)
+
+    try {
+        "...done. Watching for changes..." | Write-Host -ForegroundColor Cyan
+
+        $Watcher.EnableRaisingEvents = $true
+        $SourceId = "Sketch:$Sketch"
+
+        $self = $MyInvocation.MyCommand
+        $Params = [hashtable]$PSBoundParameters
+        $Params.Remove("Watch")
+        $ProjectRoot = $Script:ProjectRoot
+
+        $Data = $self, $Params, $ProjectRoot
+        $Action = {
+            $self, $Params, $ProjectRoot = $event.MessageData
+
+            $Change = $eventArgs.ChangeType
+            $Path = [IO.Path]::GetRelativePath($ProjectRoot, $eventArgs.FullPath)
+
+            "$Change`: $Path..." | Write-Host -ForegroundColor Cyan
+
+            & $self @Params
+
+            "...done. Watching for changes..." | Write-Host -ForegroundColor Cyan
+        }
+
+        $Subscriber = Register-ObjectEvent $Watcher Changed $Action -SourceIdentifier $SourceId -MessageData $Data
+
+        try {
+            while ($true) {sleep 1}
+
+        } finally {
+            $Subscriber | Unregister-Event
+        }
+
+    } finally {
+        $Watcher.Dispose()
+    }
 }
 #endregion sketches
 
@@ -288,7 +376,7 @@ Register-ArgumentCompleter -ParameterName Board -CommandName Build-ArduinoSketch
     (@($Boards) -like "$wordToComplete*"), (@($Boards) -like "*$wordToComplete*") | Write-Output
 }
 
-Register-ArgumentCompleter -ParameterName Port -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
+Register-ArgumentCompleter -ParameterName Port -CommandName Connect-Arduino, Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     $Ports = Get-ArduinoPort
     (@($Ports) -like "$wordToComplete*"), (@($Ports) -like "*$wordToComplete*") | Write-Output
