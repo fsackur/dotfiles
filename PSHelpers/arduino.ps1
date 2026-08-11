@@ -241,7 +241,7 @@ function Connect-Arduino {
 #endregion serial
 
 #region sketches
-$ProjectRoot = Join-Path $env:GITROOT arduino | Resolve-Path -ErrorAction Stop
+$ProjectRoot = Join-Path (realpath $env:GITROOT) arduino | Resolve-Path -ErrorAction Stop
 
 function Find-ArduinoSketch {
     [CmdletBinding()]
@@ -254,15 +254,36 @@ function Find-ArduinoSketch {
         | Split-Path
 }
 
+function Resolve-ArduinoSketch {
+    [CmdletBinding()]
+    param (
+        [Parameter(ValueFromPipeline, Position = 0)]
+        [AllowEmptyString()]
+        [string]$Sketch
+    )
+
+    process {
+        if ($Sketch) {
+            $Path = Join-Path $ProjectRoot $Sketch | Resolve-Path
+        } else {
+            $Path = $PWD | Resolve-Path
+        }
+        $Leaf = $Path | Split-Path -Leaf
+        $Path | Join-Path -ChildPath "$Leaf.ino" | Resolve-Path | Out-Null
+        [IO.Path]::GetRelativePath($ProjectRoot, $Path)
+    }
+}
+
 function Build-ArduinoSketch {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, Position = 0)]
+        [Parameter(Position = 0)]
         [string]$Sketch,
 
         [string]$Board = (Get-ArduinoDefaultBoard)
     )
 
+    $Sketch = Resolve-ArduinoSketch $Sketch
     Push-Location $ProjectRoot -ErrorAction Stop
     try {
 
@@ -276,7 +297,7 @@ function Build-ArduinoSketch {
 function Push-ArduinoSketch {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, Position = 0)]
+        [Parameter(Position = 0)]
         [string]$Sketch,
 
         [string]$Board = (Get-ArduinoDefaultBoard),
@@ -284,6 +305,7 @@ function Push-ArduinoSketch {
         [string]$Port = (Get-ArduinoDefaultPort)
     )
 
+    $Sketch = Resolve-ArduinoSketch $Sketch
     Push-Location $ProjectRoot -ErrorAction Stop
     try {
 
@@ -297,7 +319,7 @@ function Push-ArduinoSketch {
 function Deploy-ArduinoSketch {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory, Position = 0)]
+        [Parameter(Position = 0)]
         [string]$Sketch,
 
         [string]$Board = (Get-ArduinoDefaultBoard),
@@ -306,6 +328,8 @@ function Deploy-ArduinoSketch {
 
         [switch]$Watch
     )
+
+    $Sketch = Resolve-ArduinoSketch $Sketch
 
     Write-Host "Building..."
     Build-ArduinoSketch $Sketch -Board $Board
@@ -359,28 +383,42 @@ function Deploy-ArduinoSketch {
 #region convenience
 Set-Alias deploy Deploy-ArduinoSketch
 
-Register-ArgumentCompleter -ParameterName Key -CommandName Get-ArduinoCliConfig, set-ArduinoCliConfig -ScriptBlock {
-    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    (@($ConfigKeys) -like "$wordToComplete*"), (@($ConfigKeys) -like "*$wordToComplete*") | Write-Output
-}
+$CompleterSplats = (
+    @{
+        ParameterName = "Key"
+        CommandName = "Get-ArduinoCliConfig", "Set-ArduinoCliConfig"
+        ScriptBlock = {
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            (@($ConfigKeys) -like "$wordToComplete*"), (@($ConfigKeys) -like "*$wordToComplete*") | Write-Output
+        }
+    }, @{
+        ParameterName = "Sketch"
+        CommandName = "Resolve-ArduinoSketch", "Build-ArduinoSketch", "Push-ArduinoSketch", "Deploy-ArduinoSketch"
+        ScriptBlock = {
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Sketches = Find-ArduinoSketch
+            (@($Sketches) -like "$wordToComplete*"), (@($Sketches) -like "*$wordToComplete*") | Write-Output
+        }
+    }, @{
+        ParameterName = "Board"
+        CommandName = "Build-ArduinoSketch", "Push-ArduinoSketch", "Deploy-ArduinoSketch"
+        ScriptBlock = {
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Boards = Get-ArduinoBoard
+            (@($Boards) -like "$wordToComplete*"), (@($Boards) -like "*$wordToComplete*") | Write-Output
+        }
+    }, @{
+        ParameterName = "Port"
+        CommandName = "Connect-Arduino", "Build-ArduinoSketch", "Push-ArduinoSketch", "Deploy-ArduinoSketch"
+        ScriptBlock = {
+            param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+            $Ports = Get-ArduinoPort
+            (@($Ports) -like "$wordToComplete*"), (@($Ports) -like "*$wordToComplete*") | Write-Output
+        }
+    }
+)
 
-Register-ArgumentCompleter -ParameterName Sketch -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
-    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    $Sketches = Find-ArduinoSketch
-    (@($Sketches) -like "$wordToComplete*"), (@($Sketches) -like "*$wordToComplete*") | Write-Output
-}
-
-Register-ArgumentCompleter -ParameterName Board -CommandName Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
-    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    $Boards = Get-ArduinoBoard
-    (@($Boards) -like "$wordToComplete*"), (@($Boards) -like "*$wordToComplete*") | Write-Output
-}
-
-Register-ArgumentCompleter -ParameterName Port -CommandName Connect-Arduino, Build-ArduinoSketch, Push-ArduinoSketch, Deploy-ArduinoSketch -ScriptBlock {
-    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    $Ports = Get-ArduinoPort
-    (@($Ports) -like "$wordToComplete*"), (@($Ports) -like "*$wordToComplete*") | Write-Output
-}
+$CompleterSplats | % {Register-ArgumentCompleter @_}
 
 if ($null -eq $Global:PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @{}}
 $Global:PSDefaultParameterValues["*-ArduinoSketch:Board"] = {Get-ArduinoDefaultBoard}
