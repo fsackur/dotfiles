@@ -3,6 +3,10 @@ $env:STEAM_PATH = "~/.local/share/Steam/steamapps" | Resolve-Path
 
 $Script:SteamAppIds = @{}
 
+$Script:SteamWineBase = Join-Path $env:STEAM_PATH compatdata
+$Script:WineBase = "~/.local/share/wine" | Resolve-Path
+$Script:WinePrefixStack = [Collections.Generic.Stack[string]]::new()
+
 function Initialize-SteamAppId {
     [CmdletBinding()]
     param ()
@@ -91,16 +95,6 @@ function Get-SteamApp {
     } else {
         $Manifests
     }
-}
-
-Register-ArgumentCompleter -CommandName Get-SteamApp -ParameterName App -ScriptBlock {
-    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-    if (-not $Script:SteamAppIds.Keys.Count) {
-        $null = Get-SteamApp
-    }
-    $Names = ($Script:SteamAppIds.Keys | Sort-Object), ($Script:SteamAppIds.Values | Sort-Object) | Write-Output
-    $Completions = (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
-    $Completions -replace '^(.*\s.*)$', "'`$1'"
 }
 
 function Read-SteamAppManifest {
@@ -214,13 +208,13 @@ function Get-SteamAppLocation {
             Get-SteamAppId $App
         }
 
-        if (@($AppId).Count -gt 2) {
+        if (@($AppId).Count -gt 1) {
             throw "Ambiguous match for '$app': $($AppId -join ", ")"
         } elseif (-not $AppId) {
-            throw "No match found for '$App'"
+            throw [System.Management.Automation.ItemNotFoundException]::new("No match found for '$App'")
         }
 
-        $WinePrefix = [IO.Path]::Join($env:STEAM_PATH, "compatdata", $AppId, "pfx")
+        $WinePrefix = [IO.Path]::Join($SteamWineBase, $AppId, "pfx")
 
         if ($Location -eq "WineUserProfile") {
             [IO.Path]::Join($WinePrefix, "/drive_c/users/steamuser")
@@ -273,15 +267,156 @@ function Push-SteamAppLocation {
     }
 }
 
-function Set-SteamAppWinePrefix {
+function Get-WinePrefix {
     param (
-        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName, ValueFromPipeline)]
+        [Parameter(Position = 0, ValueFromPipeline)]
         [SupportsWildcards()]
         [Alias('Name')]
         [Alias('AppId')]
         [object]$App
     )
 
-    $WinePrefix = $App | Get-SteamAppLocation -Location WinePrefix -ea Stop
+    process {
+        if ($PSBoundParameters.ContainsKey("App")) {
+            if ($App.AppId) {$App = $App.AppId}
+            gci $SteamWineBase, $WineBase -Filter $App
+        } else {
+            gci $SteamWineBase, $WineBase
+        }
+    }
+}
+
+function Push-WinePrefix {
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName, ValueFromPipeline)]
+        [SupportsWildcards()]
+        [Alias('App')]
+        [Alias('AppId')]
+        [object]$Name
+    )
+
+    try {
+        $WinePrefix = $Name | Get-SteamAppLocation -Location WinePrefix -ea Stop
+    } catch [System.Management.Automation.ItemNotFoundException] {
+        $WinePrefix = $Name | Get-WinePrefix
+    }
+
+    if (-not $WinePrefix) {
+        throw [System.Management.Automation.ItemNotFoundException]::new("No match found for '$Name'")
+    }
+
+    $WinePrefixStack.Push($env:WINEPREFIX)
     $env:WINEPREFIX = $WinePrefix
+}
+
+function Pop-WinePrefix {
+    $env:WINEPREFIX = $WinePrefixStack.Pop()
+}
+
+function New-WinePrefix {
+    param (
+        [Parameter(Mandatory, Position = 0, ValueFromPipelineByPropertyName, ValueFromPipeline)]
+        [string]$Name,
+
+        [ValidateSet("win11", "win10", "win81", "win8", "win2008r2", "win7", "win2008", "vista", "win2003", "winxp64", "winxp", "win2k", "winme", "win98", "win95", "nt40", "nt351", "win31", "win30", "win20")]
+        [string]$Version = "win10"
+    )
+
+    process {
+        $WinePrefix = Join-Path $Script:WineBase $Name
+
+        if (-not ((Join-Path $WinePrefix drive_c) | Test-Path)) {
+            New-Item $WinePrefix -ItemType Directory -Force
+
+            Push-WinePrefix $Name -ea Stop
+            try {
+                winecfg /v $Version
+            } finally {
+                Pop-WinePrefix
+            }
+        }
+    }
+}
+
+function Install-WineApp {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [Alias('Prefix')]
+        [string]$Name,
+
+        [Parameter(Mandatory, Position = 1)]
+        [string]$Path
+    )
+
+
+    # New-WinePrefix $Name
+    # Push-WinePrefix $Name
+
+    # Push-Location $env:WINEPREFIX
+
+    # try {
+    #     [string[]]$DefaultFiles = gci ./drive_c/ -Exclude windows | gci -File -Recurse -Filter *.exe
+
+    #     # install
+    #     wine $Path
+
+    #     $ChangedFiles = gci ./drive_c/ -Exclude windows | gci -File -Recurse -Filter *.exe | ? {$_.FullName -notin $DefaultFiles}
+
+    # } finally {
+    #     Pop-Location
+    # }
+
+    $ChangedFiles = (
+        '/home/freddie/.local/share/wine/zelotes/drive_c/Program Files (x86)/ZELOTES C-18/Monitor.exe',
+        '/home/freddie/.local/share/wine/zelotes/drive_c/Program Files (x86)/ZELOTES C-18/Option.exe',
+        '/home/freddie/.local/share/wine/zelotes/drive_c/Program Files (x86)/ZELOTES C-18/Osd.exe',
+        '/home/freddie/.local/share/wine/zelotes/drive_c/Program Files (x86)/ZELOTES C-18/unins000.exe'
+    ) | gi
+
+    if ($ChangedFiles) {
+        "The following exe files were created:", $ChangedFiles | Write-Output | Write-Host -ForegroundColor Cyan
+    }
+
+    $DesktopBase = "~/.local/share/applications" | Resolve-Path  # or /usr/share/applications/
+
+    $ShouldUpdateDesktopDb = $false
+
+    $ChangedFiles | % {
+        $Path = $_.FullName
+        $_Name = $_.BaseName
+
+        $DesktopPath = Join-Path $DesktopBase "$_Name.desktop"
+        if (-not (Test-Path $DesktopPath) -and $PSCmdlet.ShouldProcess($Path, "Create desktop application")) {
+            $Exec = "WINEPREFIX='$env:WINEPREFIX' wine '$Path'"
+            $Content = "
+                [Desktop Entry]
+                Name=$_Name
+                Exec=$Exec
+                Terminal=false
+                Icon=winetricks
+                Type=Application
+                Categories=Utility;
+            " -replace "(?<=^|\n)\s+"
+
+            $Content > $DesktopPath
+
+            $ShouldUpdateDesktopDb = $true
+        }
+    }
+
+    if ($ShouldUpdateDesktopDb) {
+        sudo update-desktop-database
+    }
+}
+
+
+Register-ArgumentCompleter -CommandName Get-SteamApp -ParameterName App -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    if (-not $Script:SteamAppIds.Keys.Count) {
+        $null = Get-SteamApp
+    }
+    $Names = ($Script:SteamAppIds.Keys | Sort-Object), ($Script:SteamAppIds.Values | Sort-Object) | Write-Output
+    $Completions = (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+    $Completions -replace '^(.*\s.*)$', "'`$1'"
 }
