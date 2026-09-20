@@ -987,3 +987,66 @@ function Write-Iso {
         }
     }
 }
+
+# function Write-LiveCd {
+#     # sudo dnf in livecd-tools
+#     [CmdletBinding()]
+#     param (
+#         [string]$OutDir = "/vm/images",
+#         [string]$TmpDir = "/vm/tmp"
+#     )
+
+#     if (-not $PSBoundParameters.ContainsKey("ErrorAction")) {
+#         $ErrorActionPreference = "Stop"
+#     }
+
+#     sudo dnf in livecd-tools
+#     editliveos
+#     image-creator
+#     livecd-creator
+#     liveimage-mount
+
+#     $null = New-Item $OutDir -ItemType Directory -Force
+#     Push-Location $OutDir
+#     try {
+#         # sudo livecd-creator -t $TmpDir -c /home/freddie/.local/share/livecd-tools/livecd-fedora.ks -f fedora-live -v
+
+#         sudo editliveos -o $OutDir -t $TmpDir --dnfcache "$TmpDir/cache/dnf" --name fedora-live --kickstart /home/freddie/.local/share/livecd-tools/livecd-fedora.ks --extra-space-mb 2048 --compress --nocleanup -v /vm/images/Fedora-Workstation-Live-44-1.7.x86_64.iso
+
+#     } finally {
+#         Pop-Location
+#     }
+# }
+
+
+function Write-LiveCd {
+    # sudo dnf in livecd-tools
+    [CmdletBinding()]
+    param (
+        [string]$OutDir = "/vm/images",
+        [string]$TmpDir = "/vm/tmp"
+    )
+
+    if (-not $PSBoundParameters.ContainsKey("ErrorAction")) {
+        $ErrorActionPreference = "Stop"
+    }
+
+    # sudo dnf in kiwi-systemdeps distribution-gpg-keys
+    # pip install --user kiwi
+
+    $DescPath = Join-Path $TmpDir fedora-kiwi-descriptions
+    if (-not (Test-Path $DescPath)) {
+        $null = New-Item $TmpDir -ItemType Directory -Force
+        Push-Location $TmpDir
+        try {
+            git clone https://pagure.io/fedora-kiwi-descriptions.git
+        } finally {
+            Pop-Location
+        }
+    }
+
+    # $BuildScript = Join-Path $DescPath kiwi-build
+    # . $BuildScript --kiwi-description-dir ./ --output-dir=$OutDir --image-type=iso --image-profile=Workstation-Live --temp-dir $TmpDir
+
+    sudo ./kiwi-build --output-dir=/vm/kiwi/out --image-type=iso --image-profile=Workstation-Live
+}
