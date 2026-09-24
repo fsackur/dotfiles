@@ -1,21 +1,22 @@
-# If not running interactively, don't do anything
-case $- in
-    *i*)
-        ;;
-    *)
-        return
-        ;;
-esac
+maybe_exec_pwsh() {
+    # if pwsh not installed, do nothing
+    which pwsh &>>/dev/null || return
 
-ppid=$(ps --noheaders j $$ | cut -d' ' -f 1)
-parent=$(ps -o command= $ppid)
+    # If not running interactively, do nothing
+    [[ "$-" == *"i"* ]] || return
 
-# if called from pwsh, don't do anything
-case "$parent" in
-    */pwsh)
-        return
-        ;;
-    *)
-        exec pwsh
-        ;;
-esac
+    local ppid=$(ps -p $$ -o ppid --noheaders | tr -d '[:blank:]')
+    local parent=$(ps -p $ppid -o command --noheaders | cut -d' ' -f 1)  # gets path
+
+    # if called from another shell, do nothing
+    grep "$parent" /etc/shells &>>/dev/null && return
+
+    # if called from a link to pwsh, do nothing
+    [[ $(realpath $parent) == "/opt/microsoft/powershell/7/pwsh" ]] && return
+
+    # probably called from a terminal
+    exec pwsh
+}
+
+maybe_exec_pwsh
+unset maybe_exec_pwsh
