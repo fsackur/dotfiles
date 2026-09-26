@@ -64,6 +64,7 @@ function Debug-Thunderbird
     (
         [SupportsWildcards()]
         [ArgumentCompletions(
+            "SMTP",
             "IMAP*",
             "AbOutlookDirectory",
             "AbWinHelper",
