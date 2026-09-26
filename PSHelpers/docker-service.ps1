@@ -1,21 +1,34 @@
-$script:BasePath = '/services/'
+$script:DockerContext = "scorpion"
+
+$script:Services = $null
+$script:BasePath = "/services/"
+
+$script:IsLocal = if ($(hostname) -eq $DockerContext) {
+    $true
+} else {
+    $Context = docker context inspect $DockerContext | ConvertFrom-Json
+    $Hostname = $Context.Endpoints.docker.Host -replace "^\w+://" -replace "\..*"
+    $Hostname -eq $(hostname)
+}
+
+$script:DArgs = if ($IsLocal) {@()} else {"--context", $DockerContext}
 $script:Actions = @{
     Stop = {
-        docker compose down --remove-orphans
+        docker @DArgs compose down --remove-orphans
     }
     Start = {
-        docker compose up --remove-orphans --detach
+        docker @DArgs compose up --remove-orphans --detach
     }
     Restart = {
-        docker compose down --remove-orphans
-        docker compose up --remove-orphans --detach
+        docker @DArgs compose down --remove-orphans
+        docker @DArgs compose up --remove-orphans --detach
     }
     Logs = {
-        docker compose logs
+        docker @DArgs compose logs
     }
     Update = {
-        docker compose pull
-        docker compose build
+        docker @DArgs compose pull
+        docker @DArgs compose build
     }
 }
 $script:Participles = @{
@@ -33,13 +46,21 @@ function Get-Service
     (
         [Parameter(ValueFromPipeline, Position = 0)]
         [SupportsWildcards()]
-        [string]$Filter = '*'
+        [string]$Filter = "*"
     )
 
-    Get-ChildItem $BasePath -Directory -Filter $Filter |
-        Get-ChildItem -Filter 'docker-compose.yml' |
-        Split-Path |
-        Split-Path -Leaf
+    if (-not $script:Services) {
+        $Paths = if ($IsLocal) {
+            Get-ChildItem $BasePath -Directory | Get-ChildItem -Filter "docker-compose.yml"
+        } else {
+            ssh @($Hostname)[0] find $BasePath -maxdepth 2 -name "docker-compose.yml"
+
+
+        }
+        $script:Services = @($Paths) -notmatch "\.bak$" | Split-Path | Split-Path -Leaf
+    }
+
+    $script:Services -like $Filter
 }
 
 function Invoke-ServiceScript
