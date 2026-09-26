@@ -1,0 +1,7 @@
+#! /usr/bin/bash
+
+set -euo pipefail
+
+current=$(pactl get-default-sink)
+alternate=$(pactl list short sinks | grep -v "$current" | cut -f 2)
+pactl set-default-sink "$alternate"
