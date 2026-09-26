@@ -85,7 +85,7 @@ $AsyncProfile = {
     . "{{ .chezmoi.sourceDir }}/PSHelpers/pipe_operators.ps1"
     . "{{ .chezmoi.sourceDir }}/PSHelpers/Utils.ps1"
     {{ if eq .chezmoi.os "linux" }}. "{{ .chezmoi.sourceDir }}/PSHelpers/LinuxNetworking.ps1"
-    {{ end }}. "{{ .chezmoi.sourceDir }}/PSHelpers/ModuleLoad.ps1"
+    {{ end }}
 
     if (Import-Module PSFzf -PassThru -ea Ignore)
     {
