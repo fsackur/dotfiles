@@ -2,6 +2,7 @@
 $Global:PSDefaultParameterValues['Out-Default:OutVariable'] = '+LastOutput'
 $Global:PSDefaultParameterValues['Get-ChildItem:Force'] = $true
 $Global:PSDefaultParameterValues['del:Force'] = $true
+$Global:PSDefaultParameterValues['Import-Module:DisableNameChecking'] = $true
 
 $Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C:\Windows\System32\drivers\etc\hosts'}
 
