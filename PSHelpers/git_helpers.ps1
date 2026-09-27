@@ -1,5 +1,8 @@
 using namespace System.Collections.Generic
 
+$Global:PSDefaultParameterValues['Git-Clone:Origin'] = 'fsackur'
+$Global:PSDefaultParameterValues['Git-Clone:Ssh'] = $true
+
 # GitLens plays up when symlinking across filesystems
 $env:GIT_DISCOVERY_ACROSS_FILESYSTEM = 1
 
@@ -165,8 +168,6 @@ function Git-Clone
     }
 }
 Set-Alias clone Git-Clone
-$Global:PSDefaultParameterValues['Git-Clone:Origin'] = 'fsackur'
-$Global:PSDefaultParameterValues['Git-Clone:Ssh'] = $true
 
 function Git-AddRemote
 {
@@ -683,4 +684,36 @@ function Get-GitBranch
     } | Select-Object $OutputProperties
 }
 
-Import-Module posh-git
+function New-Branch {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Name
+    )
+
+    $Current = git branch --show-current
+    $Msg = "rebase marker: created branch $Name"
+    if ($Current) {
+        $Msg += " from $Current"
+    }
+
+    git switch -c $Name
+
+    $Output = git stash -m "stash at $Msg" *>&1
+    if (!$?) {
+        Write-Error ($Output -join "`n")
+        return
+    }
+
+    try {
+        git commit --allow-empty -m "--- $Msg ---"
+
+    } finally {
+        $Output = git stash pop --index *>&1
+        if (!$?) {
+            Write-Error ($Output -join "`n")
+        }
+    }
+}
+
+Import-Module -Global posh-git
