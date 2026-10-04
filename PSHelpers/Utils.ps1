@@ -411,7 +411,7 @@ function Use-PyEnv
     param
     (
         [Parameter(Position = 0)]
-        [string]$Path = $(Resolve-Path .conda -ErrorAction Ignore | Select-Object -First 1)
+        [string]$Path = $(Resolve-Path .conda, .venv -ErrorAction Ignore | Select-Object -First 1)
     )
 
     if (-not $Path)
@@ -438,17 +438,11 @@ function Use-PyEnv
     }
     elseif ($Mgr -eq "venv")
     {
-        $Script = gci ./.venv/bin/ -Filter Activate.ps1  # resolve case-sensitivity
+        $Script = Join-Path $Path bin | gci -Filter Activate.ps1  # resolve case-sensitivity
         . $Script
     }
 }
 Set-Alias Activate-PyEnv Use-PyEnv
-
-if ($IsVSCode)
-{
-    Activate-PyEnv -ErrorAction Ignore
-    Set-Alias activate Activate-PyEnv
-}
 
 Register-ArgumentCompleter -CommandName Invoke-Build.ps1 -ParameterName Task -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)

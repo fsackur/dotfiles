@@ -80,3 +80,9 @@ if (Get-Command carapace -ErrorAction Ignore) {
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 
 . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
+
+if ($IsVSCode)
+{
+    Activate-PyEnv -ErrorAction Ignore
+    Set-Alias activate Activate-PyEnv
+}
