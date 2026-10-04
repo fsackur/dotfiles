@@ -32,10 +32,11 @@ Documents
 .config/dconf-gnome.ini
 dconf-load.ps1
 
+# noisy!
+.local/share/remmina/**
 
 {{ if not (eq .chezmoi.hostname "ghetto-blaster" "brick" "lethe" "albatross" "monolith") }}
 
 .local/bin/unban-ip-from-dusty-euroburners.sh
-.local/share/remmina/**
 
 {{ end }}
