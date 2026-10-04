@@ -3,7 +3,7 @@ AddKeysToAgent yes
 PreferredAuthentications publickey
 CanonicalizeHostname yes
 CanonicalizeMaxDots 0
-CanonicalDomains dvlp.casa leigh.delamere euroburners.net
+CanonicalDomains dvlp.casa leigh.delamere nase-bortle.ts.net euroburners.net
 CanonicalizeFallbackLocal yes
 
 Host github.com
@@ -11,7 +11,7 @@ Host github.com
     IdentityFile ~/.ssh/freddie_git.pub
     ForwardAgent no
 
-Host sparkle darkhorse pony *.euroburners.net
+Host dusty sparkle darkhorse pony *.euroburners.net
     User freddie
     IdentityFile ~/.ssh/freddie_nowhere.pub
     ForwardAgent yes
@@ -37,11 +37,11 @@ Host opnshut.dvlp.casa opnshut
     User root
     IdentityFile ~/.ssh/freddie_home
 
-Host 10.0.0.* 10.1.1.* 10.4.4.* *.dvlp.casa
+Host ghetto-blaster 10.0.0.* 10.1.1.* 10.4.4.* *.dvlp.casa
     User freddie
     IdentityFile ~/.ssh/freddie_home
     ForwardAgent yes
     ForwardX11 yes
 
-Host 10.5.5.* 10.6.6.* 10.7.7.* 10.8.8.* 10.9.9.* laksa laksa.* *.leigh.delamere cisco-* *.tail466a26.ts.net
+Host 10.5.5.* 10.6.6.* 10.7.7.* 10.8.8.* 10.9.9.* cisco-* laksa laksa.* *.leigh.delamere *.tail466a26.ts.net *.nase-bortle.ts.net
     Include leigh.delamere.config
