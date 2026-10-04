@@ -9,7 +9,6 @@
 [gpg "ssh"]
     allowedSignersFile = "~/.ssh/allowed_signers"
 
-
 [includeif "hasconfig:remote.*.url:*//work.git.server/**"]
     path = .gitconfig-work
 
@@ -57,3 +56,12 @@
 
 [rerere]
     enabled = true
+
+[filter "lfs"]
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+    required = true
+    clean = git-lfs clean -- %f
+
+[color]
+    ui = auto
