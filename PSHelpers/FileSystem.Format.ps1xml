@@ -6,6 +6,7 @@
       <Name>childrenWithUnixStat</Name>
       <ViewSelectedBy>
         <TypeName>System.IO.DirectoryInfo</TypeName>
+        <TypeName>System.IO.FileInfo</TypeName>
       </ViewSelectedBy>
       <GroupBy>
         <PropertyName>PSParentPath</PropertyName>
@@ -56,7 +57,9 @@
                 <PropertyName>Group</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
-                <ScriptBlock>;</ScriptBlock>
+                <ScriptBlock>
+                    '{0:d} {0:HH}:{0:mm}' -f $_.LastWriteTime
+                </ScriptBlock>
               </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>Size</PropertyName>
@@ -73,6 +76,7 @@
       <Name>children</Name>
       <ViewSelectedBy>
         <TypeName>System.IO.DirectoryInfo</TypeName>
+        <TypeName>System.IO.FileInfo</TypeName>
       </ViewSelectedBy>
       <GroupBy>
         <PropertyName>PSParentPath</PropertyName>
@@ -124,6 +128,7 @@
       <Name>childrenWithHardlink</Name>
       <ViewSelectedBy>
         <TypeName>System.IO.DirectoryInfo</TypeName>
+        <TypeName>System.IO.FileInfo</TypeName>
       </ViewSelectedBy>
       <GroupBy>
         <PropertyName>PSParentPath</PropertyName>
@@ -175,6 +180,7 @@
       <Name>children</Name>
       <ViewSelectedBy>
         <TypeName>System.IO.DirectoryInfo</TypeName>
+        <TypeName>System.IO.FileInfo</TypeName>
       </ViewSelectedBy>
       <GroupBy>
         <PropertyName>PSParentPath</PropertyName>
@@ -248,6 +254,7 @@
       <Name>children</Name>
       <ViewSelectedBy>
         <TypeName>System.IO.DirectoryInfo</TypeName>
+        <TypeName>System.IO.FileInfo</TypeName>
       </ViewSelectedBy>
       <GroupBy>
         <PropertyName>PSParentPath</PropertyName>
