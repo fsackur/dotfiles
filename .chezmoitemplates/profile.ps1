@@ -15,9 +15,10 @@ if ($PSVersionTable.PSEdition -ne 'Core')
 if ($IsLinux -or $IsMacOS)
 {
     $NixProfiles = '/etc/profile', '~/.profile', '~/.bash_profile', '~/.bashrc', '~/.bash_login', '~/.bash_logout', '~/.zshrc', '~/.zprofile', '~/.zlogin', '~/.zlogout', '~/.zshenv'
+    $NixProfiles += gci '~/.*rc.d' -Directory | gci -File
     [array]::Reverse($NixProfiles)  # user overrides system
-    $NixPathLines = Get-Content $NixProfiles -ErrorAction Ignore | Select-String -Pattern '^\s+PATH='
-    $Expressions = @($NixPathLines) -replace '.*PATH\s*=\s*' -replace "^(?<quote>['`"])(.*)(\k<quote>)$", '$1' -split ':' |
+    $NixPathLines = Get-Content $NixProfiles -ErrorAction Ignore | Select-String -Pattern '^\s*PATH='
+    $Expressions = @($NixPathLines) -replace '.*\bPATH=' -replace "^(?<quote>['`"])(.*)(\k<quote>)$", '$1' -split ':' |
         ? {$_ -ne '$PATH'} | Write-Output | Select-Object -Unique
     $PATH = $Expressions | ForEach-Object {$ExecutionContext.InvokeCommand.ExpandString($_)}
     $PATH += $env:PATH -split ':'
