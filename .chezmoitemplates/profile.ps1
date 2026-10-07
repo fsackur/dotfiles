@@ -4,6 +4,10 @@ if (-not $Global:PSDefaultParameterValues) {$Global:PSDefaultParameterValues = @
 $OutputEncoding = [console]::InputEncoding = [console]::OutputEncoding = [Text.Utf8Encoding]::new($false)  # no bom
 $Global:PSDefaultParameterValues['*:Encoding'] = $Global:PSDefaultParameterValues['*:InputEncoding'] = $Global:PSDefaultParameterValues['*:OutputEncoding'] = $OutputEncoding
 
+$env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+
+$env:PYTHONSTARTUP = Resolve-Path ~/.pyrc -ErrorAction Ignore
+
 if ($PSVersionTable.PSEdition -ne 'Core')
 {
     Set-Variable IsWindows -Value $true -Option Constant -Scope Global
@@ -27,58 +31,78 @@ if ($IsLinux -or $IsMacOS)
     Remove-Variable PATH, NixProfiles, NixPathLines, Expressions
 }
 
-$env:PYTHONSTARTUP = Resolve-Path ~/.pyrc -ErrorAction Ignore
-
-#region PWD
-function Test-VSCode
+if ($IsLinux)
 {
-    if ($null -eq $Global:IsVSCode)
-    {
-        if ((-not $IsWindows) -and ($env:TERM -ne 'xterm-256color'))  # May not always be this value in Code, but it's definitely not in kitty
-        {
-            $Global:IsVSCode = $false
-        }
-        elseif ($env:TERM_PROGRAM)
-        {
-            $Global:IsVSCode = $env:TERM_PROGRAM -eq 'vscode'
-        }
-        else
-        {
-            $Process = Get-Process -Id $PID
-            do
-            {
-                $Global:IsVSCode = $Process.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
-                $Process = $Process.Parent
-            }
-            while ($Process -and -not $Global:IsVSCode)
-        }
+    $XdgDefaults = @{
+        XDG_CONFIG_HOME = "$env:HOME/.config"
+        XDG_CACHE_HOME = "$env:HOME/.cache"
+        XDG_DATA_HOME = "$env:HOME/.local/share"
+        XDG_STATE_HOME = "$env:HOME/.local/state"
+        XDG_DATA_DIRS = "/usr/local/share:/usr/share"
+        XDG_CONFIG_DIRS = "/etc/xdg"
     }
-    return $Global:IsVSCode
+    $XdgDefaults.GetEnumerator() |
+        ? {-not (Get-Item env:/$($_.Key) -ErrorAction Ignore)} |
+        % {Set-Content env:/$($_.Key) $_.Value}
+}
+
+if ($null -eq $Global:IsVSCode)
+{
+    if ((-not $IsWindows) -and ($env:TERM -ne 'xterm-256color'))  # May not always be this value in Code, but it's definitely not in kitty
+    {
+        $Global:IsVSCode = $false
+    }
+    elseif ($env:TERM_PROGRAM)
+    {
+        $Global:IsVSCode = $env:TERM_PROGRAM -eq 'vscode'
+    }
+    else
+    {
+        $Process = Get-Process -Id $PID
+        do
+        {
+            $Global:IsVSCode = $Process.ProcessName -match '^node|(Code( - Insiders)?)|winpty-agent$'
+            $Process = $Process.Parent
+        }
+        while ($Process -and -not $Global:IsVSCode)
+    }
 }
 
 $env:GITROOT = if (Test-Path /gitroot) {"/gitroot"} elseif (Test-Path ~/gitroot) {"~/gitroot"}
 
-if ($env:GITROOT -and -not (Test-VSCode))
+if ($env:GITROOT -and -not $IsVSCode)
 {
     Set-Location $env:GITROOT
 }
-#endregion PWD
 
 if (Get-Command starship -ErrorAction Ignore)
 {
     # brew install starship / choco install starship / winget install Starship.Starship
     $env:STARSHIP_CONFIG = $PSScriptRoot | Split-Path | Join-Path -ChildPath starship.toml
-    starship init powershell --print-full-init | Out-String | Invoke-Expression
+    # starship init powershell --print-full-init | Out-String | Invoke-Expression
+
+    # shaves off ~30ms
+    $StarshipInitScript = Join-Path $env:XDG_CONFIG_HOME starship.init.ps1
+    if ((gi $StarshipInitScript -ea Ignore).LastWriteTime -lt ([datetime]::Now.AddDays(-7))) {
+        starship init powershell --print-full-init > $StarshipInitScript
+    }
+    . $StarshipInitScript
 }
 
 if (Get-Command carapace -ErrorAction Ignore) {
     $env:CARAPACE_NOSPACE = "*"
     $env:CARAPACE_MATCH = 1
-    $env:CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
-    carapace _carapace | Out-String | Invoke-Expression
-}
+    # $env:CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
+    # carapace _carapace | Out-String | Invoke-Expression
 
-$env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+    # shaves off ~100ms
+    $env:CARAPACE_BRIDGES = 'bash'
+    $CarapaceInitScript = Join-Path $env:XDG_CONFIG_HOME carapace.init.ps1
+    if ((gi $CarapaceInitScript -ea Ignore).LastWriteTime -lt ([datetime]::Now.AddDays(-7))) {
+        carapace _carapace > $CarapaceInitScript
+    }
+    . $CarapaceInitScript
+}
 
 . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
 

@@ -6,21 +6,6 @@ $Global:PSDefaultParameterValues['Import-Module:DisableNameChecking'] = $true
 
 $Global:HostsFile = if ($IsLinux) {'/etc/hosts'} elseif ($IsMacOS) {''} else {'C:\Windows\System32\drivers\etc\hosts'}
 
-if ($IsLinux)
-{
-    $XdgDefaults = @{
-        XDG_CONFIG_HOME = "$env:HOME/.config"
-        XDG_CACHE_HOME = "$env:HOME/.cache"
-        XDG_DATA_HOME = "$env:HOME/.local/share"
-        XDG_STATE_HOME = "$env:HOME/.local/state"
-        XDG_DATA_DIRS = "/usr/local/share:/usr/share"
-        XDG_CONFIG_DIRS = "/etc/xdg"
-    }
-    $XdgDefaults.GetEnumerator() |
-        ? {-not (Get-Item env:/$($_.Key) -ErrorAction Ignore)} |
-        % {Set-Content env:/$($_.Key) $_.Value}
-}
-
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_commonparameters
 [string[]]$CommonParameters = (
     'Verbose',
@@ -59,13 +44,7 @@ Set-Alias clip Set-Clipboard
 Set-Alias sort Sort-Object
 Set-Alias json ConvertTo-Json
 Set-Alias unjson ConvertFrom-Json
-if ($IsLinux)
-{
-    Set-Alias scl systemctl
-}
 
-# Save typing out [pscustomobject]
-Add-Type 'public class o : System.Management.Automation.PSObject {}' -WarningAction Ignore
 
 # https://devblogs.microsoft.com/powershell/announcing-psreadline-2-1-with-predictive-intellisense/
 Set-PSReadLineOption -EditMode Windows
