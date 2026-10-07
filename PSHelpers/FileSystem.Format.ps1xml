@@ -62,7 +62,19 @@
                 </ScriptBlock>
               </TableColumnItem>
               <TableColumnItem>
-                <PropertyName>Size</PropertyName>
+                <ScriptBlock>
+                    $Size = $_.Size
+                    $Size, $Suffix = if ($Size -gt 1GB) {
+                        ($Size / 1GB), "G"
+                    } elseif ($Size -gt 1MB) {
+                        ($Size / 1MB), "M"
+                    } elseif ($Size -gt 1KB) {
+                        ($Size / 1KB), "K"
+                    } else {
+                        $Size, ""
+                    }
+                    "$([Math]::Round($Size, 2))$Suffix"
+                </ScriptBlock>
               </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>NameString</PropertyName>

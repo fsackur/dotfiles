@@ -82,6 +82,8 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 
 . "{{ .chezmoi.sourceDir }}/PSHelpers/Console.ps1"
 
+Update-FormatData -PrependPath "{{ .chezmoi.sourceDir }}/PSHelpers/FileSystem.Format.ps1xml"
+
 if ($IsVSCode)
 {
     Activate-PyEnv -ErrorAction Ignore
