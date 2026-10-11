@@ -1,3 +1,9 @@
+<#
+    .DESCRIPTION
+    Requires PadroAdamo's patch for libratbag: https://github.com/libratbag/libratbag/pull/1877
+
+    Built in ansible: https://github.com/fsackur/ansible/blob/bc1b2c5/roles/zelotes_mouse/tasks/main.yml
+#>
 
 # source: /usr/include/linux/input-event-codes.h (codes up to 0x2e7) and custom ratbag codes (-1, 1073741824..)
 enum Key {
@@ -278,8 +284,8 @@ enum Key {
     BTN_8 = 0x108
     BTN_9 = 0x109
 
-    BTN_MOUSE = 0x110
     BTN_LEFT = 0x110
+    BTN_MOUSE = 0x110  # swapped order from input-event-codes.c so BTN_MOUSE is the alias
     BTN_RIGHT = 0x111
     BTN_MIDDLE = 0x112
     BTN_SIDE = 0x113
@@ -793,17 +799,17 @@ $Script:ErrorActionPreference = "Stop"
 $Script:C18Name = "SOAI USB Gaming Mouse"
 
 $Script:ButtonNames = @(
-    "Left",
-    "Right",
-    "Middle",
-    "Thumb1",
-    "Thumb2",
-    "DPI",
-    "JoyUp",
-    "JoyDown",
-    "JoyLeft",
-    "JoyRight",
-    "JoyPress"
+    "Left",     # 0
+    "Right",    # 1
+    "Middle",   # 2
+    "Thumb1",   # 3
+    "Thumb2",   # 4
+    "DPI",      # 5
+    "JoyUp",    # 6
+    "JoyDown",  # 7
+    "JoyLeft",  # 8
+    "JoyRight", # 9
+    "JoyPress"  # 10
 )
 
 $Script:ButtonAliases = @(
@@ -815,43 +821,28 @@ $Script:ButtonAliases = @(
     [Key]::BTN_FORWARD
 )
 
-function Install-ZelotesDriver {
-    <#
-        .DESCRIPTION
-        Piper is the GUI. But it doesn't show all buttons perfectly - perhaps due to missing SVG?
-
-        .LINK
-        https://github.com/libratbag/libratbag/pull/1877/changes
-    #>
-
-    [CmdletBinding()]
-    param ()
-
-    Push-Location $env:GITROOT
-    try {
-        git clone ssh://github.com/libratbag/libratbag --origin upstream
-        cd libratbag
-        git remote add PadreAdamo ssh://github.com/PadreAdamo/libratbag
-        git fetch PadreAdamo
-        git switch soai-c18-driver
-
-        sudo dnf install piper libevdev-devel libunistring-devel check-devel valgrind python3-devel swig
-        meson builddir
-        ninja -C builddir
-        sudo ninja -C builddir install
-
-    } finally {
-        Pop-Location
+$Script:Presets = [ordered]@{
+    Default = @{
+        Left     = [Key]::BTN_LEFT
+        Right    = [Key]::BTN_RIGHT
+        Middle   = [Key]::BTN_MIDDLE
+        Thumb1   = [Key]::BTN_FORWARD
+        Thumb2   = [Key]::BTN_BACK
+        DPI      = [Key]::RESOLUTION_CYCLE_UP
+        JoyUp    = [Key]::KEY_UP
+        JoyDown  = [Key]::KEY_DOWN
+        JoyLeft  = [Key]::KEY_LEFT
+        JoyRight = [Key]::KEY_RIGHT
+        JoyPress = [Key]::KEY_ENTER
     }
-
-    $Override = "[Service]`nExecStart=`nExecStart=/usr/local/bin/ratbagd"
-    sudo mkdir -p /etc/systemd/system/ratbagd.service.d
-    $Override | sudo tee /etc/systemd/system/ratbagd.service.d/override.conf | Out-Null
-    sudo systemctl restart ratbagd
+    BG3 = @{
+        JoyLeft  = [Key]::KEY_ESC
+    }
 }
 
 function Get-ZelotesProfileCount {
     [CmdletBinding()]
+    [OutputType([int])]
     param ()
 
     [string]$Count = (ratbagctl $C18Name info) -match "^\s*Number of Profiles: " -replace ".*:\s*"
@@ -859,14 +850,33 @@ function Get-ZelotesProfileCount {
 }
 
 function Get-ZelotesActiveProfile {
-    ratbagctl $C18Name profile active get
+    [CmdletBinding()]
+    [OutputType([int])]
+    param ()
+
+    $Profile = ratbagctl $C18Name profile active get
+    [int]$Profile
+}
+
+function Switch-ZelotesProfile {
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0)]
+        [uint]$Profile
+    )
+
+    if (-not $PSBoundParameters.ContainsKey("Profile")) {
+        $Profile = ((Get-ZelotesActiveProfile) + 1) % (Get-ZelotesProfileCount)
+    }
+
+    ratbagctl $C18Name profile active set $Profile
 }
 
 function Get-Zelotes {
     [CmdletBinding()]
     param (
         [Parameter(Position = 0)]
-        [ValidateSet(0, 1, "active")]
+        [ValidatePattern("^(\d+|active)$")]
         [string]$Profile = "active"
     )
 
@@ -899,29 +909,52 @@ function Get-Zelotes {
     [pscustomobject]$Mapping
 }
 
-
 function Set-Zelotes {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "Default")]
     param (
+        [Parameter(Position = 0, Mandatory, ParameterSetName = "Preset")]
+        [string]$Preset,
+
         [ValidateSet(0, 1, "active")]
         [string]$Profile = "active",
 
+        [Parameter(ParameterSetName = "Default")]
         [Key]$Left,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$Right,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$Middle,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$Thumb1,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$Thumb2,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$DPI,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$JoyUp,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$JoyDown,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$JoyLeft,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$JoyRight,
+        [Parameter(ParameterSetName = "Default")]
         [Key]$JoyPress
     )
 
+    if ($PSCmdlet.ParameterSetName -eq "Preset") {
+        $Mapping = $Presets.Default
+        if ($Preset -ne "Default") {
+            $Mapping = $Mapping.Clone()
+            $Presets[$Preset].GetEnumerator() | % {$Mapping[$_.Key] = $_.Value}
+        }
+
+        [void]$PSBoundParameters.Remove("Preset")
+        return & $MyInvocation.MyCommand @PSBoundParameters @Mapping
+    }
+
     if ($Profile -eq "active") {$Profile = Get-ZelotesActiveProfile}
 
-    # $c.Parameters.Values | ? ParameterType -eq ([Key])
     $Mappings = $PSBoundParameters.GetEnumerator() | ? Value -is ([Key])
     $Mappings | % {
         $Button = $ButtonNames.IndexOf($_.Key)
@@ -929,6 +962,8 @@ function Set-Zelotes {
 
         $ValArgs = if ($Value -in $RatbagButtons) {
             "button", $Value -replace ".*_"
+        } elseif ($Value -in $ButtonAliases) {
+            "button", $ButtonAliases.IndexOf($Value)
         } elseif ($Value -in $RatbagSpecials) {
             "special", ($Value -replace "_", "-").ToLower()
         } else {
@@ -936,5 +971,20 @@ function Set-Zelotes {
         }
 
         ratbagctl $C18Name profile $Profile button $Button action set @ValArgs
+        # IDK why but the mouse freezes unless you run the command twice
+        ratbagctl $C18Name profile $Profile button $Button action set @ValArgs
     }
+}
+
+Register-ArgumentCompleter -CommandName Set-Zelotes -ParameterName Preset -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    [string[]]$Names = $Presets.Keys
+    (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+}
+
+function Reset-Zelotes {
+    [CmdletBinding()]
+    param ()
+    Set-Zelotes -Profile 0 Default
+    Switch-ZelotesProfile 0
 }
