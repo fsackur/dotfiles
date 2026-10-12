@@ -1,7 +1,8 @@
 
-$RealScriptRoot = realpath $PSCommandPath | Split-Path
+$Script:ScriptRoot = realpath $PSCommandPath | Split-Path
 $PSModulePaths = $env:PSModulePath -split [System.IO.Path]::PathSeparator
 $PSModulePath = $PSModulePaths | Where-Object {$_.StartsWith($env:HOME)} | Select-Object -Last 1
+$PSAllUserModulePath = $PSModulePaths | Where-Object {-not $_.StartsWith($env:HOME)} | Select-Object -First 1
 
 function Update-HelperModule {
     [CmdletBinding()]
@@ -10,102 +11,127 @@ function Update-HelperModule {
         [ArgumentCompleter({
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
-            $Files = Get-ChildItem $RealScriptRoot -Filter *.ps1 | % BaseName
+            $Files = Get-ChildItem $ScriptRoot -Filter *.ps1 | % BaseName
             (@($Files) -like "$wordToComplete*"), (@($Files) -like "*$wordToComplete*") | Write-Output
         })]
-        [string[]]$Name
+        [string[]]$Name,
+
+        [ValidateSet("Copy", "Link")]
+        [string]$Type = "Link",
+
+        [switch]$AllUsers
     )
 
     if ($MyInvocation.ExpectingInput) {
         $Name = $input
     }
 
+    $ModulePath = if ($AllUsers) {$PSAllUserModulePath} else {$PSModulePath}
+
     if (-not $Name) {
-        $Name = Get-ChildItem $RealScriptRoot -Filter *.ps1 | % BaseName
+        $Name = Get-ChildItem $ScriptRoot -Filter *.ps1 | % BaseName
     }
 
-    foreach ($_Name in $Name) {
-        $_Name = $_Name -replace "\.ps1$"
+    function deploy {
+        [CmdletBinding()]
+        param ($Source, $Dest)
 
-        $FileName = [IO.Path]::ChangeExtension($_Name, "ps1")  # no-op when already ps1
-        $Dir = Join-Path $PSModulePath $_Name
+        $Dest = if ($Dest) {$Dest} else {$Source}
+        $Source = realpath (Join-Path $ScriptRoot $Source)
 
-        $Link = Join-Path $Dir $FileName
-        $Target = Join-Path $RealScriptRoot $FileName
-        if (-not (Test-Path $Link)) {
-            $Target = realpath $Target
-            mkdir -p $Dir
-            ln -sf $Target $Link
-        }
-
-        $TypeFileName = [IO.Path]::ChangeExtension($_Name, "Types.ps1xml")
-        $TypeTarget = Join-Path $RealScriptRoot $TypeFileName
-        $Link = Join-Path $Dir $TypeFileName
-        if (Test-Path $TypeTarget) {
-            if (-not (Test-Path $Link)) {
-                $TypeTarget = realpath $TypeTarget
-                mkdir -p $Dir
-                ln -sf $TypeTarget $Link
+        $Action = if ($Type -eq "Copy") {
+            {
+                pushd $ModuleBase > /dev/null
+                cp -f $Source $Dest
+                popd > /dev/null
             }
-        } else {
-            $TypeFileName = $null
-        }
-
-        $FormatFileName = [IO.Path]::ChangeExtension($_Name, "Format.ps1xml")
-        $FormatTarget = Join-Path $RealScriptRoot $FormatFileName
-        $Link = Join-Path $Dir $FormatFileName
-        if (Test-Path $FormatTarget) {
-            if (-not (Test-Path $Link)) {
-                $FormatTarget = realpath $FormatTarget
-                mkdir -p $Dir
-                ln -sf $FormatTarget $Link
+        } elseif ((Get-Item $Dest -ea Ignore).LinkTarget -ne $Source) {
+            {
+                pushd $ModuleBase > /dev/null
+                ln -sf $Source $Dest
+                popd > /dev/null
             }
+        }
+
+        if ($AllUsers) {
+            sudo sh -c ($ExecutionContext.InvokeCommand.ExpandString($Action))
         } else {
-            $FormatFileName = $null
+            & $Action
+        }
+    }
+
+    Push-Location $ScriptRoot -ea Stop
+    try {
+        foreach ($_Name in $Name) {
+            $_Name = $_Name -replace "\.ps1$"  # belt-and-braces; we're expecting basename anyway
+            $SourceScript = [IO.Path]::ChangeExtension($_Name, "ps1")
+            $SourcePath = $SourceScript | Resolve-Path -ea Stop
+            $ModuleBase = Join-Path $ModulePath $_Name
+            $Manifest = @{
+                RootModule = [IO.Path]::ChangeExtension($_Name, "psm1")
+            }
+
+            if ($AllUsers) {
+                sudo mkdir -p $ModuleBase
+                sudo chown -R (id -u) $ModuleBase
+            } else {
+                mkdir -p $ModuleBase
+            }
+
+            # Tidy deprecated links
+            $Deprecated = Join-Path $ModuleBase "$_Name.ps1"
+            if (Test-Path $Deprecated) {del $Deprecated}
+
+            deploy -Source $SourceScript -Dest $Manifest.RootModule
+
+            $TypeFilename = [IO.Path]::ChangeExtension($_Name, "Types.ps1xml")
+            if (Test-Path $TypeFilename) {
+                deploy -Source $TypeFilename
+                $Manifest.TypesToProcess = $TypeFileName
+            }
+
+            $FormatFileName = [IO.Path]::ChangeExtension($_Name, "Format.ps1xml")
+            if (Test-Path $FormatFileName) {
+                deploy -Source $FormatFileName
+                $Manifest.FormatsToProcess = $FormatFileName
+            }
+
+            $Ast = [Management.Automation.Language.Parser]::ParseFile($SourcePath, [ref]$null, [ref]$null)
+            $FunctionAsts = $Ast.FindAll({
+                param ($Ast)
+                $Ast -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+                $Ast.Name -inotlike "private:*" -and
+                $Ast.Parent.Parent -isnot [System.Management.Automation.Language.TypeDefinitionAst]  # ignore class methods; apparently, a type definition isn't a nested scriptblock
+            }, $false)
+            $Manifest.FunctionsToExport = $FunctionAsts.Name
+
+            $AliasAsts = $Ast.FindAll({
+                param ($Ast)
+                $Ast -is [System.Management.Automation.Language.CommandAst] -and
+                $Ast.CommandElements[0].Value -eq "Set-Alias"
+            }, $false)
+            $Manifest.AliasesToExport = $AliasAsts | % {$_.CommandElements[1].Value}
+
+            $AssignmentAsts = $Ast.FindAll({
+                param ($Ast)
+                $Ast -is [System.Management.Automation.Language.AssignmentStatementAst]
+            }, $false)
+            $VariableAsts = $AssignmentAsts.Left.Target
+            $Variables = $VariableAsts.VariablePath | ? IsGlobal | % UserPath
+            $Manifest.VariablesToExport = $Variables -replace '^.*:'
+
+
+            $ManifestPath = Join-Path $ModuleBase ([IO.Path]::ChangeExtension($_Name, "psd1"))
+            New-ModuleManifest $ManifestPath @Manifest
+
+
+            if ($AllUsers) {
+                sudo chown -R (id -u) $ModuleBase
+            }
         }
 
-        $Ast = [Management.Automation.Language.Parser]::ParseFile($Target, [ref]$null, [ref]$null)
-        $FunctionAsts = $Ast.FindAll({
-            param ($Ast)
-            $Ast -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
-            $Ast.Name -inotlike "private:*" -and
-            $Ast.Parent.Parent -isnot [System.Management.Automation.Language.TypeDefinitionAst]  # ignore class methods; apparently, a type definition isn't a nested scriptblock
-        }, $false)
-        $Functions = $FunctionAsts.Name
-
-        $AliasAsts = $Ast.FindAll({
-            param ($Ast)
-            $Ast -is [System.Management.Automation.Language.CommandAst] -and
-            $Ast.CommandElements[0].Value -eq "Set-Alias"
-        }, $false)
-        $Aliases = $AliasAsts | % {$_.CommandElements[1].Value}
-
-        $AssignmentAsts = $Ast.FindAll({
-            param ($Ast)
-            $Ast -is [System.Management.Automation.Language.AssignmentStatementAst]
-        }, $false)
-        $VariableAsts = $AssignmentAsts.Left.Target
-        $Variables = $VariableAsts.VariablePath | ? IsGlobal | % UserPath
-        $Variables = $Variables -replace '^Global:'
-
-
-        $ManifestPath = Join-Path $Dir "$_Name.psd1"
-        $Psm1Name = "$_Name.psm1"
-        $Psm1Path = Join-Path $Dir $Psm1Name
-        $DotSourceIncantation = '. ([IO.Path]::ChangeExtension($PSCommandPath, "ps1"))'
-        $DotSourceIncantation > $Psm1Path
-
-        $Splat = @{
-            RootModule        = $Psm1Name
-            TypesToProcess    = $TypeFileName
-            FormatsToProcess  = $FormatFileName
-            FunctionsToExport = $Functions
-            AliasesToExport   = $Aliases
-            VariablesToExport = $Variables
-        }
-        New-ModuleManifest $ManifestPath @Splat
-
-        # Remove-Module $_Name -Force -ErrorAction Ignore
+    } finally {
+        Pop-Location
     }
 }
 
