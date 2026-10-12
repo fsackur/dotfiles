@@ -42,9 +42,12 @@ Set-Alias p podman
 Set-Alias pc podman-compose
 Set-Alias clip Set-Clipboard
 Set-Alias sort Sort-Object
-Set-Alias json ConvertTo-Json
-Set-Alias unjson ConvertFrom-Json
-
+Set-Alias fromj ConvertFrom-Json
+Set-Alias toj ConvertTo-Json
+Set-Alias fromy ConvertFrom-Yaml
+Set-Alias toy ConvertTo-Yaml
+Set-Alias fromb64 ConvertFrom-Base64
+Set-Alias tob64 ConvertTo-Base64
 
 # https://devblogs.microsoft.com/powershell/announcing-psreadline-2-1-with-predictive-intellisense/
 Set-PSReadLineOption -EditMode Windows
