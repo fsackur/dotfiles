@@ -51,6 +51,19 @@ function Update-HelperModule {
             $TypeFileName = $null
         }
 
+        $FormatFileName = [IO.Path]::ChangeExtension($_Name, "Format.ps1xml")
+        $FormatTarget = Join-Path $RealScriptRoot $FormatFileName
+        $Link = Join-Path $Dir $FormatFileName
+        if (Test-Path $FormatTarget) {
+            if (-not (Test-Path $Link)) {
+                $FormatTarget = realpath $FormatTarget
+                mkdir -p $Dir
+                ln -sf $FormatTarget $Link
+            }
+        } else {
+            $FormatFileName = $null
+        }
+
         $Ast = [Management.Automation.Language.Parser]::ParseFile($Target, [ref]$null, [ref]$null)
         $FunctionAsts = $Ast.FindAll({
             param ($Ast)
@@ -85,6 +98,7 @@ function Update-HelperModule {
         $Splat = @{
             RootModule        = $Psm1Name
             TypesToProcess    = $TypeFileName
+            FormatsToProcess  = $FormatFileName
             FunctionsToExport = $Functions
             AliasesToExport   = $Aliases
             VariablesToExport = $Variables
