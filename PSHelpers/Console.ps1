@@ -133,17 +133,3 @@ function Get-PSReadlineHistory
 {
     gc (Get-PSReadLineOption).HistorySavePath
 }
-
-if (-not $env:SSH_AUTH_SOCK)
-{
-    [string[]]$SshAgentOutput = @()
-    if ($IsLinux -and (Get-Command gnome-keyring-daemon -ErrorAction Ignore))
-    {
-        $SshAgentOutput = gnome-keyring-daemon --start
-    }
-    else
-    {
-        $SshAgentOutput = $(ssh-agent) -replace ';.*' | Select-Object -SkipLast 1
-    }
-    $env:SSH_AUTH_SOCK = $SshAgentOutput -match 'SSH_AUTH_SOCK' -replace '.*='
-}
