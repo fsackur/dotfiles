@@ -163,8 +163,8 @@ Set-Alias Start-Service Invoke-ServiceScript
 Set-Alias Restart-Service Invoke-ServiceScript
 Set-Alias Show-ServiceLog Invoke-ServiceScript
 Set-Alias Update-Service Invoke-ServiceScript
-Set-Alias stop Start-Service
+Set-Alias stop Stop-Service
 Set-Alias start Start-Service
-Set-Alias restart Start-Service
+Set-Alias restart Restart-Service
 Set-Alias logs Show-ServiceLog
 Set-Alias update Update-Service
