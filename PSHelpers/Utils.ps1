@@ -101,6 +101,7 @@ function Update-HelperModule {
                 param ($Ast)
                 $Ast -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
                 $Ast.Name -inotlike "private:*" -and
+                $Ast.Name -inotlike "script:*" -and
                 $Ast.Parent.Parent -isnot [System.Management.Automation.Language.TypeDefinitionAst]  # ignore class methods; apparently, a type definition isn't a nested scriptblock
             }, $false)
             $Manifest.FunctionsToExport = $FunctionAsts.Name
