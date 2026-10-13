@@ -21,7 +21,11 @@ $script:BasePath = if ($IsLocal) {
 $script:DArgs = if ($IsLocal) {@()} else {"--context", $DockerContext}
 $script:Actions = @{
     Status = {
-        docker @DArgs compose ps -a --format json | ConvertFrom-Json
+        docker @DArgs compose ps -a --format json | ConvertFrom-Json | % {
+            $_.CreatedAt = [datetime]($_.CreatedAt -replace " \D+$")
+            $_.PSTypeNames.Insert(0, "DockerProcess")
+            $_
+        }
     }
     Stop = {
         docker @DArgs compose down --remove-orphans @args
