@@ -7,7 +7,7 @@ if ($Hostname -eq $DockerContext) {
     $script:IsLocal = $true
 } else {
     $Context = docker context inspect $DockerContext | ConvertFrom-Json
-    $Script:DockerHost = $Context.Endpoints.docker.Host -replace "^\w+://" -replace "\..*"
+    $Script:DockerHost = $Context.Endpoints.docker.Host -replace "^\w+://" -replace "\..*" | Select-Object -First 1
     $script:IsLocal = $DockerHost -eq $Hostname
 }
 
@@ -20,6 +20,9 @@ $script:BasePath = if ($IsLocal) {
 
 $script:DArgs = if ($IsLocal) {@()} else {"--context", $DockerContext}
 $script:Actions = @{
+    Status = {
+        docker @DArgs compose ps -a --format json | ConvertFrom-Json
+    }
     Stop = {
         docker @DArgs compose down --remove-orphans @args
     }
@@ -48,16 +51,23 @@ $script:Participles = @{
 
 $script:Services = $null
 
-$script:SshfsProcess = $null
 function script:Mount-BasePath {
-# function Mount-BasePath {
-    if ($script:SshfsProcess) {
-        return
+    if ($IsLocal) {return}
+
+    $Target = "$DockerHost`:$LocalBasePath"
+    $Mountpoint = $BasePath
+
+    $MyModule = $MyInvocation.MyCommand.Module
+    if ($MyModule) {
+        $Cleanup = {
+            if ((mount) -match "$Target on $BasePath ") {
+                umount $BasePath
+            }
+        }
+        $MyModule.OnRemove = $Cleanup
     }
 
-    if ($IsLocal -or (gci $BasePath -ea Ignore)) {
-        return
-    }
+    if (gci $BasePath -ea Ignore) {return}
 
     sudo mkdir -p $BasePath
     sudo chmod 775 $BasePath
@@ -65,40 +75,34 @@ function script:Mount-BasePath {
 
     sudo sed -i "s/#\s*user_allow_other/user_allow_other/g" /etc/fuse.conf
 
-    $MyModule = $MyInvocation.MyCommand.Module
-    if ($MyModule) {
-        $MyModule.OnRemove = {umount $BasePath}
-    }
 
-    sshfs -o allow_other $DockerHost`:$LocalBasePath $BasePath
+    sshfs -o allow_other $Target $Mountpoint
 }
 
-function Get-Service
-{
+function script:Get-ServiceName {
     [CmdletBinding()]
     param
     (
         [Parameter(ValueFromPipeline, Position = 0)]
         [SupportsWildcards()]
-        [string]$Filter = "*"
+        [string]$Name = "*"
     )
 
     if (-not $script:Services) {
         $Paths = if ($IsLocal) {
             Get-ChildItem $BasePath -Directory | Get-ChildItem -Filter "docker-compose.yml"
         } else {
-            ssh @($DockerHost)[0] find $LocalBasePath -maxdepth 2 -name "docker-compose.yml"
+            ssh $DockerHost find $LocalBasePath -maxdepth 2 -name "docker-compose.yml"
         }
 
         $Paths = $Paths | Split-Path | Split-Path -Leaf | Sort-Object -Unique
         $script:Services = @($Paths) -notmatch "\.bak$"
     }
 
-    $script:Services -like $Filter
+    $script:Services -like $Name
 }
 
-function Invoke-ServiceScript
-{
+function Invoke-ServiceScript {
     [CmdletBinding()]
     param
     (
@@ -117,7 +121,7 @@ function Invoke-ServiceScript
     {
         if ($Name)
         {
-            $Name = $Name | Get-Service | Sort-Object -Unique
+            $Name = $Name | Get-ServiceName | Sort-Object -Unique
         }
 
         $CalledAs = (Get-PSCallStack)[0, 1] | % InvocationInfo | % InvocationName
@@ -154,15 +158,17 @@ function Invoke-ServiceScript
 Register-ArgumentCompleter -CommandName Invoke-ServiceScript -ParameterName Name -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 
-    $Names = Get-Service
+    $Names = Get-ServiceName
     (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output
 }
 
+Set-Alias Get-Service Invoke-ServiceScript
 Set-Alias Stop-Service Invoke-ServiceScript
 Set-Alias Start-Service Invoke-ServiceScript
 Set-Alias Restart-Service Invoke-ServiceScript
 Set-Alias Show-ServiceLog Invoke-ServiceScript
 Set-Alias Update-Service Invoke-ServiceScript
+Set-Alias status Get-Service
 Set-Alias stop Stop-Service
 Set-Alias start Start-Service
 Set-Alias restart Restart-Service
