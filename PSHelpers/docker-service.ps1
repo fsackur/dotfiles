@@ -46,6 +46,7 @@ $script:Actions = @{
     }
 }
 $script:Participles = @{
+    Status = "Showing"
     Stop = "Stopping"
     Start = "Starting"
     Restart = "Restarting"
@@ -106,6 +107,18 @@ function script:Get-ServiceName {
     $script:Services -like $Name
 }
 
+function Get-Service {
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(ValueFromPipeline, Position = 0)]
+        [SupportsWildcards()]
+        [string[]]$Name = "*"
+    )
+
+    Invoke-ServiceScript $Name
+}
+
 function Invoke-ServiceScript {
     [CmdletBinding()]
     param
@@ -126,11 +139,21 @@ function Invoke-ServiceScript {
         if ($Name)
         {
             $Name = $Name | Get-ServiceName | Sort-Object -Unique
+            $Name | & $MyInvocation.MyCommand
+            break
         }
 
-        $CalledAs = (Get-PSCallStack)[0, 1] | % InvocationInfo | % InvocationName
-        $CalledAs = @($CalledAs) -ne '&'
-        $Verb = if ($CalledAs -eq "Show-ServiceLog") {"Logs"} else {$CalledAs -replace '-.*' | Select-Object -First 1}
+        $CalledAs = (Get-PSCallStack)[0, 1, 2] | % InvocationInfo | % InvocationName
+        $CalledAs = @($CalledAs) -ne '&' -ne $MyInvocation.MyCommand.Name
+
+        $Verb = if ($CalledAs -match "log") {
+            "Logs"
+        } elseif ($CalledAs -eq "Get-Service" -or $CalledAs -eq "status") {
+            "Status"
+        } else {
+            $CalledAs -replace '-.*' | Select-Object -First 1
+        }
+
         if (-not $Action)
         {
             $Action = $Actions[$Verb]
@@ -166,7 +189,6 @@ Register-ArgumentCompleter -CommandName Invoke-ServiceScript -ParameterName Name
     (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output
 }
 
-Set-Alias Get-Service Invoke-ServiceScript
 Set-Alias Stop-Service Invoke-ServiceScript
 Set-Alias Start-Service Invoke-ServiceScript
 Set-Alias Restart-Service Invoke-ServiceScript
