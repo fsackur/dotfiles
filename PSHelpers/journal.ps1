@@ -25,6 +25,8 @@ function Read-Journal {
 
         [string[]]$ExcludeSyslogId,
 
+        [string[]]$Facility,
+
         [Alias("Grep")]
         [regex]$Pattern,
 
@@ -106,6 +108,10 @@ function Read-Journal {
         $ExcludeSyslogId | % {
             $_args += "--exclude-identifier=$_"
         }
+    }
+
+    if ($Facility) {
+        $_args += "--facility=$($Facility -join ',')"
     }
 
     if ($Pattern) {
@@ -307,3 +313,9 @@ $SyslogIdCompleter = {
 }
 Register-ArgumentCompleter -CommandName Read-Journal -ParameterName SyslogId -ScriptBlock $SyslogIdCompleter
 Register-ArgumentCompleter -CommandName Read-Journal -ParameterName ExcludeSyslogId -ScriptBlock $SyslogIdCompleter
+
+Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Facility -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    $Names = journalctl --facility=help
+    (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+}
