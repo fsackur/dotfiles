@@ -47,6 +47,27 @@
     </View>
 
     <View>
+      <Name>JournalValue</Name>
+      <ViewSelectedBy>
+        <TypeName>JournalValue</TypeName>
+      </ViewSelectedBy>
+      <GroupBy>
+        <PropertyName>Field</PropertyName>
+      </GroupBy>
+      <CustomControl>
+        <CustomEntries>
+          <CustomEntry>
+            <CustomItem>
+              <ExpressionBinding>
+                 <ScriptBlock>$_</ScriptBlock>
+              </ExpressionBinding>
+            </CustomItem>
+          </CustomEntry>
+        </CustomEntries>
+      </CustomControl>
+    </View>
+
+    <View>
       <Name>JournalUnit</Name>
       <ViewSelectedBy>
         <TypeName>JournalUnit</TypeName>
