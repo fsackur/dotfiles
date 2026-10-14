@@ -183,7 +183,11 @@ function Read-Journal {
         & $Reader
     } else {
         Write-Verbose "journalctl $(@($_args) -ne $StructuredOutputArg)"
-        & $Reader | ConvertFrom-Json | % {$_.PSTypeNames.Insert(0, "JournalEntry"); $_}
+        & $Reader | % -OutBuffer 0 {
+            $Entry = ConvertFrom-Json $_
+            $Entry.PSTypeNames.Insert(0, "JournalEntry")
+            $Entry
+        }
     }
 }
 
