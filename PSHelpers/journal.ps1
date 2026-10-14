@@ -127,6 +127,46 @@ function Get-JournalBoot {
     journalctl --list-boots -o json | ConvertFrom-Json | % {$_.PSTypeNames.Insert(0, "JournalBoot"); $_}
 }
 
+$script:JournalFields = $null
+function script:Get-JournalFieldName {
+    [OutputType([string])]
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0)]
+        [SupportsWildcards()]
+        [string]$Name
+    )
+
+    if (-not $Script:JournalFields) {
+        $Script:JournalFields = journalctl --fields | Sort-Object {$_ -replace "^_+"}
+    }
+
+    if ($Name) {
+        $Script:JournalFields -ilike $Name
+    } else {
+        $Script:JournalFields
+    }
+}
+
+function Get-JournalField {
+    [OutputType([string])]
+    [CmdletBinding()]
+    param (
+        [Parameter(Position = 0)]
+        [SupportsWildcards()]
+        [string]$Name
+    )
+
+    $Fields = Get-JournalFieldName @PSBoundParameters
+    $Fields | % {
+        $Field = $_
+        journalctl -F $Field |
+            % {Add-Member -PassThru -InputObject $_ -NotePropertyMembers @{Field = $Field; Value = $_}} |
+            % {$_.PSTypeNames.Insert(0, "JournalValue"); $_} |
+            Sort-Object
+    }
+}
+
 function Get-JournalUnit {
     [OutputType("JournalUnit")]
     [CmdletBinding()]
@@ -157,14 +197,20 @@ function Get-JournalUnit {
     $Types = $Type | % {$ValidValues -like $_} | Sort-Object {$ValidValues.IndexOf($_)} -Unique
     $Types | % {
         $UnitType = $_
-        journalctl -F $FieldMap[$UnitType] |
+        Get-JournalField $FieldMap[$UnitType] |
+            ? $NameFilter |
             % {Add-Member -PassThru -InputObject $_ -NotePropertyMembers @{UnitType = $UnitType}} |
             % {$_.PSTypeNames.Insert(0, "JournalUnit"); $_} |
-            ? $NameFilter |
             Sort-Object
     }
 }
 
+
+Register-ArgumentCompleter -CommandName Get-JournalField -ParameterName Name -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    $Names = Get-JournalFieldName
+    (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+}
 
 Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Boot -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
