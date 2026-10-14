@@ -31,8 +31,7 @@ function Read-Journal {
         $Until,
 
         [Parameter(ParameterSetName = "boot")]
-        [ValidateRange(-65535, 0)]
-        [int]$Boot,
+        [string]$Boot,
 
         [string]$Pattern,
 
@@ -126,4 +125,11 @@ function Get-JournalBoot {
     param ()
 
     journalctl --list-boots -o json | ConvertFrom-Json | % {$_.PSTypeNames.Insert(0, "JournalBoot"); $_}
+}
+
+Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Boot -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    $Boots = Get-JournalBoot | Sort-Object Index -Descending
+    $Names = "all", $Boots.index, $Boots.boot_id | Write-Output
+    (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
 }
