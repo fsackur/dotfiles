@@ -127,9 +127,56 @@ function Get-JournalBoot {
     journalctl --list-boots -o json | ConvertFrom-Json | % {$_.PSTypeNames.Insert(0, "JournalBoot"); $_}
 }
 
+function Get-JournalUnit {
+    [OutputType("JournalUnit")]
+    [CmdletBinding()]
+    param (
+        [ValidateSet("Unit", "Slice", "UserUnit", "UserSlice")]
+        [string[]]$Type = ("Unit", "Slice", "UserUnit", "UserSlice"),
+
+        [Parameter(Position = 0)]
+        [SupportsWildcards()]
+        [string]$Name
+    )
+
+    $NameFilter = if ($Name) {
+        {$_ -like $Name -or $_ -like "$Name.*"}
+    } else {
+        {$true}
+    }
+
+    $FieldMap = @{
+        "Unit"      = "_SYSTEMD_UNIT"
+        "Slice"     = "_SYSTEMD_SLICE"
+        "UserUnit"  = "_SYSTEMD_USER_UNIT"
+        "UserSlice" = "_SYSTEMD_USER_SLICE"
+    }
+
+    $ValidValues = $MyInvocation.MyCommand.Parameters.Type.Attributes | ? {$_ -is [ValidateSet]} | % ValidValues
+
+    $Types = $Type | % {$ValidValues -like $_} | Sort-Object {$ValidValues.IndexOf($_)} -Unique
+    $Types | % {
+        $UnitType = $_
+        journalctl -F $FieldMap[$UnitType] |
+            % {Add-Member -PassThru -InputObject $_ -NotePropertyMembers @{UnitType = $UnitType}} |
+            % {$_.PSTypeNames.Insert(0, "JournalUnit"); $_} |
+            ? $NameFilter |
+            Sort-Object
+    }
+}
+
+
 Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Boot -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     $Boots = Get-JournalBoot | Sort-Object Index -Descending
     $Names = "all", $Boots.index, $Boots.boot_id | Write-Output
+    (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+}
+
+Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Unit -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    $Journal = $fakeBoundParameters.Journal
+    $UnitType = if ($Journal -ieq "user") {"UserUnit", "UserSlice"} else {"Unit", "Slice"}
+    $Names = (Get-JournalUnit -Type $UnitType) -replace "\.service$" | Sort-Object
     (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
 }
