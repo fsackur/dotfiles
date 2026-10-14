@@ -1,3 +1,14 @@
+enum JournalPriority {
+    emerg = 0
+    alert = 1
+    crit = 2
+    err = 3
+    warning = 4
+    notice = 5
+    info = 6
+    debug = 7
+}
+
 function Read-Journal {
     [OutputType("JournalBoot", ParameterSetName = "Structured")]
     [OutputType([string], ParameterSetName = "Raw")]
@@ -16,6 +27,9 @@ function Read-Journal {
 
         [Alias("Grep")]
         [regex]$Pattern,
+
+        [Alias("Level")]
+        [JournalPriority]$Priority,
 
         [switch]$CaseSensitive,
 
@@ -99,6 +113,10 @@ function Read-Journal {
         if (-not $CaseSensitive) {
             $_args += "--case-sensitive=false"
         }
+    }
+
+    if ($null -ne $Priority) {
+        $_args += "--priority=$Priority"
     }
 
     if ($Count) {$_args += "--lines=$Count"}
