@@ -46,4 +46,50 @@
       </MemberSet>
     </Members>
   </Type>
+
+  <Type>
+    <Name>JournalBoot</Name>
+    <Members>
+      <AliasProperty>
+        <Name>BootId</Name>
+        <ReferencedMemberName>boot_id</ReferencedMemberName>
+      </AliasProperty>
+      <ScriptProperty>
+        <Name>FirstEntry</Name>
+        <GetScriptBlock>
+          [datetime]::UnixEpoch.AddMicroseconds($this.first_entry)
+        </GetScriptBlock>
+      </ScriptProperty>
+      <ScriptProperty>
+        <Name>LastEntry</Name>
+        <GetScriptBlock>
+          [datetime]::UnixEpoch.AddMicroseconds($this.last_entry)
+        </GetScriptBlock>
+      </ScriptProperty>
+      <MemberSet>
+        <Name>PSStandardMembers</Name>
+        <Members>
+          <PropertySet>
+            <Name>DefaultDisplayPropertySet</Name>
+            <ReferencedProperties>
+              <Name>Index</Name>
+              <Name>BootId</Name>
+              <Name>FirstEntry</Name>
+              <Name>LastEntry</Name>
+            </ReferencedProperties>
+          </PropertySet>
+          <NoteProperty>
+            <Name>DefaultDisplayProperty</Name>
+            <Value>Name</Value>
+          </NoteProperty>
+          <PropertySet>
+            <Name>DefaultKeyPropertySet</Name>
+            <ReferencedProperties>
+              <Name>Index</Name>
+            </ReferencedProperties>
+          </PropertySet>
+        </Members>
+      </MemberSet>
+    </Members>
+  </Type>
 </Types>

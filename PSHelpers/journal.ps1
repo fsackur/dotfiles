@@ -119,3 +119,11 @@ function Read-Journal {
         & $Reader | ConvertFrom-Json | % {$_.PSTypeNames.Insert(0, "JournalEntry"); $_}
     }
 }
+
+function Get-JournalBoot {
+    [OutputType("JournalBoot")]
+    [CmdletBinding()]
+    param ()
+
+    journalctl --list-boots -o json | ConvertFrom-Json | % {$_.PSTypeNames.Insert(0, "JournalBoot"); $_}
+}
