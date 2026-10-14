@@ -45,5 +45,26 @@
         </TableRowEntries>
       </TableControl>
     </View>
+
+    <View>
+      <Name>JournalUnit</Name>
+      <ViewSelectedBy>
+        <TypeName>JournalUnit</TypeName>
+      </ViewSelectedBy>
+      <GroupBy>
+        <PropertyName>UnitType</PropertyName>
+      </GroupBy>
+      <CustomControl>
+        <CustomEntries>
+          <CustomEntry>
+            <CustomItem>
+              <ExpressionBinding>
+                <ScriptBlock>$_</ScriptBlock>
+              </ExpressionBinding>
+            </CustomItem>
+          </CustomEntry>
+        </CustomEntries>
+      </CustomControl>
+    </View>
   </ViewDefinitions>
 </Configuration>
