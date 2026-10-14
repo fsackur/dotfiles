@@ -28,7 +28,7 @@ function Get-Distro
 
     if (-not $IsLinux)
     {
-        Write-Error -Exception [NotSupportedException]::new('This function is only supported on Linux') -ErrorAction Stop
+        Write-Error -Exception ([NotSupportedException]::new('This function is only supported on Linux')) -ErrorAction Stop
     }
 
     $DistroName = (Get-Content /etc/os-release -ErrorAction Stop) -match '^ID=' -replace '.*=' | Select-Object -First 1
@@ -142,7 +142,7 @@ function Find-RepoPackageProvidingFile
         }
         else
         {
-            Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
+            Write-Error -Exception ([NotSupportedException]::new('Only RPM and DEB packages are supported')) -ErrorAction Stop
         }
     }
 }
@@ -193,7 +193,7 @@ function Get-RepoPackageFiles
             }
             else
             {
-                Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
+                Write-Error -Exception ([NotSupportedException]::new('Only RPM and DEB packages are supported')) -ErrorAction Stop
             }
         }
         else
@@ -214,7 +214,7 @@ function Get-RepoPackageFiles
             }
             else
             {
-                Write-Error -Exception [NotImplementedException]::new('Only RPM and DEB packages are supported') -ErrorAction Stop
+                Write-Error -Exception ([NotSupportedException]::new('Only RPM and DEB packages are supported')) -ErrorAction Stop
             }
         }
     }
