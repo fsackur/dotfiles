@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Get-FormatData -TypeName System.IO.FileInfo | Export-FormatData -Path ./Filesystem.Format.ps1xml -->
+<Configuration>
+  <ViewDefinitions>
+    <View>
+      <Name>Short</Name>
+      <ViewSelectedBy>
+        <TypeName>JournalEntry</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Timestamp</Label>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Hostname</Label>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>SyslogId</Label>
+            <Width>24</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Message</Label>
+            <Alignment>Left</Alignment>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <Wrap />
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Timestamp</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Hostname</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>SyslogId</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>Message</PropertyName>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+  </ViewDefinitions>
+</Configuration>
