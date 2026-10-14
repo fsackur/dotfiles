@@ -4,6 +4,10 @@ function Read-Journal {
     [CmdletBinding(DefaultParameterSetName = "Structured")]
     param
     (
+        [Parameter(Position = 0)]
+        [SupportsWildcards()]
+        [string[]]$Id,
+
         [string[]]$Unit,
 
         [string[]]$SyslogId,
@@ -48,12 +52,27 @@ function Read-Journal {
     $StructuredOutputArg = "--output=json"
     $_args = @()
 
-    if ($User) {
-        $_args += "--user"
-    }
+    if ($Id) {
+        $All = Get-JournalId
+        $Filters = $Id
+            | % {
+                $_Id = $_
+                $All | ? Value -ilike $_Id
+            } |
+            Select-Object -Unique
 
-    if ($Dmesg) {
-        $_args += "--dmesg"
+        $Filters |
+            Select-Object -SkipLast 1 |
+            % {
+                $_args += $_.Field, $_.Value -join "="
+                $_args += "+"
+            }
+
+        $Filters |
+            Select-Object -Last 1 |
+            % {
+                $_args += $_.Field, $_.Value -join "="
+            }
     }
 
     if ($Unit) {
@@ -230,6 +249,11 @@ function Get-JournalUnit {
     }
 }
 
+function script:Get-JournalId {
+    $Fields = "SYSLOG_IDENTIFIER", "_SYSTEMD_UNIT", "_SYSTEMD_SLICE", "_SYSTEMD_USER_UNIT", "_SYSTEMD_USER_SLICE"
+    $Fields | % {Get-JournalField $_} | Sort-Object
+}
+
 
 Register-ArgumentCompleter -CommandName Get-JournalField -ParameterName Name -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -244,6 +268,12 @@ Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Boot -Script
     (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
 }
 
+Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Id -ScriptBlock {
+    param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    $Names = Get-JournalId
+    (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
+}
+
 Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Unit -ScriptBlock {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     $UnitType = if ($fakeBoundParameters.User) {"UserUnit", "UserSlice"} else {"Unit", "Slice"}
@@ -251,9 +281,11 @@ Register-ArgumentCompleter -CommandName Read-Journal -ParameterName Unit -Script
     (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
 }
 
-Register-ArgumentCompleter -CommandName Read-Journal -ParameterName SyslogId -ScriptBlock {
+$SyslogIdCompleter = {
     param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
     $Names = Get-JournalField SYSLOG_IDENTIFIER
     $Completions = (@($Names) -like "$wordToComplete*"), (@($Names) -like "*$wordToComplete*") | Write-Output | Select-Object -Unique
     $Completions -replace "^\(.*\)$", "'`$0'"
 }
+Register-ArgumentCompleter -CommandName Read-Journal -ParameterName SyslogId -ScriptBlock $SyslogIdCompleter
+Register-ArgumentCompleter -CommandName Read-Journal -ParameterName ExcludeSyslogId -ScriptBlock $SyslogIdCompleter
