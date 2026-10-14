@@ -9,6 +9,35 @@ enum JournalPriority {
     debug = 7
 }
 
+$script:ResetCode = "`e[0m"
+$global:JournalPriorityColourCodes = [pscustomobject]@{
+    [JournalPriority]::emerg   = $PSStyle.Formatting.Error
+    [JournalPriority]::alert   = $PSStyle.Formatting.Error
+    [JournalPriority]::crit    = $PSStyle.Formatting.Error
+    [JournalPriority]::err     = "$($PSStyle.Formatting.Error)`e[22m"  # reset bold
+    [JournalPriority]::warning = "$($PSStyle.Formatting.Warning)`e[22m"
+    [JournalPriority]::notice  = $ResetCode
+    [JournalPriority]::info    = "`e[2m"  # dim
+    [JournalPriority]::debug   = "$($PSStyle.Formatting.Debug)`e[22m`e[2m"
+}
+
+function Format-JournalMessage {
+    [CmdletBinding()]
+    param (
+        [AllowNull()]
+        [Nullable[JournalPriority]]
+        $Priority = 5,
+
+        [Parameter(Mandatory, Position = 0, ValueFromPipeline)]
+        [string]$Message
+    )
+
+    process {
+        $Code = $JournalPriorityColourCodes.$Priority
+        $Code, $Message, $ResetCode -join ""
+    }
+}
+
 function Read-Journal {
     [OutputType("JournalBoot", ParameterSetName = "Structured")]
     [OutputType([string], ParameterSetName = "Raw")]

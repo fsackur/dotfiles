@@ -3,6 +3,64 @@
 <Configuration>
   <ViewDefinitions>
     <View>
+      <Name>Default</Name>
+      <ViewSelectedBy>
+        <TypeName>JournalEntry</TypeName>
+      </ViewSelectedBy>
+      <TableControl>
+        <TableHeaders>
+          <TableColumnHeader>
+            <Label>Timestamp</Label>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Level</Label>
+            <Width>8</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Unit</Label>
+            <Width>24</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>SyslogId</Label>
+            <Width>24</Width>
+          </TableColumnHeader>
+          <TableColumnHeader>
+            <Label>Message</Label>
+            <Alignment>Left</Alignment>
+          </TableColumnHeader>
+        </TableHeaders>
+        <TableRowEntries>
+          <TableRowEntry>
+            <Wrap />
+            <TableColumnItems>
+              <TableColumnItem>
+                <PropertyName>Timestamp</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>
+                  Format-JournalMessage -Priority $_.Level -Message $_.Level
+                </ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>
+                  if ($_._SYSTEMD_USER_UNIT) {$_._SYSTEMD_USER_UNIT} else {$_._SYSTEMD_UNIT}
+                </ScriptBlock>
+              </TableColumnItem>
+              <TableColumnItem>
+                <PropertyName>SyslogId</PropertyName>
+              </TableColumnItem>
+              <TableColumnItem>
+                <ScriptBlock>
+                  Format-JournalMessage -Priority $_.Level -Message $_.MESSAGE
+                </ScriptBlock>
+              </TableColumnItem>
+            </TableColumnItems>
+          </TableRowEntry>
+        </TableRowEntries>
+      </TableControl>
+    </View>
+
+    <View>
       <Name>Short</Name>
       <ViewSelectedBy>
         <TypeName>JournalEntry</TypeName>
@@ -39,13 +97,7 @@
               </TableColumnItem>
               <TableColumnItem>
                 <ScriptBlock>
-                  if ($null -eq $_.PRIORITY -or $_.PRIORITY -gt 4) {
-                    $_.MESSAGE
-                  } elseif ($_.PRIORITY -eq 4) {
-                    "$($PSStyle.Formatting.Warning)$($_.MESSAGE)`e[0m"
-                  } else {
-                    "$($PSStyle.Formatting.Error)$($_.MESSAGE)`e[0m"
-                  }
+                  Format-JournalMessage -Priority $_.Level -Message $_.MESSAGE
                 </ScriptBlock>
               </TableColumnItem>
             </TableColumnItems>

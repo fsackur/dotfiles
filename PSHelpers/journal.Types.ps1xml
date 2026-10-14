@@ -8,6 +8,12 @@
           [datetime]::UnixEpoch.AddMicroseconds($this.__REALTIME_TIMESTAMP)
         </GetScriptBlock>
       </ScriptProperty>
+      <ScriptProperty>
+        <Name>Level</Name>
+        <GetScriptBlock>
+          [JournalPriority]$this.PRIORITY
+        </GetScriptBlock>
+      </ScriptProperty>
       <AliasProperty>
         <Name>Hostname</Name>
         <ReferencedMemberName>_HOSTNAME</ReferencedMemberName>
