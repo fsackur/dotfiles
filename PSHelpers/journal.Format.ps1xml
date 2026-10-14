@@ -38,7 +38,15 @@
                 <PropertyName>SyslogId</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
-                <PropertyName>Message</PropertyName>
+                <ScriptBlock>
+                  if ($null -eq $_.PRIORITY -or $_.PRIORITY -gt 4) {
+                    $_.MESSAGE
+                  } elseif ($_.PRIORITY -eq 4) {
+                    "$($PSStyle.Formatting.Warning)$($_.MESSAGE)`e[0m"
+                  } else {
+                    "$($PSStyle.Formatting.Error)$($_.MESSAGE)`e[0m"
+                  }
+                </ScriptBlock>
               </TableColumnItem>
             </TableColumnItems>
           </TableRowEntry>
