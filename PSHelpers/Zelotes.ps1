@@ -838,6 +838,12 @@ $Script:Presets = [ordered]@{
     BG3 = @{
         JoyLeft  = [Key]::KEY_ESC
     }
+    Navigation = @{
+        JoyUp    = [Key]::KEY_PAGEUP
+        JoyDown  = [Key]::KEY_PAGEDOWN
+        JoyLeft  = [Key]::KEY_BACK
+        JoyRight = [Key]::KEY_FORWARD
+    }
 }
 
 function Get-ZelotesProfileCount {
