@@ -1,6 +1,6 @@
 $script:DockerContext = "scorpion"
 
-$Hostname = hostname
+$Hostname = $(hostname) -replace "\..*"
 
 if ($Hostname -eq $DockerContext) {
     $Script:DockerHost = $Hostname
