@@ -955,6 +955,7 @@ function Set-Zelotes {
 
     if ($Profile -eq "active") {$Profile = Get-ZelotesActiveProfile}
 
+    $Button = $ValArgs = $null
     $Mappings = $PSBoundParameters.GetEnumerator() | ? Value -is ([Key])
     $Mappings | % {
         $Button = $ButtonNames.IndexOf($_.Key)
@@ -971,9 +972,12 @@ function Set-Zelotes {
         }
 
         ratbagctl $C18Name profile $Profile button $Button action set @ValArgs
-        # IDK why but the mouse freezes unless you run the command twice
-        ratbagctl $C18Name profile $Profile button $Button action set @ValArgs
     }
+
+    if ($null -eq $Button) {return}
+
+    # IDK why but the mouse freezes unless you run the command twice
+    ratbagctl $C18Name profile $Profile button $Button action set @ValArgs
 }
 
 Register-ArgumentCompleter -CommandName Set-Zelotes -ParameterName Preset -ScriptBlock {
