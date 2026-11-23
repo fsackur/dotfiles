@@ -844,6 +844,12 @@ $Script:Presets = [ordered]@{
         JoyLeft  = [Key]::KEY_BACK
         JoyRight = [Key]::KEY_FORWARD
     }
+    GodOfWar = @{
+        JoyLeft  = [Key]::KEY_Q
+        JoyRight = [Key]::KEY_R
+        JoyDown  = [Key]::KEY_LEFTCTRL
+        JoyUp    = [Key]::BTN_BACK
+    }
 }
 
 function Get-ZelotesProfileCount {
