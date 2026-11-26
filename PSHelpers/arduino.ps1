@@ -191,6 +191,26 @@ function Set-ArduinoDefaultBoard {
     if (-not $_Board) {throw "Board not installed: $Board"}
     $Script:DefaultBoard = $_Board
 }
+
+function Install-ArduinoBoard {
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, Position = 0)]
+        [Alias("Core")]
+        [string]$Board,
+
+        [switch]$System
+    )
+    $Core = $Board -replace "(?<=:\w+):\w+$"
+    $_args = "core install $Core" -split " "
+    if ($System) {
+        sudo arduino-cli @_args
+    } else {
+        arduino-cli @_args
+    }
+}
+
+Set-Alias Install-ArduinoCore Install-ArduinoBoard
 #endregion boards
 
 #region serial
@@ -401,10 +421,13 @@ $CompleterSplats = (
         }
     }, @{
         ParameterName = "Board"
-        CommandName = "Build-ArduinoSketch", "Push-ArduinoSketch", "Deploy-ArduinoSketch"
+        CommandName = "Build-ArduinoSketch", "Push-ArduinoSketch", "Deploy-ArduinoSketch", "Install-ArduinoBoard"
         ScriptBlock = {
             param ($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
             $Boards = Get-ArduinoBoard
+            if ($commandName -eq "Install-ArduinoBoard") {
+                $Boards = $Boards -replace "(?<=:\w+):\w+$" | Select-Object -Unique
+            }
             (@($Boards) -like "$wordToComplete*"), (@($Boards) -like "*$wordToComplete*") | Write-Output
         }
     }, @{
